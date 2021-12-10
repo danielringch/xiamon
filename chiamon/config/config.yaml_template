@@ -1,0 +1,4 @@
+outputs:
+  discordbot: <file>
+plugins:
+  flexfarmer: <file>
