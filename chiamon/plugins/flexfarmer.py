@@ -2,17 +2,15 @@ import asyncio
 import yaml, datetime, ciso8601
 from .plugin import Plugin
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
-        super(Flexfarmer, self).__init__('flexfarmer')
+        super(Flexfarmer, self).__init__('flexfarmer', outputs)
         self.print(f'Flexfarmer plugin {__version__}')
         with open(config, "r") as stream:
             config_data = yaml.safe_load(stream)
             self.__log_path = config_data['log_path']
-
-        self.__outputs = outputs
 
         self.__file = config_data['log_path']
         self.__aggregation = config_data['aggregation']
@@ -23,7 +21,7 @@ class Flexfarmer(Plugin):
         else:
             self.__cleanup = False
 
-        scheduler.add_job("Flexfarmer" ,self.run, config_data['intervall'])
+        scheduler.add_job('flexfarmer' ,self.run, config_data['intervall'])
 
     async def run(self):
         error_lines = []
@@ -50,12 +48,10 @@ class Flexfarmer(Plugin):
         for error_line in error_lines:
             message += error_line
 
-        sending_tasks = []
-        for output in self.__outputs:
-            sending_tasks.append(output.send_message(message))
+        sending_tasks = self.send(message)
 
         if self.__cleanup:
             open(self.__file, 'w').close()
 
-        await asyncio.gather(*sending_tasks)
+        await sending_tasks
 

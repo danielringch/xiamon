@@ -11,23 +11,23 @@ class Scheduler:
 
 
     def __init__(self):
-        self.__jobs = []
+        self.__jobs = {}
 
     def add_job(self, name, func, intervall):
         job = Scheduler.__bundle(name, func, intervall)
-        self.__jobs.append(job)
+        self.__jobs[name] = job
         print(f'[scheduler] New job {job.name} added; next execution: {job.next}')
 
-    async def force_all(self):
-        tasks = []
-        for job in self.__jobs:
-            tasks.append(job.func())
-        await asyncio.gather(*tasks)
+    async def manual(self, plugin):
+        if plugin in self.__jobs:
+            await self.__jobs[plugin].func()
+        else:
+            print(f'WARNING: plugin {plugin} not found.')
 
     async def run(self):
         time = datetime.datetime.now()
         tasks = []
-        for job in self.__jobs:
+        for job in self.__jobs.values():
             if job.next < time:
                 job.next = job.iter.get_next(datetime.datetime)
                 tasks.append(job.func())

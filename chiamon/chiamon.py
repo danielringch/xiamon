@@ -6,7 +6,7 @@ from core import *
 from interfaces import *
 from plugins import *
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -15,14 +15,14 @@ warnings.filterwarnings(
 
 prefix = '[chiamon] {0}'
 
-available_plugins = {'flexfarmer': Flexfarmer}
+available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive}
 
 async def main():
     print(f'Chiamon {__version__}')
 
     parser = argparse.ArgumentParser(description='Monitor for chia nodes.')
-    parser.add_argument('config', metavar='config')
-    parser.add_argument('--run-on-startup', action='store_true', dest="on_startup", help="Run all plugins on startup.")
+    parser.add_argument('-c', '--config', type=str, required=True, help="Path to config file.")
+    parser.add_argument('-m', '--manual', type=str, required=False, nargs='+', help="Run plugin manually on startup.")
     args = parser.parse_args()
 
     with open(args.config, "r") as stream:
@@ -46,16 +46,20 @@ async def main():
         if key not in available_plugins:
             print(prefix.format(f'WARNING: plugin {key} given in config, but not available.'))
             continue
-        subconfig_path = os.path.join(os.path.dirname(args.config), plugins_configs['flexfarmer'])
+        subconfig_path = os.path.join(os.path.dirname(args.config), plugins_configs[key])
         if not os.path.exists(subconfig_path):
             print(prefix.format(f'WARNING: not config file available for plugin {key}.'))
             continue
         plugins[key] = available_plugins[key](subconfig_path, scheduler, outputs.values())
 
-    print('Ready.')
 
-    if args.on_startup:
-        await scheduler.force_all()
+    manual_tasks = []
+    for manual_plugin in args.manual:
+        print(prefix.format(f'Manual run of plugin {manual_plugin}.'))
+        manual_tasks.append(scheduler.manual(manual_plugin))
+    await asyncio.gather(*manual_tasks)
+
+    print(prefix.format('Startup complete.'))
 
     await schedule_plugins(scheduler)
 

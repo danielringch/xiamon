@@ -1,0 +1,2 @@
+intervall: <cron, e.g. "0 * * * *">
+paths: <list of paths>
