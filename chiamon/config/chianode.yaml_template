@@ -1,0 +1,4 @@
+intervall: <cron, e.g. "0 * * * *">
+path: <path>
+cert: <file>
+key: <file>

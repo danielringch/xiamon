@@ -6,7 +6,7 @@ from core import *
 from interfaces import *
 from plugins import *
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -15,7 +15,7 @@ warnings.filterwarnings(
 
 prefix = '[chiamon] {0}'
 
-available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive}
+available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive, 'chianode': Chianode}
 
 async def main():
     print(f'Chiamon {__version__}')
@@ -54,9 +54,10 @@ async def main():
 
 
     manual_tasks = []
-    for manual_plugin in args.manual:
-        print(prefix.format(f'Manual run of plugin {manual_plugin}.'))
-        manual_tasks.append(scheduler.manual(manual_plugin))
+    if args.manual:
+        for manual_plugin in args.manual:
+            print(prefix.format(f'Manual run of plugin {manual_plugin}.'))
+            manual_tasks.append(scheduler.manual(manual_plugin))
     await asyncio.gather(*manual_tasks)
 
     print(prefix.format('Startup complete.'))
