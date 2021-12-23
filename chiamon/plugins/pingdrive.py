@@ -1,7 +1,9 @@
 import asyncio, yaml, glob, random, os, datetime
+from datetime import timedelta
 from .plugin import Plugin
+from .utils.alert import Alert
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 class Pingdrive(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -12,7 +14,10 @@ class Pingdrive(Plugin):
             config_data = yaml.safe_load(stream)
             self.__paths = config_data['paths']
 
-        self.__failures = {}
+        mute_intervall = config_data['alert_mute_interval']
+        self.__ping_failed_alerts = {}
+        for path in self.__paths:
+            self.__ping_failed_alerts[path] = Alert(super(Pingdrive, self), timedelta(hours=mute_intervall))
 
         scheduler.add_job('pingdrive' ,self.run, config_data['intervall'])
 
@@ -36,7 +41,5 @@ class Pingdrive(Plugin):
             file.seek(offset,0)
             _ = file.read(1024)
         except:
-            now = datetime.datetime.now()
-            if path not in self.__failures or now - self.__failures[path] > datetime.timedelta(hours=1):
-                self.__failures[path] = now
-                await self.send(f'Ping failed for path: {path}', is_alert=True)
+            alert = self.__ping_failed_alerts[path]
+            await alert.send(f'Ping failed for path: {path}')

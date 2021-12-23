@@ -22,7 +22,7 @@ class Scheduler:
         if plugin in self.__jobs:
             await self.__jobs[plugin].func()
         else:
-            print(f'WARNING: plugin {plugin} not found.')
+            print(f'WARNING: job {plugin} not found.')
 
     async def run(self):
         time = datetime.datetime.now()

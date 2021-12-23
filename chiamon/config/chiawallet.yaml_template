@@ -3,3 +3,4 @@ check_intervall: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 cert: <file>
 key: <file>
+wallet_id = <id>

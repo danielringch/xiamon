@@ -1,4 +1,5 @@
 intervall: <cron, e.g. "0 * * * *">
-log_path: <file>>
+log_path: <file>
 reset_logs: <boolean>
 aggregation: <hours>
+output_path: <path>

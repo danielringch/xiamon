@@ -6,7 +6,7 @@ from core import *
 from interfaces import *
 from plugins import *
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -15,14 +15,14 @@ warnings.filterwarnings(
 
 prefix = '[chiamon] {0}'
 
-available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive, 'chianode': Chianode}
+available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive, 'chianode': Chianode, 'chiawallet': Chiawallet}
 
 async def main():
     print(f'Chiamon {__version__}')
 
     parser = argparse.ArgumentParser(description='Monitor for chia nodes.')
     parser.add_argument('-c', '--config', type=str, required=True, help="Path to config file.")
-    parser.add_argument('-m', '--manual', type=str, required=False, nargs='+', help="Run plugin manually on startup.")
+    parser.add_argument('-m', '--manual', type=str, required=False, nargs='+', help="Run job manually on startup.")
     args = parser.parse_args()
 
     with open(args.config, "r") as stream:
@@ -55,9 +55,9 @@ async def main():
 
     manual_tasks = []
     if args.manual:
-        for manual_plugin in args.manual:
-            print(prefix.format(f'Manual run of plugin {manual_plugin}.'))
-            manual_tasks.append(scheduler.manual(manual_plugin))
+        for manual_job in args.manual:
+            print(prefix.format(f'Manual run of job {manual_job}.'))
+            manual_tasks.append(scheduler.manual(manual_job))
     await asyncio.gather(*manual_tasks)
 
     print(prefix.format('Startup complete.'))
