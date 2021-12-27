@@ -3,7 +3,7 @@ from typing import DefaultDict
 from pathlib import Path
 from .plugin import Plugin
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -14,7 +14,6 @@ class Flexfarmer(Plugin):
 
         self.__file = config_data['log_path']
         self.__aggregation = config_data['aggregation']
-        self.print(f'Log file to read: {self.__file}', True)
         self.__output_path = config_data['output_path']
 
         if "reset_logs" in config_data:

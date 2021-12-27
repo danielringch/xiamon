@@ -1,15 +1,13 @@
 import asyncio, yaml, glob, random, os, datetime
-from datetime import timedelta
 from .plugin import Plugin
 from .utils.alert import Alert
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 
 class Pingdrive(Plugin):
     def __init__(self, config, scheduler, outputs):
         super(Pingdrive, self).__init__('pingdrive', outputs)
         self.print(f'Pingdrive plugin {__version__}')
-        self.print(f'config file: {config}', True)
         with open(config, "r") as stream:
             config_data = yaml.safe_load(stream)
             self.__paths = config_data['paths']
@@ -17,7 +15,7 @@ class Pingdrive(Plugin):
         mute_intervall = config_data['alert_mute_interval']
         self.__ping_failed_alerts = {}
         for path in self.__paths:
-            self.__ping_failed_alerts[path] = Alert(super(Pingdrive, self), timedelta(hours=mute_intervall))
+            self.__ping_failed_alerts[path] = Alert(super(Pingdrive, self), mute_intervall)
 
         scheduler.add_job('pingdrive' ,self.run, config_data['intervall'])
 

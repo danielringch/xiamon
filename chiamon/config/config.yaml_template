@@ -1,4 +1,4 @@
-outputs:
+interfaces:
   discordbot: <file>
 plugins:
   flexfarmer: <file>

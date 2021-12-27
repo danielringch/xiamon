@@ -1,16 +1,14 @@
 import yaml, aiohttp
 from ssl import SSLContext
-from datetime import timedelta
 from .plugin import Plugin
 from .utils.alert import Alert
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
         super(Chiawallet, self).__init__('chiawallet', outputs)
         self.print(f'Chiawallet plugin {__version__}')
-        self.print(f'config file: {config}', True)
         with open(config, "r") as stream:
             config_data = yaml.safe_load(stream)
 
@@ -18,8 +16,8 @@ class Chiawallet(Plugin):
         self.__context.load_cert_chain(config_data['cert'], keyfile=config_data['key'])
 
         mute_intervall = config_data['alert_mute_interval']
-        self.__rpc_failed_alert = Alert(super(Chiawallet, self), timedelta(hours=mute_intervall))
-        self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), timedelta(hours=mute_intervall))
+        self.__rpc_failed_alert = Alert(super(Chiawallet, self), mute_intervall)
+        self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_intervall)
 
         self.__wallet_id = config_data['wallet_id']
         self.__balance = None

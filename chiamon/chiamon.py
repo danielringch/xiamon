@@ -6,7 +6,7 @@ from core import *
 from interfaces import *
 from plugins import *
 
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -15,7 +15,13 @@ warnings.filterwarnings(
 
 prefix = '[chiamon] {0}'
 
-available_plugins = {'flexfarmer': Flexfarmer, 'pingdrive': Pingdrive, 'chianode': Chianode, 'chiawallet': Chiawallet}
+available_interfaces = {'stdout': Stdout, 
+                        'discordbot': Discordbot}
+available_plugins = {'chianode': Chianode,
+                     'chiawallet': Chiawallet,
+                     'flexfarmer': Flexfarmer,
+                     'flexpool': Flexpool,
+                     'pingdrive': Pingdrive}
 
 async def main():
     print(f'Chiamon {__version__}')
@@ -28,30 +34,27 @@ async def main():
     with open(args.config, "r") as stream:
         config = yaml.safe_load(stream)
     
-    outputs = {}
+    interfaces = {}
     plugins = {}
 
     scheduler = Scheduler()
 
-    output_configs = config['outputs']
-    if 'discordbot' in output_configs:
-        print(prefix.format('Loading output "Discordbot"...'))
-        discordbot_config = os.path.join(os.path.dirname(args.config), output_configs['discordbot'])
-        discordbot = Discordbot(discordbot_config)
-        await discordbot.start(loop)
-        outputs['discordbot'] = discordbot
-
-    plugins_configs = config['plugins']
-    for key in plugins_configs:
-        if key not in available_plugins:
-            print(prefix.format(f'WARNING: plugin {key} given in config, but not available.'))
+    for key, value in config['interfaces'].items():
+        print(f'Loading interface {key}...')
+        interface_config = get_config_path(key, available_interfaces, value, args.config)
+        if interface_config is None:
             continue
-        subconfig_path = os.path.join(os.path.dirname(args.config), plugins_configs[key])
-        if not os.path.exists(subconfig_path):
-            print(prefix.format(f'WARNING: not config file available for plugin {key}.'))
-            continue
-        plugins[key] = available_plugins[key](subconfig_path, scheduler, outputs.values())
+        interface = available_interfaces[key](interface_config)
+        await interface.start()
+        interfaces[key] = interface
 
+    for key, value in config['plugins'].items():
+        print(f'Loading plugin {key}...')
+        plugin_config = get_config_path(key, available_plugins, value, args.config)
+        if plugin_config is None:
+            continue
+        plugin = available_plugins[key](plugin_config, scheduler, interfaces.values())
+        plugins[key] = plugin
 
     manual_tasks = []
     if args.manual:
@@ -68,6 +71,16 @@ async def schedule_plugins(scheduler):
     while True:
         time.sleep(60)
         await scheduler.run()
+
+def get_config_path(item, available_items, config, config_root_dir):
+    if item not in available_items:
+        print(prefix.format(f'WARNING: {item} given in config, but not available.'))
+        return None
+    subconfig_path = os.path.join(os.path.dirname(config_root_dir), config)
+    if not os.path.exists(subconfig_path):
+        print(prefix.format(f'WARNING: no config file available for {item}.'))
+        return None
+    return subconfig_path
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
