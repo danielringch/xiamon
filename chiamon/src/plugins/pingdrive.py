@@ -1,8 +1,7 @@
 import asyncio, yaml, glob, random, os, datetime
-from .plugin import Plugin
-from .utils.alert import Alert
+from ..core import Plugin, Alert
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 class Pingdrive(Plugin):
     def __init__(self, config, scheduler, outputs):

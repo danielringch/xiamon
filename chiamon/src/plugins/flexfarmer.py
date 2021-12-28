@@ -1,9 +1,9 @@
 import yaml, datetime, ciso8601, re, os
 from typing import DefaultDict
 from pathlib import Path
-from .plugin import Plugin
+from ..core import Plugin
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -43,12 +43,12 @@ class Flexfarmer(Plugin):
         message = self.__add_statistic(message, 'Region unhealty', parser.region_unhealty)
         message = self.__add_statistic(message, 'Primary region unavailable', parser.primary_region_unavailable)
         message = self.__add_statistic(message, 'Failover region unavailable', parser.failover_region_unavailable)
-        message = self.__add_statistic(message, 'Reconnect error', parser.reconnect_error)
+        message = self.__add_statistic(message, 'Network error', parser.network_error)
         message = self.__add_statistic(message, 'Unknown errors', parser.unknown_error)
         for category, partials in sorted(parser.lookup_times.items(), key=lambda x: x[0]):
             message = self.__add_statistic(message, f'Lookup time < {category + 1}s', partials)
 
-        sending_tasks = self.send(message)
+        sending_tasks = self.send(Plugin.Channel.info, message)
 
         self.__write_errors(parser.error_lines)
         self.__write_errors(parser.unknown_error_lines, 'unknown_')
@@ -84,7 +84,7 @@ class Flexfarmer(Plugin):
             self.region_unhealty = 0
             self.primary_region_unavailable = 0
             self.failover_region_unavailable = 0
-            self.reconnect_error = 0
+            self.network_error = 0
             self.unknown_error = 0
             self.error_lines = []
             self.unknown_error_lines = []
@@ -95,7 +95,7 @@ class Flexfarmer(Plugin):
                               self.__parse_duplicate_partial,
                               self.__parse_rejected_partial, self.__parse_unhealty_region,
                               self.__parse_primary_region_unavailable, self.__parse_failover,
-                              self.__parse_reconnect_error]
+                              self.__parse_network_error, self.__parse_farmer_not_initialized]
 
         def parse(self, line):
             timestamp = ciso8601.parse_datetime(line[1:11] + 'T' + line[12:20])
@@ -199,9 +199,17 @@ class Flexfarmer(Plugin):
                 return True
             return None
 
-        def __parse_reconnect_error(self, line):
+        def __parse_network_error(self, line):
             if line.startswith('  WARN worker: Reconnecting to the blockchain bridge gateway error'):
-                self.reconnect_error += 1
+                self.network_error += 1
                 return True
+            if line.startswith(' ERROR pool: Failed to make pool request'):
+                self.network_error += 1
+                return True
+            return None
+
+        def __parse_farmer_not_initialized(self, line):
+            if line.startswith('  WARN pool: Farmer is not initialized'):
+                return False
             return None
 

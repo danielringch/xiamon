@@ -1,2 +1,4 @@
-mute_info: <boolean>
 mute_alert: <boolean>
+mute_info: <boolean>
+mute_error: <boolean>
+mute_debug: <boolean>

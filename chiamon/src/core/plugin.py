@@ -1,16 +1,13 @@
-from abc import ABC, abstractmethod
 import asyncio
+from abc import ABC, abstractmethod
+from .interface import Interface
 
-__version__ = "0.3.0"
+class Plugin(ABC):
+    Channel = Interface.Channel
 
-class Plugin:
     def __init__(self, prefix, outputs):
         self.__prefix = prefix
         self.__outputs = outputs
-
-    @abstractmethod
-    async def run(self):
-        pass
 
     def print(self, message):
         lines = message.splitlines()
@@ -21,11 +18,9 @@ class Plugin:
         for line in message.splitlines():
             print(f'    {line}')
 
-    async def send(self, message, is_alert=False):
+    async def send(self, channel, message):
         sending_tasks = []
         for output in self.__outputs:
-            sending_tasks.append(output.send_message(self.__prefix, message, is_alert))
+            sending_tasks.append(output.send_message(channel, self.__prefix, message))
 
         await asyncio.gather(*sending_tasks)
-
-

@@ -1,9 +1,8 @@
 import yaml, aiohttp
 from ssl import SSLContext
-from .plugin import Plugin
-from .utils.alert import Alert
+from ..core import Plugin, Alert, Alerts
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"
 
 class Chianode(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -45,7 +44,7 @@ class Chianode(Plugin):
             await self.__node_unsynced_alert.send(message)
             return peak
         if not muted:
-            await self.send(f'Chia full node synced; peak {peak}.')
+            await self.send(Plugin.Channel.info, f'Chia full node synced; peak {peak}.')
         return peak
 
     async def __get_connections(self, peak):
@@ -71,7 +70,7 @@ class Chianode(Plugin):
                 syncing_count += 1
             nodes_count += 1
         message = '{0} nodes connected\nsynced={1}\nnot synced={2}\nunknown={3}'.format(nodes_count, synced_count, syncing_count, unkown_count)
-        await self.send(message)
+        await self.send(Plugin.Channel.info, message)
 
     async def __post(self, cmd):
         try:

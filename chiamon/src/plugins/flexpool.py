@@ -1,9 +1,8 @@
 import yaml, aiohttp, datetime
 from typing import DefaultDict
-from .plugin import Plugin
-from .utils.alert import Alert, Alerts
+from ..core import Plugin, Alert, Alerts
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -19,9 +18,10 @@ class Flexpool(Plugin):
         self.__last_summary = datetime.datetime.now()
         self.__reported_space = DefaultDict(lambda: None)
 
-        self.__connection_alert = Alert(super(Flexpool, self), config_data['connection_error_mute_intervall'])
+        self.__connection_alerts = Alerts(super(Flexpool, self))
         self.__offline_alerts = Alerts(super(Flexpool, self))
-        self.__alert_mute_intervall = config_data['alert_mute_interval']
+        self.__connection_mute_intervall = config_data['connection_error_mute_intervall']
+        self.__offline_mute_intervall = config_data['alert_mute_interval']
 
         scheduler.add_job('flexpool-summary' ,self.summary, config_data['summary_intervall'])
         scheduler.add_job('flexpool-check', self.check, config_data['check_intervall'])
@@ -35,7 +35,7 @@ class Flexpool(Plugin):
                 message = (
                     f'Open balance: {open_xch} XCH ({open_money} {self.__currency})'
                 )
-                await self.send(message)
+                await self.send(Plugin.Channel.info, message)
             workers = await self.__get_worker_status(session)
             if workers is not None:
                 for worker in workers.values():
@@ -46,7 +46,7 @@ class Flexpool(Plugin):
                         f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB\n'
                         f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
                     )
-                    await self.send(message)
+                    await self.send(Plugin.Channel.info, message)
             payments = await self.__get_payments(session, since)
             if payments is not None:
                 for payment in payments:
@@ -54,7 +54,7 @@ class Flexpool(Plugin):
                         f'Payment: {payment.value} XCH\n'
                         f'On {payment.timestamp} after {payment.duration}'
                     )
-                    await self.send(message)
+                    await self.send(Plugin.Channel.info, message)
 
     async def check(self):
         async with aiohttp.ClientSession() as session:
@@ -66,18 +66,18 @@ class Flexpool(Plugin):
                     continue
                 if not self.__offline_alerts.contains(worker.name):
                     self.__offline_alerts.add(worker.name,
-                        Alert(super(Flexpool, self), self.__alert_mute_intervall))
+                        Alert(super(Flexpool, self), self.__offline_mute_intervall))
                 if not worker.online:
                     self.__offline_alerts.send(worker.name, f'Worker {worker.name} is offline.')
                     continue
                 alert = self.__offline_alerts.get(worker.name)
                 if alert.is_muted():
                     alert.unmute()
-                    self.send(f'Worker {worker.name} is online again.')
+                    self.send(Plugin.Channel.info, f'Worker {worker.name} is online again.')
                 last_space = self.__reported_space[worker.name]
                 if last_space is not None and last_space > worker.reported_hashrate:
-                    self.send(f'Worker {worker.name}: Reported space space dropped (old: {last_space:.2f} TB new: {worker.reported_hashrate:.2f}',
-                        is_alert=True)
+                    self.send(Plugin.Channel.alert,
+                        f'Worker {worker.name}: Reported space space dropped (old: {last_space:.2f} TB new: {worker.reported_hashrate:.2f}')
 
     def __ignore_worker(self, name):
         if self.__check_workers is not None and name not in self.__check_workers:
@@ -134,12 +134,22 @@ class Flexpool(Plugin):
                 response.raise_for_status()
                 data =  await response.json()
         except Exception as e:
-            await self.__connection_alert.send(str(e))
+            await self.__handle_connection_error(False, cmd, f'Command {cmd}: {str(e)}')
             return None
         if data['error'] is not None:
-            await self.__connection_alert.send(f'Flexpool api request "{cmd}" failed: {data["error"]}')
+            await self.__handle_connection_error(False, cmd, f'Command {cmd}: {data["error"]}')
             return None
+        await self.__handle_connection_error(True, cmd, f'Command {cmd} successful again.')
         return data['result']
+
+    async def __handle_connection_error(self, success, cmd, message):
+        if not self.__connection_alerts.contains(cmd):
+            self.__connection_alerts.add(cmd, Alert(super(Flexpool, self), self.__connection_mute_intervall))
+        alert = self.__connection_alerts.get(cmd)
+        if success:
+            await alert.send_unmute(message)
+        else:
+            await alert.send_unmute(message)
 
     class WorkerStatus:
         def __init__(self, json):

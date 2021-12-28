@@ -2,11 +2,11 @@ import argparse, os, yaml, asyncio, time
 import warnings
 from pytz_deprecation_shim import PytzUsageWarning
 
-from core import *
-from interfaces import *
-from plugins import *
+from src.core import Scheduler
+from src.interfaces import *
+from src.plugins import *
 
-__version__ = "0.5.0"
+__version__ = "0.6.0"
 
 warnings.filterwarnings(
     "ignore",

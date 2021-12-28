@@ -1,3 +1,4 @@
+from .plugin import Plugin
 import datetime
 
 class Alert:
@@ -10,7 +11,13 @@ class Alert:
         if self.is_muted():
             return
         self.mute()
-        await self.__plugin.send(message, True)    
+        await self.__plugin.send(Plugin.Channel.alert, message) 
+
+    async def send_unmute(self, message):
+        if not self.is_muted:
+            return;
+        self.unmute()
+        await self.__plugin.send(Plugin.Channel.alert, message) 
 
     def is_muted(self):
         now = datetime.datetime.now()
@@ -48,6 +55,12 @@ class Alerts:
                 alert.mute()
         if(unmute_others):
             self.unmute_all(but=key)
+
+    async def send_unmute(self, message):
+        if not self.is_any_muted:
+            return;
+        self.unmute_all()
+        await self.__plugin.send(Plugin.Channel.alert, message) 
 
     def is_any_muted(self):
         for alert in self.__alerts.values():

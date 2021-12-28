@@ -1,3 +1,5 @@
 token:  <token file>
+alert_channel: <channel id>
 info_channel: <channel id>
-alerts_channel: <channel id>
+error_channel: <channel id>
+debug_channel: <channel id>

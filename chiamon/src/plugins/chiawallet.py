@@ -1,9 +1,8 @@
 import yaml, aiohttp
 from ssl import SSLContext
-from .plugin import Plugin
-from .utils.alert import Alert
+from ..core import Plugin, Alert
 
-__version__ = "0.1.1"
+__version__ = "0.1.2"
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -32,13 +31,15 @@ class Chiawallet(Plugin):
         diff = raw_balance - self.__balance if self.__balance else 0
         if diff != 0:
             self.__balance = raw_balance
-            await self.send(f'Balance changed: {self.__mojo_to_xch(diff)} XCH\nNew balance: {self.__mojo_to_xch(raw_balance)} XCH', True)
+            await self.send(Plugin.Channel.alert,
+                f'Balance changed: {self.__mojo_to_xch(diff)} XCH\nNew balance: {self.__mojo_to_xch(raw_balance)} XCH')
 
     async def summary(self):
         raw_balance = await self.__get_balance()
         if not raw_balance:
             return
-        await self.send(f'Wallet balance: {self.__mojo_to_xch(raw_balance)} XCH')
+        await self.send(Plugin.Channel.info,
+            f'Wallet balance: {self.__mojo_to_xch(raw_balance)} XCH')
 
     async def __get_balance(self):
         if not await self.__get_synced():
