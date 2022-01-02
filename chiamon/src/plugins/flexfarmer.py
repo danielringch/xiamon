@@ -1,29 +1,27 @@
-import yaml, datetime, ciso8601, re, os
+import datetime, ciso8601, re, os
 from typing import DefaultDict
 from pathlib import Path
-from ..core import Plugin
+from ..core import Plugin, Config
 
-__version__ = "0.2.2"
+__version__ = "0.3.0"
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
         super(Flexfarmer, self).__init__('flexfarmer', outputs)
         self.print(f'Flexfarmer plugin {__version__}')
-        with open(config, "r") as stream:
-            config_data = yaml.safe_load(stream)
 
-        self.__file = config_data['log_path']
-        self.__aggregation = config_data['aggregation']
-        self.__output_path = config_data['output_path']
+        config_data = Config(config)
 
-        if "reset_logs" in config_data:
-            self.__cleanup = config_data['reset_logs']
-        else:
-            self.__cleanup = False
+        self.__file = config_data.data['log_path']
+        self.__aggregation, _ = config_data.get_value_or_default(24, 'aggregation')
+        self.__output_path = config_data.data['output_path']
+        self.__cleanup, _ = config_data.get_value_or_default(False, 'reset_logs')
+        interval, _ = config_data.get_value_or_default('0 0 * * *', 'interval')
 
-        scheduler.add_job('flexfarmer' ,self.run, config_data['intervall'])
+        scheduler.add_job('flexfarmer' ,self.run, interval)
 
     async def run(self):
+        await self.send(Plugin.Channel.debug, f'Creating summary from {self.__file}.')
         oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=self.__aggregation)
         parser = Flexfarmer.Parser(oldest_timestamp)
 

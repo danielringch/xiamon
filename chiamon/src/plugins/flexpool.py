@@ -1,62 +1,78 @@
-import yaml, aiohttp, datetime
+import asyncio, aiohttp, datetime
 from typing import DefaultDict
-from ..core import Plugin, Alert, Alerts
+from ..core import Plugin, Alert, Config
 
-__version__ = "0.1.1"
+__version__ = "0.2.0"
 
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
         super(Flexpool, self).__init__('flexpool', outputs)
         self.print(f'Flexpool plugin {__version__}')
-        with open(config, "r") as stream:
-            config_data = yaml.safe_load(stream)
 
-        self.__address = config_data['address']
-        self.__currency = config_data['currency']
-        self.__check_workers = None if config_data['check_workers'] == 'all' else config_data['check_workers']
+        config_data = Config(config)
+
+        self.__address = config_data.data['address']
+        self.__currency, _ = config_data.get_value_or_default('USD', 'currency')
+        self.__worker_whitelist, _ = config_data.get_value_or_default(None, 'worker_whitelist')
 
         self.__last_summary = datetime.datetime.now()
         self.__reported_space = DefaultDict(lambda: None)
 
-        self.__connection_alerts = Alerts(super(Flexpool, self))
-        self.__offline_alerts = Alerts(super(Flexpool, self))
-        self.__connection_mute_intervall = config_data['connection_error_mute_intervall']
-        self.__offline_mute_intervall = config_data['alert_mute_interval']
+        self.__timeout = aiohttp.ClientTimeout(total=30)
 
-        scheduler.add_job('flexpool-summary' ,self.summary, config_data['summary_intervall'])
-        scheduler.add_job('flexpool-check', self.check, config_data['check_intervall'])
+        self.__connection_alerts = {}
+        self.__connection_mute_interval, _ = config_data.get_value_or_default(24, 'connection_error_mute_interval')
+        self.__connection_tolerance, _ = config_data.get_value_or_default(0, 'connection_error_tolerance')
+        self.__connection_retry, _ = config_data.get_value_or_default(3, 'connection_retry')
+        self.__offline_alerts = {}
+        self.__offline_mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        self.__offline_tolerance, _ = config_data.get_value_or_default(0, 'alert_tolerance')
+
+        scheduler.add_job('flexpool-summary' ,self.summary, config_data.get_value_or_default('0 * * * *', 'summary_interval')[0])
+        scheduler.add_job('flexpool-check', self.check, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
 
     async def summary(self):
-        since = self.__last_summary
-        self.__last_summary = datetime.datetime.now
+        now = datetime.datetime.now
+        await self.send(Plugin.Channel.debug, f'Creating summary for address {self.__address}.')
         async with aiohttp.ClientSession() as session:
-            open_xch, open_money = await self.__get_balance(session)
-            if open_xch is not None:
+            balance_task = self.__get_balance(session)
+            workers_task = self.__get_worker_status(session)
+            payments_task = self.__get_payments(session, self.__last_summary)
+            balance, workers, payments = await asyncio.gather(balance_task, workers_task, payments_task)
+        open_xch = balance[0]
+        open_money = balance[1]
+        if open_xch is None or workers is None or payments is None:
+            await self.send(Plugin.Channel.info, 'The following summary is incomplete, since one or more requests failed.')
+        else:
+            self.__last_summary = now
+        if open_xch is not None:
+            message = (
+                f'Open balance: {open_xch} XCH ({open_money} {self.__currency})'
+            )
+            await self.send(Plugin.Channel.info, message)
+        if workers is not None:
+            for worker in workers.values():
+                if self.__ignore_worker(worker.name):
+                    continue
                 message = (
-                    f'Open balance: {open_xch} XCH ({open_money} {self.__currency})'
+                    f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):\n'
+                    f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB\n'
+                    f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
                 )
                 await self.send(Plugin.Channel.info, message)
-            workers = await self.__get_worker_status(session)
-            if workers is not None:
-                for worker in workers.values():
-                    if self.__ignore_worker(worker.name):
-                        continue
-                    message = (
-                        f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):\n'
-                        f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB\n'
-                        f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
-                    )
-                    await self.send(Plugin.Channel.info, message)
-            payments = await self.__get_payments(session, since)
-            if payments is not None:
+        if payments is not None:
+            if len(payments) == 0:
+                await self.send(Plugin.Channel.info, 'No new payments available')
+            else:
                 for payment in payments:
                     message = (
                         f'Payment: {payment.value} XCH\n'
                         f'On {payment.timestamp} after {payment.duration}'
                     )
-                    await self.send(Plugin.Channel.info, message)
+                    await self.send(Plugin.Channel.info, message)    
 
     async def check(self):
+        await self.send(Plugin.Channel.debug, f'Checking status for workers {",".join(self.__offline_alerts.keys())}.')
         async with aiohttp.ClientSession() as session:
             workers = await self.__get_worker_status(session)
             if workers is None:
@@ -64,13 +80,13 @@ class Flexpool(Plugin):
             for worker in workers.values():
                 if self.__ignore_worker(worker.name):
                     continue
-                if not self.__offline_alerts.contains(worker.name):
-                    self.__offline_alerts.add(worker.name,
-                        Alert(super(Flexpool, self), self.__offline_mute_intervall))
+                if worker.name not in self.__offline_alerts:
+                    self.__offline_alerts[worker.name] = Alert(super(Flexpool, self),
+                        self.__offline_mute_interval, self.__offline_tolerance)
+                alert = self.__offline_alerts[worker.name]
                 if not worker.online:
-                    self.__offline_alerts.send(worker.name, f'Worker {worker.name} is offline.')
+                    alert.send(f'Worker {worker.name} is offline.')
                     continue
-                alert = self.__offline_alerts.get(worker.name)
                 if alert.is_muted():
                     alert.unmute()
                     self.send(Plugin.Channel.info, f'Worker {worker.name} is online again.')
@@ -80,7 +96,7 @@ class Flexpool(Plugin):
                         f'Worker {worker.name}: Reported space space dropped (old: {last_space:.2f} TB new: {worker.reported_hashrate:.2f}')
 
     def __ignore_worker(self, name):
-        if self.__check_workers is not None and name not in self.__check_workers:
+        if self.__worker_whitelist is not None and name not in self.__worker_whitelist:
             return True
         else:
             return False
@@ -127,29 +143,39 @@ class Flexpool(Plugin):
             
         return payments
 
-    async def __get(self, session, cmd, params):
+    async def __get(self, session, cmd, params, retry=0):
         data = {}
         try:
-            async with session.get(f'https://api.flexpool.io/v2/{cmd}', params=params) as response:
+            request = f'https://api.flexpool.io/v2/{cmd}'
+            async with session.get(request, params=params, timeout=self.__timeout) as response:
                 response.raise_for_status()
                 data =  await response.json()
+        except asyncio.TimeoutError as e_timeout:
+            if retry < self.__connection_retry:
+                await self.send(Plugin.Channel.debug, f'Retrying request {cmd} after timeout.')
+                await asyncio.sleep(5)
+                return await self.__get(session, cmd, params, retry + 1)
+            else:
+                await self.__handle_connection_error(False, cmd, f'Request {cmd}: timeout')
+                return None
         except Exception as e:
-            await self.__handle_connection_error(False, cmd, f'Command {cmd}: {str(e)}')
+            await self.__handle_connection_error(False, cmd, f'Request {cmd}: {repr(e)}')
             return None
         if data['error'] is not None:
-            await self.__handle_connection_error(False, cmd, f'Command {cmd}: {data["error"]}')
+            await self.__handle_connection_error(False, cmd, f'Request {cmd}: {data["error"]}')
             return None
-        await self.__handle_connection_error(True, cmd, f'Command {cmd} successful again.')
+        await self.__handle_connection_error(True, cmd, f'Request {cmd} successful again.')
         return data['result']
 
     async def __handle_connection_error(self, success, cmd, message):
-        if not self.__connection_alerts.contains(cmd):
-            self.__connection_alerts.add(cmd, Alert(super(Flexpool, self), self.__connection_mute_intervall))
-        alert = self.__connection_alerts.get(cmd)
+        if cmd not in self.__connection_alerts:
+            self.__connection_alerts[cmd] = Alert(super(Flexpool, self),
+                self.__connection_mute_interval, self.__connection_tolerance)
+        alert = self.__connection_alerts[cmd]
         if success:
-            await alert.send_unmute(message)
+            await alert.reset(message)
         else:
-            await alert.send_unmute(message)
+            await alert.send(message)
 
     class WorkerStatus:
         def __init__(self, json):

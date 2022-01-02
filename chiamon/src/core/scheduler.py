@@ -3,18 +3,18 @@ import croniter, datetime
 
 class Scheduler:
     class __bundle:
-        def __init__(self, name, func, intervall):
+        def __init__(self, name, func, interval):
             self.name = name
             self.func = func
-            self.iter = croniter.croniter(intervall, datetime.datetime.now())
+            self.iter = croniter.croniter(interval, datetime.datetime.now())
             self.next = self.iter.get_next(datetime.datetime)
 
 
     def __init__(self):
         self.__jobs = {}
 
-    def add_job(self, name, func, intervall):
-        job = Scheduler.__bundle(name, func, intervall)
+    def add_job(self, name, func, interval):
+        job = Scheduler.__bundle(name, func, interval)
         self.__jobs[name] = job
         print(f'[scheduler] New job {job.name} added; next execution: {job.next}')
 

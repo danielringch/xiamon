@@ -1,17 +1,16 @@
-token:  <token file>
 alert:
-    id: <discord channel id>
+    file: <file>
     whitelist: <list of plugin to log or null>
     blacklist: <list excluded plugins or null>
 info:
-    id: <discord channel id>
+    file: <file>
     whitelist: <list of plugin to log or null>
     blacklist: <list excluded plugins or null>
 error:
-    id: <discord channel id>
+    file: <file>
     whitelist: <list of plugin to log or null>
     blacklist: <list excluded plugins or null>
 debug:
-    id: <discord channel id>
+    file: <file>
     whitelist: <list of plugin to log or null>
     blacklist: <list excluded plugins or null>

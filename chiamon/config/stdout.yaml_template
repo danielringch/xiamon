@@ -1,4 +1,12 @@
-mute_alert: <boolean>
-mute_info: <boolean>
-mute_error: <boolean>
-mute_debug: <boolean>
+alert:
+    whitelist: <list of plugin to log or null>
+    blacklist: <list excluded plugins or null>
+info:
+    whitelist: <list of plugin to log or null>
+    blacklist: <list excluded plugins or null>
+error:
+    whitelist: <list of plugin to log or null>
+    blacklist: <list excluded plugins or null>
+debug:
+    whitelist: <list of plugin to log or null>
+    blacklist: <list excluded plugins or null>

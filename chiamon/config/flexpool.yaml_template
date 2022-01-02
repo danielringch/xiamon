@@ -1,7 +1,10 @@
-summary_intervall: <cron, e.g. "0 * * * *">
-check_intervall: <cron, e.g. "0 * * * *">
-connection_error_mute_intervall: <hours>
+summary_interval: <cron, e.g. "0 * * * *">
+check_interval: <cron, e.g. "0 * * * *">
+connection_error_mute_interval: <hours>
+connection_error_tolerance: <number>
+connection_retry: <number>
 alert_mute_interval: <hours>
+alert_tolerance: <number>
 address: <XCH wallet address>
 currency: <string, e.g. "USD">
-check_workers: <list of worker names or "all">
+worker_whitelist: <list of worker names or null>

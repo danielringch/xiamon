@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -15,13 +15,15 @@ warnings.filterwarnings(
 
 prefix = '[chiamon] {0}'
 
-available_interfaces = {'stdout': Stdout, 
-                        'discordbot': Discordbot}
+available_interfaces = {'discordbot': Discordbot,
+                        'logfile': Logfile,
+                        'stdout': Stdout}
 available_plugins = {'chianode': Chianode,
                      'chiawallet': Chiawallet,
                      'flexfarmer': Flexfarmer,
                      'flexpool': Flexpool,
-                     'pingdrive': Pingdrive}
+                     'pingdrive': Pingdrive,
+                     'smartctl': Smartctl}
 
 async def main():
     print(f'Chiamon {__version__}')
@@ -29,6 +31,7 @@ async def main():
     parser = argparse.ArgumentParser(description='Monitor for chia nodes.')
     parser.add_argument('-c', '--config', type=str, required=True, help="Path to config file.")
     parser.add_argument('-m', '--manual', type=str, required=False, nargs='+', help="Run job manually on startup.")
+    parser.add_argument('-i', '--interface', type=str, required=False, nargs='+', help="Override selected interfaces.")
     args = parser.parse_args()
 
     with open(args.config, "r") as stream:
@@ -40,11 +43,14 @@ async def main():
     scheduler = Scheduler()
 
     for key, value in config['interfaces'].items():
+        if args.interface and key not in args.interface:
+            print(f'Interface {key} ignored.')
+            continue
         print(f'Loading interface {key}...')
         interface_config = get_config_path(key, available_interfaces, value, args.config)
         if interface_config is None:
             continue
-        interface = available_interfaces[key](interface_config)
+        interface = available_interfaces[key](interface_config, scheduler)
         await interface.start()
         interfaces[key] = interface
 

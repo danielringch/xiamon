@@ -3,3 +3,4 @@ from .flexpool import Flexpool
 from .pingdrive import Pingdrive
 from .chianode import Chianode
 from .chiawallet import Chiawallet
+from .smartctl import Smartctl

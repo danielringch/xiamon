@@ -1,6 +1,7 @@
-summary_intervall: <cron, e.g. "0 * * * *">
-check_intervall: <cron, e.g. "0 * * * *">
+summary_interval: <cron, e.g. "0 * * * *">
+check_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 cert: <file>
 key: <file>
+host: <ip:port, usually 127.0.0.1:9256>
 wallet_id = <id>

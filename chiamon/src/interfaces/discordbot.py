@@ -1,35 +1,60 @@
-import os, discord, yaml, asyncio
+import os, discord, asyncio
 from ..core.interface import Interface
+from ..core import Config
 
-class Discordbot:
-
-    __prefix = 'discordbot'
-
-    def __init__(self, config):
-        with open(config, "r") as stream:
-            config_data = yaml.safe_load(stream)
-            self.__channels = {
-                Interface.Channel.alert : config_data['alert_channel'],
-                Interface.Channel.info : config_data['info_channel'],
-                Interface.Channel.error : config_data['error_channel'],
-                Interface.Channel.debug : config_data['debug_channel']
-            }
-        with open(os.path.join(os.path.dirname(config), config_data['token']), "r") as stream:
-            self.__token = stream.readline()
+class Discordbot(Interface):
+    def __init__(self, config, _):
+        super(Discordbot, self).__init__()
+        config_data = Config(config)
 
         self.__client = discord.Client()
+        self.__channels = {}
+
+        for channel, name in self.channel_names.items():
+            if name in config_data.data:
+                id, id_given = config_data.get_value_or_default(None, name, 'id')
+                if not id_given:
+                    print(f'[logfile] WARNING: Channel {name} ignored, since no id is given.')
+                    continue
+                self.__channels[channel] = Discordbot.Channel(
+                    self.__client,
+                    id,
+                    config_data.get_value_or_default(None, name, 'whitelist')[0],
+                    config_data.get_value_or_default(None, name, 'blacklist')[0])
+
+        with open(os.path.join(os.path.dirname(config), config_data.data['token']), "r") as stream:
+            self.__token = stream.readline()
 
     async def start(self):
         asyncio.ensure_future(self.__client.start(self.__token))
         await self.__client.wait_for('ready')
-        print(f'[discordbot] Discord bot ready, user {self.__client.user}.')
+        for channel in self.__channels.values():
+            channel.activate()
+        channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
+        print(f'[discordbot] Discord bot {self.__client.user} ready, available channels: {channels}')
 
     async def send_message(self, channel, prefix, message):
-        channel_id = self.__channels[channel]
-        if channel_id is None:
+        if channel not in self.__channels:
             return
-        discord_channel = self.__client.get_channel(channel_id)
-        await discord_channel.send(f'{prefix} {message}')
+        await self.__channels[channel].send(prefix, message)
+
+    class Channel:
+        def __init__(self, client, id, whitelist, blacklist):
+            self.__client = client
+            self.__id = id
+            self.__channel = None
+            self.__whitelist = set(whitelist) if whitelist is not None else None
+            self.__blacklist = set(blacklist) if blacklist is not None else None
+
+        def activate(self):
+            self.__channel = self.__client.get_channel(self.__id)
+
+        async def send(self, prefix, message):
+            if self.__whitelist is not None and prefix not in self.__whitelist:
+                return
+            if self.__blacklist is not None and prefix in self.__blacklist:
+                return
+            await self.__channel.send(f'{prefix} {message}')
 
 
 

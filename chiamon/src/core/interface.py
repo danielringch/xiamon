@@ -5,7 +5,12 @@ class Interface(ABC):
     Channel = Enum('Channel', 'alert info error debug')
 
     def __init__(self):
-        pass
+        self.channel_names = {
+            Interface.Channel.alert: 'alert',
+            Interface.Channel.info: 'info',
+            Interface.Channel.error: 'error',
+            Interface.Channel.debug: 'debug'
+        }
 
     @abstractmethod
     async def start(self):
