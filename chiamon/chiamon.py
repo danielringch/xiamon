@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.7.0"
+__version__ = "0.8.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -18,7 +18,8 @@ prefix = '[chiamon] {0}'
 available_interfaces = {'discordbot': Discordbot,
                         'logfile': Logfile,
                         'stdout': Stdout}
-available_plugins = {'chianode': Chianode,
+available_plugins = {'chiafarmer': Chiafarmer,
+                     'chianode': Chianode,
                      'chiawallet': Chiawallet,
                      'flexfarmer': Flexfarmer,
                      'flexpool': Flexpool,
@@ -55,12 +56,16 @@ async def main():
         interfaces[key] = interface
 
     for key, value in config['plugins'].items():
-        print(f'Loading plugin {key}...')
-        plugin_config = get_config_path(key, available_plugins, value, args.config)
-        if plugin_config is None:
-            continue
-        plugin = available_plugins[key](plugin_config, scheduler, interfaces.values())
-        plugins[key] = plugin
+        paths = [value] if isinstance(value, str) else value
+        for path in paths:
+            print(f'Loading plugin {key}...')
+            plugin_config = get_config_path(key, available_plugins, path, args.config)
+            if plugin_config is None:
+                continue
+            plugin = available_plugins[key](plugin_config, scheduler, interfaces.values())
+            plugins[plugin.name] = plugin
+
+    await scheduler.start(interfaces.values())
 
     manual_tasks = []
     if args.manual:

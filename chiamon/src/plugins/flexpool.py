@@ -2,14 +2,14 @@ import asyncio, aiohttp, datetime
 from typing import DefaultDict
 from ..core import Plugin, Alert, Config
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
-        super(Flexpool, self).__init__('flexpool', outputs)
-        self.print(f'Flexpool plugin {__version__}')
-
         config_data = Config(config)
+        name, _ = config_data.get_value_or_default('flexpool', 'name')
+        super(Flexpool, self).__init__(name, outputs)
+        self.print(f'Flexpool plugin {__version__}; name: {name}')
 
         self.__address = config_data.data['address']
         self.__currency, _ = config_data.get_value_or_default('USD', 'currency')
@@ -28,11 +28,11 @@ class Flexpool(Plugin):
         self.__offline_mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
         self.__offline_tolerance, _ = config_data.get_value_or_default(0, 'alert_tolerance')
 
-        scheduler.add_job('flexpool-summary' ,self.summary, config_data.get_value_or_default('0 * * * *', 'summary_interval')[0])
-        scheduler.add_job('flexpool-check', self.check, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
+        scheduler.add_job(f'{name}-summary' ,self.summary, config_data.get_value_or_default('0 * * * *', 'summary_interval')[0])
+        scheduler.add_job(f'{name}-check', self.check, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
 
     async def summary(self):
-        now = datetime.datetime.now
+        now = datetime.datetime.now()
         await self.send(Plugin.Channel.debug, f'Creating summary for address {self.__address}.')
         async with aiohttp.ClientSession() as session:
             balance_task = self.__get_balance(session)
@@ -85,14 +85,13 @@ class Flexpool(Plugin):
                         self.__offline_mute_interval, self.__offline_tolerance)
                 alert = self.__offline_alerts[worker.name]
                 if not worker.online:
-                    alert.send(f'Worker {worker.name} is offline.')
+                    await alert.send(f'Worker {worker.name} is offline.')
                     continue
                 if alert.is_muted():
-                    alert.unmute()
-                    self.send(Plugin.Channel.info, f'Worker {worker.name} is online again.')
+                    alert.reset(f'Worker {worker.name} is online again.')
                 last_space = self.__reported_space[worker.name]
                 if last_space is not None and last_space > worker.reported_hashrate:
-                    self.send(Plugin.Channel.alert,
+                    await self.send(Plugin.Channel.alert,
                         f'Worker {worker.name}: Reported space space dropped (old: {last_space:.2f} TB new: {worker.reported_hashrate:.2f}')
 
     def __ignore_worker(self, name):

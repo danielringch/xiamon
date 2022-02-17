@@ -4,7 +4,7 @@ import datetime
 class Alert:
     def __init__(self, plugin, mute_interval, tolerance=0):
         self.__plugin = plugin
-        self.__mute_interval = datetime.timedelta(hours=mute_interval)
+        self.__mute_interval = datetime.timedelta(hours=mute_interval) if mute_interval is not None else None
         self.__tolerance = tolerance
         self.__tolerance_remaining = tolerance
         self.__current_mute = None

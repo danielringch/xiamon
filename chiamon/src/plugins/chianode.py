@@ -1,33 +1,33 @@
 import aiohttp
 from ..core import Plugin, Alert, Chiarpc, Config
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 class Chianode(Plugin):
     def __init__(self, config, scheduler, outputs):
-        super(Chianode, self).__init__('chianode', outputs)
-        self.print(f'Chianode plugin {__version__}')
-
         config_data = Config(config)
+        name, _ = config_data.get_value_or_default('chianode', 'name')
+        super(Chianode, self).__init__(name, outputs)
+        self.print(f'Chianode plugin {__version__}; name: {name}')
 
-        self.__host, _ = config_data.get_value_or_default('127.0.0.1:8555','host')
-        self.__mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
-        self.__rpc = Chiarpc(self.__host, config_data.data['cert'], config_data.data['key'],
-            super(Chianode, self), self.__mute_interval)
+        host, _ = config_data.get_value_or_default('127.0.0.1:8555','host')
+        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'],
+            super(Chianode, self), mute_interval)
 
-        self.__node_unsynced_alert = Alert(super(Chianode, self), self.__mute_interval)
+        self.__node_unsynced_alert = Alert(super(Chianode, self), mute_interval)
 
-        scheduler.add_job('chianode-check' ,self.check, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
-        scheduler.add_job('chianode-summary', self.summary, config_data.get_value_or_default('0 * * * *', 'summary_interval')[0])
+        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
+        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
 
     async def check(self):
-        await self.send(Plugin.Channel.debug, f'Checking sync state of {self.__host}.')
+        await self.send(Plugin.Channel.debug, 'Checking sync state.')
         async with aiohttp.ClientSession() as session:
             _, _, _ = await self.__get_sync_state(session)
 
     async def summary(self):
-        await self.send(Plugin.Channel.debug, f'Creating summary for {self.__host}.')
+        await self.send(Plugin.Channel.debug, f'Creating summary.')
         async with aiohttp.ClientSession() as session:
             synced, height, peak = await self.__get_sync_state(session)
             synced_nodes, syncing_nodes, unknown_nodes, other_nodes = await self.__get_connections(session, peak)

@@ -1,3 +1,4 @@
+name: <unique name>
 interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 paths: <list of paths>

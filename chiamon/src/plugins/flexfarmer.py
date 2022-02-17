@@ -3,22 +3,23 @@ from typing import DefaultDict
 from pathlib import Path
 from ..core import Plugin, Config
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
+
+# TODO: write parser for times. Values > 1 minute have format \d+m[\d\.]+
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
-        super(Flexfarmer, self).__init__('flexfarmer', outputs)
-        self.print(f'Flexfarmer plugin {__version__}')
-
         config_data = Config(config)
+        name, _ = config_data.get_value_or_default('flexfarmer', 'name')
+        super(Flexfarmer, self).__init__(name, outputs)
+        self.print(f'Flexfarmer plugin {__version__}; name: {name}')
 
         self.__file = config_data.data['log_path']
         self.__aggregation, _ = config_data.get_value_or_default(24, 'aggregation')
         self.__output_path = config_data.data['output_path']
         self.__cleanup, _ = config_data.get_value_or_default(False, 'reset_logs')
-        interval, _ = config_data.get_value_or_default('0 0 * * *', 'interval')
 
-        scheduler.add_job('flexfarmer' ,self.run, interval)
+        scheduler.add_job(name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
 
     async def run(self):
         await self.send(Plugin.Channel.debug, f'Creating summary from {self.__file}.')
@@ -210,4 +211,3 @@ class Flexfarmer(Plugin):
             if line.startswith('  WARN pool: Farmer is not initialized'):
                 return False
             return None
-

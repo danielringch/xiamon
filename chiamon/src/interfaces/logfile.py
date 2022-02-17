@@ -23,6 +23,7 @@ class Logfile(Interface):
                     config_data.get_value_or_default(None, name, 'whitelist')[0],
                     config_data.get_value_or_default(None, name, 'blacklist')[0])
 
+        scheduler.add_job('logfile-flush', self.__flush, "* * * * *")
         scheduler.add_job('logfile-daychange' ,self.__handle_day_change, '0 0 * * *')
 
     async def start(self):
@@ -37,6 +38,10 @@ class Logfile(Interface):
     async def __handle_day_change(self):
         for handle  in self.__file_handles.values():
             handle.close()
+
+    async def __flush(self):
+        for file in self.__file_handles.values():
+            file.flush()
 
     class Channel:
         def __init__(self, name, handle, whitelist, blacklist):
@@ -80,6 +85,11 @@ class Logfile(Interface):
                 self.__current_handle = self.__create_handle()
             self.__current_handle.write(line)
             self.__current_handle.write('\n')
+
+        def flush(self):
+            if self.__current_handle is None:
+                return
+            self.__current_handle.flush()
 
         def close(self):
             if self.__current_handle is None:

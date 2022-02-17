@@ -1,14 +1,14 @@
 import asyncio, glob, random, os
 from ..core import Plugin, Alert, Config
 
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 
 class Pingdrive(Plugin):
     def __init__(self, config, scheduler, outputs):
-        super(Pingdrive, self).__init__('pingdrive', outputs)
-        self.print(f'Pingdrive plugin {__version__}')
-
         config_data = Config(config)
+        name, _ = config_data.get_value_or_default('pingdrive', 'name')
+        super(Pingdrive, self).__init__(name, outputs)
+        self.print(f'Pingdrive plugin {__version__}; name {name}')
 
         self.__paths = config_data.data['paths']
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
@@ -16,7 +16,7 @@ class Pingdrive(Plugin):
         for path in self.__paths:
             self.__failed_alerts[path] = Alert(super(Pingdrive, self), mute_interval)
 
-        scheduler.add_job('pingdrive' ,self.run, config_data.data['interval'])
+        scheduler.add_job(name ,self.run, config_data.data['interval'])
 
     async def run(self):
         ping_tasks = []
