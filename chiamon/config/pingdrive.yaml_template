@@ -1,4 +1,9 @@
 name: <unique name>
-interval: <cron, e.g. "0 * * * *">
+summary_interval: <cron, e.g. "0 * * * *">
+rescan_intervall: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
-paths: <list of paths>
+drives:
+    - <alias>:
+        mount_point: <path>
+        path_to_plots: <path>
+        max_idle_time: <minutes>

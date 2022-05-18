@@ -32,16 +32,16 @@ class Stdout(Interface):
         self.__channels[channel].send(prefix, message)
         
     def __alert(self, prefix, message):
-        return f'[ALERT] [{prefix}] [stdout] [{Stdout.__now()}]', message
+        return f'[{Stdout.__now()}] [ALERT] [{prefix}]', message
 
     def __info(self, prefix, message):
-        return f'[{prefix}] [stdout] [info] [{Stdout.__now()}]', message
+        return f'[{Stdout.__now()}] [info] [{prefix}]', message
 
     def __error(self, prefix, message):
-        return f'[ERROR] [{prefix}] [stdout] [{Stdout.__now()}]', message
+        return f'[{Stdout.__now()}] [ERROR] [{prefix}]', message
 
     def __debug(self, prefix, message):
-        return f'[{prefix}] [stdout] [debug] [{Stdout.__now()}]', message
+        return f'[{Stdout.__now()}] [debug] [{prefix}]', message
 
     @staticmethod
     def __now():
@@ -59,9 +59,10 @@ class Stdout(Interface):
 
         def __print(self, prefix, message):
             lines = message.splitlines()
-            print(prefix)
-            for line in lines:
-                print(f'    {line}')
+            print(f'{prefix} {lines[0]}')
+            if len(lines) > 1:
+                for line in lines[1:]:
+                    print(f'{" " * len(prefix)} {line}')
 
 
 

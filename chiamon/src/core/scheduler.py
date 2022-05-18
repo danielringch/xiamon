@@ -1,5 +1,8 @@
-import croniter, datetime, asyncio
+import croniter, datetime, asyncio, traceback
+from collections import namedtuple
 from .interface import Interface
+
+Startupjob = namedtuple("Startupjob", "name func")
 
 class Scheduler:
     class __bundle:
@@ -12,21 +15,28 @@ class Scheduler:
 
     def __init__(self):
         self.__jobs = {}
+        self.__startup_jobs = []
         self.__interfaces = []
 
     async def start(self, interfaces):
         self.__interfaces.extend(interfaces)
         for job in self.__jobs.values():
-            await self.__print(Interface.Channel.debug, f'Job {job.name}; next executtion: {job.next}')
-
+            await self.__print(Interface.Channel.debug, f'Job {job.name}; next execution: {job.next}')
+        for startup_job in self.__startup_jobs:
+            await self.__print(Interface.Channel.debug, f'Running startup job {startup_job.name}.')
+            await self.__try_run(startup_job)
+            
     def add_job(self, name, func, interval):
-        self.__jobs[name] = Scheduler.__bundle(name, func, interval)
-
-    async def manual(self, plugin):
-        if plugin in self.__jobs:
-            await self.__try_run(self.__jobs[plugin])
+        if interval is None:
+            self.__startup_jobs.append(Startupjob(name, func))
         else:
-            await self.__print(Interface.Channel.error, f'Job {plugin} not found.')
+            self.__jobs[name] = Scheduler.__bundle(name, func, interval)
+
+    async def manual(self, job):
+        if job in self.__jobs:
+            await self.__try_run(self.__jobs[job])
+        else:
+            await self.__print(Interface.Channel.error, f'Job {job} not found.')
 
     async def run(self):
         time = datetime.datetime.now()
@@ -41,7 +51,9 @@ class Scheduler:
         try:
             await job.func()
         except Exception as e:
-            await self.__print(Interface.Channel.error, f'Job {job.name} failed with:\n{repr(e)}')
+            trace = traceback.format_exc()
+            message = f'Job {job.name} failed:\n{repr(e)}\n{trace}'
+            await self.__print(Interface.Channel.error, message)
 
     async def __print(self, channel, message):
         tasks = []

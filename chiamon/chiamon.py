@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.8.0"
+__version__ = "0.9.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -80,7 +80,7 @@ async def main():
 
 async def schedule_plugins(scheduler):
     while True:
-        time.sleep(60)
+        time.sleep(20)
         await scheduler.run()
 
 def get_config_path(item, available_items, config, config_root_dir):
@@ -89,7 +89,7 @@ def get_config_path(item, available_items, config, config_root_dir):
         return None
     subconfig_path = os.path.join(os.path.dirname(config_root_dir), config)
     if not os.path.exists(subconfig_path):
-        print(prefix.format(f'WARNING: no config file available for {item}.'))
+        print(prefix.format(f'WARNING: config file for plugin {item} not found: {subconfig_path}.'))
         return None
     return subconfig_path
 

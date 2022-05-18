@@ -1,14 +1,12 @@
 import aiohttp
-from ..core import Plugin, Alert, Chiarpc, Config
-
-__version__ = "0.3.0"
+from ...core import Plugin, Alert, Chiarpc, Config
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
         name, _ = config_data.get_value_or_default('chiawallet', 'name')
         super(Chiawallet, self).__init__(name, outputs)
-        self.print(f'Chiawallet plugin {__version__}; name: {name}')
+        self.print(f'Plugin chiawallet; name: {name}')
 
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
@@ -23,6 +21,11 @@ class Chiawallet(Plugin):
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        scheduler.add_job(f'{name}-startup', self.startup, None)
+
+    async def startup(self):
+        async with aiohttp.ClientSession() as session:
+            self.__balance = await self.__get_balance(session)
 
     async def check(self):
         await self.send(Plugin.Channel.debug, f'Checking wallet {self.__wallet_id}.')

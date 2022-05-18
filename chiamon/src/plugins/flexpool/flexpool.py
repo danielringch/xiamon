@@ -1,15 +1,13 @@
 import asyncio, aiohttp, datetime
 from typing import DefaultDict
-from ..core import Plugin, Alert, Config
-
-__version__ = "0.3.0"
+from ...core import Plugin, Alert, Config
 
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
         name, _ = config_data.get_value_or_default('flexpool', 'name')
         super(Flexpool, self).__init__(name, outputs)
-        self.print(f'Flexpool plugin {__version__}; name: {name}')
+        self.print(f'Plugin flexpool; name: {name}')
 
         self.__address = config_data.data['address']
         self.__currency, _ = config_data.get_value_or_default('USD', 'currency')

@@ -1,9 +1,7 @@
 import datetime, ciso8601, re, os
 from typing import DefaultDict
 from pathlib import Path
-from ..core import Plugin, Config
-
-__version__ = "0.4.0"
+from ...core import Plugin, Config
 
 # TODO: write parser for times. Values > 1 minute have format \d+m[\d\.]+
 
@@ -12,7 +10,7 @@ class Flexfarmer(Plugin):
         config_data = Config(config)
         name, _ = config_data.get_value_or_default('flexfarmer', 'name')
         super(Flexfarmer, self).__init__(name, outputs)
-        self.print(f'Flexfarmer plugin {__version__}; name: {name}')
+        self.print(f'Plugin flexfarmer; name: {name}')
 
         self.__file = config_data.data['log_path']
         self.__aggregation, _ = config_data.get_value_or_default(24, 'aggregation')
@@ -97,6 +95,8 @@ class Flexfarmer(Plugin):
                               self.__parse_network_error, self.__parse_farmer_not_initialized]
 
         def parse(self, line):
+            if line[0] != '[': # not all lines contain timestamps, e.g. when block found
+                return
             timestamp = ciso8601.parse_datetime(line[1:11] + 'T' + line[12:20])
             if timestamp < self.__oldest_timestamp:
                 return
