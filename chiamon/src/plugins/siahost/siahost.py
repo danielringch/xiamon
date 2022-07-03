@@ -97,7 +97,7 @@ class Siahost(Plugin):
                 message += f'{ending} d'.rjust(10)
                 message += f'{proof} d\n'.rjust(10)
                 id += 1
-            await self.send(Plugin.Channel.debug, message)
+            await self.send(Plugin.Channel.report, message)
 
     async def __request(self, cmd, generator):
         alert = self.__request_alerts[cmd]

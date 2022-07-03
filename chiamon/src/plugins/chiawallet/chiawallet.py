@@ -49,12 +49,13 @@ class Chiawallet(Plugin):
             diff = balance - self.__balance
             self.__balance = balance
             balance_fiat_string, delta_fiat_string = await self.__coinprice.to_fiat_string(self.__balance, diff)
-            await self.send(Plugin.Channel.alert, 
-                (
-                    f'Balance changed of wallet {self.__wallet_id}:\n'
-                    f'delta: {diff} XCH ({delta_fiat_string})\n'
-                    f'new: {self.__balance} XCH ({balance_fiat_string})'
-                ))
+            message = (
+                f'Balance changed of wallet {self.__wallet_id}:\n'
+                f'delta: {diff} XCH ({delta_fiat_string})\n'
+                f'new: {self.__balance} XCH ({balance_fiat_string})'
+            )
+            await self.send(Plugin.Channel.info, message)
+            await self.send(Plugin.Channel.report, message)
 
     async def summary(self):
         async with aiohttp.ClientSession() as session:
