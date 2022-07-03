@@ -54,7 +54,14 @@ class Discordbot(Interface):
                 return
             if self.__blacklist is not None and prefix in self.__blacklist:
                 return
-            await self.__channel.send(f'{prefix} {message}')
+            message = f'{prefix} {message}'
+            max_length = 2000
+            size_limited_messages = [message[i:i+max_length] for i in range(0,len(message), max_length)]
+            try:
+                for sub_message in size_limited_messages:
+                    await self.__channel.send(sub_message)
+            except:
+                print('[discordbot] Failed sending a message.')
 
 
 
