@@ -2,6 +2,7 @@
 Tools for running chia farmers and full nodes on linux systems like Raspberry Pi.
 
 Dependecies:
+colorama
 pytz_deprecation_shim
 croniter
 discord.py

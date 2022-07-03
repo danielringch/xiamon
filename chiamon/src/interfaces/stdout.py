@@ -1,4 +1,4 @@
-import datetime
+import datetime, colorama
 from ..core.interface import Interface
 from ..core import Config
 
@@ -7,18 +7,15 @@ class Stdout(Interface):
         super(Stdout, self).__init__()
         config_data = Config(config)
 
+        colorama.init()
+
         self.__channels = {}
-        self.__formatters = {
-            Interface.Channel.alert : self.__alert,
-            Interface.Channel.info : self.__info,
-            Interface.Channel.error : self.__error,
-            Interface.Channel.debug : self.__debug
-        }
 
         for channel, name in self.channel_names.items():
             if name in config_data.data:
                 self.__channels[channel] = Stdout.Channel(
-                    self.__formatters[channel],
+                    name,
+                    config_data.get_value_or_default('reset', name, 'color')[0],
                     config_data.get_value_or_default(None, name, 'whitelist')[0],
                     config_data.get_value_or_default(None, name, 'blacklist')[0])
 
@@ -28,43 +25,46 @@ class Stdout(Interface):
         print(f'[stdout] Stdout ready, available channels: {channels}')
 
     async def send_message(self, channel, prefix, message):
-        now = datetime.datetime.now()
+        if channel not in self.__channels:
+            return
         self.__channels[channel].send(prefix, message)
-        
-    def __alert(self, prefix, message):
-        return f'[{Stdout.__now()}] [ALERT] [{prefix}]', message
-
-    def __info(self, prefix, message):
-        return f'[{Stdout.__now()}] [info] [{prefix}]', message
-
-    def __error(self, prefix, message):
-        return f'[{Stdout.__now()}] [ERROR] [{prefix}]', message
-
-    def __debug(self, prefix, message):
-        return f'[{Stdout.__now()}] [debug] [{prefix}]', message
-
-    @staticmethod
-    def __now():
-        return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
     class Channel:
-        def __init__(self, formatter, whitelist, blacklist):
-            self.__formatter = formatter
+        def __init__(self, prefix, color, whitelist, blacklist):
+            self.__colors = {
+                'reset' : colorama.Fore.RESET,
+                'black' : colorama.Fore.BLACK,
+                'red' : colorama.Fore.RED,
+                'green' : colorama.Fore.GREEN,
+                'yellow' : colorama.Fore.YELLOW,
+                'blue' : colorama.Fore.BLUE,
+                'magenta' : colorama.Fore.MAGENTA,
+                'cyan' : colorama.Fore.CYAN,
+                'white' : colorama.Fore.WHITE
+            }
+
+            self.__prefix = prefix
+            self.__color = color
             self.__whitelist = set(whitelist) if whitelist is not None else None
             self.__blacklist = set(blacklist) if blacklist is not None else None
 
+        @staticmethod
+        def __now():
+            return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+
         def send(self, prefix, message):
-            prefix, message = self.__formatter(prefix, message)
+            if self.__whitelist is not None and prefix not in self.__whitelist:
+                return
+            if self.__blacklist is not None and prefix in self.__blacklist:
+                return
+            prefix = f'[{Stdout.Channel.__now()}] [{self.__prefix}] [{prefix}]'
             self.__print(prefix, message)
 
         def __print(self, prefix, message):
             lines = message.splitlines()
+            print(self.__colors[self.__color], end='')
             print(f'{prefix} {lines[0]}')
             if len(lines) > 1:
                 for line in lines[1:]:
                     print(f'{" " * len(prefix)} {line}')
-
-
-
-
-
+            print(colorama.Style.RESET_ALL, end='')
