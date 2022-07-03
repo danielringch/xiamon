@@ -1,0 +1,13 @@
+name: <unique name>
+summary_interval: <cron, e.g. "0 0 * * *">
+check_interval: <cron, e.g. "0 * * * *">
+alert_mute_interval: <hours>
+chia:
+    cert: <file>
+    key: <file>
+    host: <ip:port, usually 127.0.0.1:8555>
+sia:
+    host: <ip:port, usually 127.0.0.1:9980>
+    password: <password>
+storj:
+    host: <ip:port, usually 127.0.0.1:14002>

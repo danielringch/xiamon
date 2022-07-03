@@ -19,16 +19,14 @@ class Chiarpc:
         except Exception as e:
             await self.__handle_connection_error(False, 'exception', cmd, f'Command {cmd}: {str(e)}')
             return None
-        if data['success'] != True:
+        if data['success'] != True and data['success'] != 'true':
             await self.__handle_connection_error(False, 'nosuccess', cmd, f'Command {cmd} returned no success.')
             return None
         await self.__handle_connection_error(True, None, cmd, None)
         return data
 
     async def __handle_connection_error(self, success, key, cmd, message):
-        if cmd not in self.__rpc_failed_alerts:
-            self.__rpc_failed_alerts[cmd] = Alert(self.__plugin, self.__mute_interval)
-        alert = self.__rpc_failed_alerts[cmd]
+        alert = self.__rpc_failed_alerts.setdefault(cmd, Alert(self.__plugin, self.__mute_interval))
         if success:
             await alert.reset(f'Command {cmd} was successful again.')
         else:

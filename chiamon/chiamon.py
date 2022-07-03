@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.9.0"
+__version__ = "0.10.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -24,7 +24,13 @@ available_plugins = {'chiafarmer': Chiafarmer,
                      'flexfarmer': Flexfarmer,
                      'flexpool': Flexpool,
                      'pingdrive': Pingdrive,
-                     'smartctl': Smartctl}
+                     'serviceping': Serviceping,
+                     'siahost' : Siahost,
+                     'sianode' : Sianode,
+                     'siawallet' : Siawallet,
+                     'smartctl': Smartctl,
+                     'storjnode': Storjnode,
+                     'sysmonitor': Sysmonitor}
 
 async def main():
     print(f'Chiamon {__version__}')

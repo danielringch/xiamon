@@ -40,12 +40,10 @@ class Scheduler:
 
     async def run(self):
         time = datetime.datetime.now()
-        tasks = []
         for job in self.__jobs.values():
             if job.next < time:
+                await self.__try_run(job)
                 job.next = job.iter.get_next(datetime.datetime)
-                tasks.append(self.__try_run(job))
-        await asyncio.gather(*tasks)
 
     async def __try_run(self, job):
         try:

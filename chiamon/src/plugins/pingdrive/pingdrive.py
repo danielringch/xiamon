@@ -17,28 +17,46 @@ class Pingdrive(Plugin):
         self.__drives = {}
 
         for drive_block in config_data.data['drives']:
-            for drive, drive_config in drive_block.items():
-                self.__alerts[drive] = Alert(super(Pingdrive, self), alert_mute_intervall)
-                drive_config['alias'] = drive
+            for alias, drive_config in drive_block.items():
+                self.__alerts[alias] = Alert(super(Pingdrive, self), alert_mute_intervall)
+                drive_config['alias'] = alias
                 self.__drive_configs[drive_config['mount_point']] = drive_config
   
+        self.__first_summary = True
+
         scheduler.add_job(f'{name}-check', self.check, '* * * * *')
         scheduler.add_job(f'{name}-rescan' ,self.rescan, config_data.get_value_or_default('0 * * * *', 'rescan_intervall')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
         scheduler.add_job(f'{name}-startup', self.rescan, None)
 
     async def check(self):
-        messages = {}
+        messages = []
         for drive in self.__drives.values():
-            messages[drive.alias] = drive.check()
-        await self.__merge_message(None, messages)
+            messages.append(drive.check())
+            if drive.online:
+                await self.__alerts[drive.alias].reset(f'{drive.alias} is online again')
+            else:
+                await self.__alerts[drive.alias].send(f'{drive.alias} is offline')
+        await self.send(Plugin.Channel.debug, '\n'.join(messages))
 
     async def summary(self):
-        messages = {}
+        online = 0
+        inactive = 0
+        offline = 0
         for drive in self.__drives.values():
-            pings, active = drive.summary()
-            messages[drive.alias] = Plugin.Channel.info, f'{drive.alias}: {pings} pings, {active} active minutes'
-        await self.__merge_message('Drive statistics since last summary:', messages)
+            if not drive.online:
+                offline += 1
+            else:
+                real_active = drive.active_minutes - drive.pings
+                expected_active = drive.expected_active_minutes
+                if not self.__first_summary and real_active < expected_active:
+                    await self.send(Plugin.Channel.alert, f'{drive.alias} was too inactive: {real_active}/{expected_active} minutes')
+                    inactive += 1
+                else:
+                    online += 1
+            drive.reset_statistics()
+        await self.send(Plugin.Channel.info, f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
+        self.__first_summary = False
 
     async def rescan(self):
         drives = self.__get_drives();
@@ -63,14 +81,3 @@ class Pingdrive(Plugin):
             mountpoint = parts[1]
             drives[device].add(mountpoint)
         return drives
-
-    async def __merge_message(self, prefix, messages):
-        channels = defaultdict(lambda: [prefix]) if prefix is not None else defaultdict(lambda: [])
-        for drive in sorted(messages):
-            channel, message = messages[drive]
-            if channel == Plugin.Channel.alert:
-                await self.__alerts[drive].send(message)
-            else:
-                channels[channel].append(message)
-        for channel, lines in channels.items():
-            await self.send(channel, '\n'.join(lines))

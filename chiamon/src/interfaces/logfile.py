@@ -50,7 +50,6 @@ class Logfile(Interface):
             self.__whitelist = set(whitelist) if whitelist is not None else None
             self.__blacklist = set(blacklist) if blacklist is not None else None
             self.__separator = '|'
-            self.__handle.write(f'{self.__now()} | Channel {self.__name} is attached to this file.')
 
         def send(self, prefix, message):
             if self.__whitelist is not None and prefix not in self.__whitelist:
@@ -75,7 +74,7 @@ class Logfile(Interface):
             full_filename = os.path.basename(path).split('.', 1)
             self.__filename = full_filename[0]
             self.__fileending = f'.{full_filename[1]}' if len(full_filename) > 1 else ''
-            self.__current_handle = self.__create_handle()
+            self.__current_handle = None # no file will be created if write() is never called
 
         def __del__(self):
             self.close()

@@ -7,3 +7,4 @@ drives:
         mount_point: <path>
         path_to_plots: <path>
         max_idle_time: <minutes>
+        expected_active: <minutes>

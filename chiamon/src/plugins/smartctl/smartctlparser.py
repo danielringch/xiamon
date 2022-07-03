@@ -2,7 +2,7 @@ import re
 
 class SmartctlParser:
     def __init__(self, data):
-        self.identifier = None
+        self.__identifier = None
         self.__attributes = {}
         self.__model = None
         self.__serial = None
@@ -33,7 +33,7 @@ class SmartctlParser:
             else:
                 break
         self.__success = self.__model is not None and self.__serial is not None
-        self.__identifier = f'{self.model}-{self.serial}' if self.__success else None
+        self.__identifier = f'{self.__model}-{self.__serial}' if self.__success else None
 
     @property
     def identifier(self):

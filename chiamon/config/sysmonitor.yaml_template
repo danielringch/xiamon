@@ -1,0 +1,15 @@
+name: <unique name>
+interval: <cron, e.g. "0 * * * *">
+alert_mute_interval: <hours>
+load:
+    treshold: <load>
+    hysteresis: <load>
+    samples: <number>
+ram:
+    treshold: <percent>
+    hysteresis: <percent>
+    samples: <number>
+swap:
+    treshold: <percent>
+    hysteresis: <percent>
+    samples: <number>

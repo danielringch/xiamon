@@ -6,6 +6,7 @@ pytz_deprecation_shim
 croniter
 discord.py
 ciso8601
+psutil
 
 How to enable smart support:
 

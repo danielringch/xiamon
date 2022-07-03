@@ -14,7 +14,6 @@ class Flexpool(Plugin):
         self.__worker_whitelist, _ = config_data.get_value_or_default(None, 'worker_whitelist')
 
         self.__last_summary = datetime.datetime.now()
-        self.__reported_space = DefaultDict(lambda: None)
 
         self.__timeout = aiohttp.ClientTimeout(total=30)
 
@@ -49,7 +48,7 @@ class Flexpool(Plugin):
             )
             await self.send(Plugin.Channel.info, message)
         if workers is not None:
-            for worker in workers.values():
+            for worker in workers:
                 if self.__ignore_worker(worker.name):
                     continue
                 message = (
@@ -65,7 +64,7 @@ class Flexpool(Plugin):
                 for payment in payments:
                     message = (
                         f'Payment: {payment.value} XCH\n'
-                        f'On {payment.timestamp} after {payment.duration}'
+                        f'On {payment.timestamp} after {payment.duration:.1f} d'
                     )
                     await self.send(Plugin.Channel.info, message)    
 
@@ -75,7 +74,7 @@ class Flexpool(Plugin):
             workers = await self.__get_worker_status(session)
             if workers is None:
                 return
-            for worker in workers.values():
+            for worker in workers:
                 if self.__ignore_worker(worker.name):
                     continue
                 if worker.name not in self.__offline_alerts:
@@ -85,12 +84,7 @@ class Flexpool(Plugin):
                 if not worker.online:
                     await alert.send(f'Worker {worker.name} is offline.')
                     continue
-                if alert.is_muted():
-                    alert.reset(f'Worker {worker.name} is online again.')
-                last_space = self.__reported_space[worker.name]
-                if last_space is not None and last_space > worker.reported_hashrate:
-                    await self.send(Plugin.Channel.alert,
-                        f'Worker {worker.name}: Reported space space dropped (old: {last_space:.2f} TB new: {worker.reported_hashrate:.2f}')
+                await alert.reset(f'Worker {worker.name} is online again.')
 
     def __ignore_worker(self, name):
         if self.__worker_whitelist is not None and name not in self.__worker_whitelist:
@@ -110,10 +104,7 @@ class Flexpool(Plugin):
         data = await self.__get(session, 'miner/workers', params)
         if data is None:
             return None
-        workers = []
-        for worker in data:
-            workers.append(Flexpool.WorkerStatus(worker))
-        return {worker.name : worker for worker in workers}
+        return [Flexpool.WorkerStatus(worker) for worker in data]
 
     async def __get_payments(self, session, since):
         params = {'coin': 'XCH', 'address': self.__address, 'page': 0}
@@ -189,5 +180,5 @@ class Flexpool(Plugin):
         def __init__(self, json):
             self.timestamp = datetime.datetime.fromtimestamp(json['timestamp'])
             self.value = json['value'] / 1000000000000.0
-            self.duration = datetime.timedelta(seconds=json['duration'])
+            self.duration = float(json['duration']) / (3600.0 * 24.0)
 
