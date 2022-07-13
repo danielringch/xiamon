@@ -1,6 +1,6 @@
 import os, discord, asyncio
-from ..core.interface import Interface
-from ..core import Config
+from ...core.interface import Interface
+from ...core import Config
 
 class Discordbot(Interface):
     def __init__(self, config, _):

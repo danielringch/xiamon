@@ -1,6 +1,6 @@
 import datetime, colorama
-from ..core.interface import Interface
-from ..core import Config
+from ...core.interface import Interface
+from ...core import Config
 
 class Stdout(Interface):
     def __init__(self, config, _):

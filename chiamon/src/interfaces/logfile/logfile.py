@@ -1,6 +1,6 @@
 import datetime, os
-from ..core.interface import Interface
-from ..core import Config
+from ...core.interface import Interface
+from ...core import Config
 
 class Logfile(Interface):
     def __init__(self, config, scheduler):
