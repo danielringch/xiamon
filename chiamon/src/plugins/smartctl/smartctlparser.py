@@ -33,7 +33,7 @@ class SmartctlParser:
             else:
                 break
         self.__success = self.__model is not None and self.__serial is not None
-        self.__identifier = f'{self.__model}-{self.__serial}' if self.__success else None
+        self.__identifier = f'{self.__model}-{self.__serial}'.replace(' ', '-') if self.__success else None
 
     @property
     def identifier(self):
