@@ -37,13 +37,13 @@ class Siawallet(Plugin):
         data = await self.__get_data()
         if len(data) == 4:
             _, free, locked, risked = data
-            balance = free + locked + risked
+            balance = free + locked
             fiat_string, = await self.__coinprice.to_fiat_string(balance)
             message = (
                 f'Balance: {balance} SC ({fiat_string})\n'
                 f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
                 f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
-                f'Risked balance: {risked} SC ({(risked / balance * 100):.0f} %)\n'
+                f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
             )
             await self.send(Plugin.Channel.info, message)
         else:
@@ -53,8 +53,8 @@ class Siawallet(Plugin):
         data = await self.__get_data()
         if len(data) != 4:
             return
-        _, free, locked, risked = data
-        balance = free + locked + risked
+        _, free, locked, _ = data
+        balance = free + locked
         yesterday_balance = self.__history.get_balance(date.today() - timedelta(days=1))
         if yesterday_balance is None:
             yesterday_balance = 0
@@ -71,9 +71,9 @@ class Siawallet(Plugin):
             await self.__wallet_locked_alert.send('Wallet is locked.')
 
     async def __check_balance(self, free, locked, risked):
-        balance = free + locked + risked
-        await self.send(Plugin.Channel.debug, f'Wallet balance (free/locked/risked): {balance} ({free} / {locked} | {risked}) SC.')
-        available_factor = 1.0 - ((locked + risked) / balance)
+        balance = free + locked
+        await self.send(Plugin.Channel.debug, f'Wallet balance (free/locked/risked): {balance} ({free} / {locked} / {risked}) SC.')
+        available_factor = 1.0 - (locked / balance)
         if available_factor < 0.1:
             await self.__low_unlocked_balance_alert.send(f'Non collateral balance is low: {(available_factor * 100):.0f} %')
 
