@@ -24,10 +24,10 @@ class Stdout(Interface):
         channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
         print(f'[stdout] Stdout ready, available channels: {channels}')
 
-    async def send_message(self, channel, prefix, message):
+    async def send_message(self, channel, sender, message):
         if channel not in self.__channels:
             return
-        self.__channels[channel].send(prefix, message)
+        self.__channels[channel].send(sender, message)
 
     class Channel:
         def __init__(self, prefix, color, whitelist, blacklist):
@@ -52,12 +52,12 @@ class Stdout(Interface):
         def __now():
             return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
-        def send(self, prefix, message):
-            if self.__whitelist is not None and prefix not in self.__whitelist:
+        def send(self, sender, message):
+            if self.__whitelist is not None and sender not in self.__whitelist:
                 return
-            if self.__blacklist is not None and prefix in self.__blacklist:
+            if self.__blacklist is not None and sender in self.__blacklist:
                 return
-            prefix = f'[{Stdout.Channel.__now()}] [{self.__prefix}] [{prefix}]'
+            prefix = f'[{Stdout.Channel.__now()}] [{self.__prefix}] [{sender}]'
             self.__print(prefix, message)
 
         def __print(self, prefix, message):

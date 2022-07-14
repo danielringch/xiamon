@@ -33,10 +33,10 @@ class Discordbot(Interface):
         channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
         print(f'[discordbot] Discord bot {self.__client.user} ready, available channels: {channels}')
 
-    async def send_message(self, channel, prefix, message):
+    async def send_message(self, channel, sender, message):
         if channel not in self.__channels:
             return
-        await self.__channels[channel].send(prefix, message)
+        await self.__channels[channel].send(sender, message)
 
     class Channel:
         def __init__(self, client, id, whitelist, blacklist):
@@ -49,12 +49,12 @@ class Discordbot(Interface):
         def activate(self):
             self.__channel = self.__client.get_channel(self.__id)
 
-        async def send(self, prefix, message):
-            if self.__whitelist is not None and prefix not in self.__whitelist:
+        async def send(self, sender, message):
+            if self.__whitelist is not None and sender not in self.__whitelist:
                 return
-            if self.__blacklist is not None and prefix in self.__blacklist:
+            if self.__blacklist is not None and sender in self.__blacklist:
                 return
-            message = f'{prefix} {message}'
+            message = f'{sender} {message}'
             max_length = 2000
             size_limited_messages = [message[i:i+max_length] for i in range(0,len(message), max_length)]
             try:

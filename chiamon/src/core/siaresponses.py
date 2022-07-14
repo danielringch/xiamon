@@ -116,12 +116,37 @@ class Siacontractsdata:
     class Contract:
         def __init__(self, json):
             self.__datasize = int(json['datasize'])
+            self.__locked_collateral = Conversions.hasting_to_siacoin(int(json['lockedcollateral']))
+            self.__risked_collateral = Conversions.hasting_to_siacoin(int(json['riskedcollateral']))
+            self.__storage_revenue = Conversions.hasting_to_siacoin(int(json['potentialstoragerevenue']))
+            self.__upload_revenue = Conversions.hasting_to_siacoin(int(json['potentialuploadrevenue']))
+            self.__download_revenue = Conversions.hasting_to_siacoin(int(json['potentialdownloadrevenue']))
             self.__start = int(json['negotiationheight'])
             self.__end = int(json['expirationheight'])
             self.__proof_deadline = int(json['proofdeadline'])
 
         def datasize(self, unit):
             return Conversions.byte_to(unit, self.__datasize)
+
+        @property
+        def locked_collateral(self):
+            return self.__locked_collateral
+
+        @property
+        def risked_collateral(self):
+            return self.__risked_collateral
+
+        @property
+        def storage_revenue(self):
+            return self.__storage_revenue
+
+        @property
+        def upload_revenue(self):
+            return self.__upload_revenue
+
+        @property
+        def download_revenue(self):
+            return self.__download_revenue
 
         @property
         def start(self):

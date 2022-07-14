@@ -1,7 +1,7 @@
 from datetime import timedelta
 import statistics
 
-from ...core import Plugin, Alert, Siaapi, Siacontractsdata, Siaconsensusdata, Config, Conversions, Byteunit
+from ...core import Plugin, Alert, Siaapi, Siacontractsdata, Siaconsensusdata, Config, Conversions, Byteunit, Tablerenderer
 
 class Siahost(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -25,7 +25,7 @@ class Siahost(Plugin):
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-list', self.list, config_data.get_value_or_default('0 0 * * *', 'list_interval')[0])
+        scheduler.add_job(f'{name}-list', self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
 
     async def check(self):
         pass
@@ -83,21 +83,23 @@ class Siahost(Plugin):
         if consensus is not None and contracts is not None:
             height = consensus.height
             id = 0
-            message = f'{"ID".rjust(10)}{"Size".rjust(10)}{"Started".rjust(10)}{"Ending".rjust(10)}{"Proof".rjust(10)}\n'
+            renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Proof', 'Locked', 'Storage', 'Upload', 'Download'], 10)
+            data = renderer.data
             for contract in sorted(contracts.contracts, key=lambda x: x.end):
                 if contract.proof_deadline < height:
                     continue
-                size = contract.datasize(Byteunit.mb)
-                started = Conversions.siablocks_to_duration(height - contract.start).days
-                ending = Conversions.siablocks_to_duration(contract.end - height).days
-                proof = Conversions.siablocks_to_duration(contract.proof_deadline - height).days
-                message += f'{id}'.rjust(10)
-                message += f'{size:.0f} MB'.rjust(10)
-                message += f'{started} d'.rjust(10)
-                message += f'{ending} d'.rjust(10)
-                message += f'{proof} d\n'.rjust(10)
+
+                data['ID'].append(f'{id}')
+                data['Size'].append(f'{contract.datasize(Byteunit.gb):.1f} GB')
+                data['Started'].append(f'{Conversions.siablocks_to_duration(height - contract.start).days} d')
+                data['Ending'].append(f'{Conversions.siablocks_to_duration(contract.end - height).days} d')
+                data['Proof'].append(f'{Conversions.siablocks_to_duration(contract.proof_deadline - height).days} d')
+                data['Locked'].append(f'{contract.locked_collateral:.0f} SC')
+                data['Storage'].append(f'{contract.storage_revenue:.0f} SC')
+                data['Upload'].append(f'{contract.upload_revenue:.0f} SC')
+                data['Download'].append(f'{contract.download_revenue:.0f} SC')
                 id += 1
-            await self.send(Plugin.Channel.report, message)
+            await self.send(Plugin.Channel.report, renderer.render())
 
     async def __request(self, cmd, generator):
         alert = self.__request_alerts[cmd]
