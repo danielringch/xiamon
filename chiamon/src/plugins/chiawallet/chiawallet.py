@@ -77,6 +77,16 @@ class Chiawallet(Plugin):
         self.__history.add_balance(date.today(), delta, balance, price)
         self.__yesterday_balance = balance
 
+        fiat_balance = balance * price
+        currency = self.__currency.upper()
+        message = (
+            f'Wallet {self.__wallet_id}: '
+            f'{balance:.12f} XCH; '
+            f'{price:.4f} {currency}/XCH; '
+            f'{fiat_balance:.2f} {currency}\n'
+        )
+        await self.send(Plugin.Channel.report, message)
+
     async def __get_balance(self, session):
         if not await self.__get_synced(session):
             return None

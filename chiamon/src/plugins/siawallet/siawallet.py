@@ -24,7 +24,7 @@ class Siawallet(Plugin):
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-dump', self.dump, '55 23 * * *')
+        scheduler.add_job(f'{name}-dump', self.dump, '59 23 * * *')
 
     async def check(self):
         data = await self.__get_data()
