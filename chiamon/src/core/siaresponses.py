@@ -125,8 +125,9 @@ class Siacontractsdata:
             self.__end = int(json['expirationheight'])
             self.__proof_deadline = int(json['proofdeadline'])
 
-        def datasize(self, unit):
-            return Conversions.byte_to(unit, self.__datasize)
+        @property
+        def datasize(self):
+            return self.__datasize
 
         @property
         def locked_collateral(self):

@@ -90,14 +90,14 @@ class Siahost(Plugin):
                     continue
 
                 data['ID'].append(f'{id}')
-                data['Size'].append(f'{contract.datasize(Byteunit.gb):.1f} GB')
+                data['Size'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.byte_to_auto(contract.datasize)))
                 data['Started'].append(f'{Conversions.siablocks_to_duration(height - contract.start).days} d')
                 data['Ending'].append(f'{Conversions.siablocks_to_duration(contract.end - height).days} d')
                 data['Proof'].append(f'{Conversions.siablocks_to_duration(contract.proof_deadline - height).days} d')
-                data['Locked'].append(f'{contract.locked_collateral:.0f} SC')
-                data['Storage'].append(f'{contract.storage_revenue:.0f} SC')
-                data['Upload'].append(f'{contract.upload_revenue:.0f} SC')
-                data['Download'].append(f'{contract.download_revenue:.0f} SC')
+                data['Locked'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.locked_collateral)))
+                data['Storage'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.storage_revenue)))
+                data['Upload'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.upload_revenue)))
+                data['Download'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.download_revenue)))
                 id += 1
             await self.send(Plugin.Channel.report, renderer.render())
 
