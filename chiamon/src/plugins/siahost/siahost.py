@@ -18,6 +18,7 @@ class Siahost(Plugin):
         password = config_data.data['password']
         self.__api = Siaapi(host, password)
 
+        self.__unsync_alert = Alert(super(Siahost, self), mute_interval)
         self.__request_alerts = {
             'consensus' : Alert(super(Siahost, self), mute_interval),
             'host/contracts' : Alert(super(Siahost, self), mute_interval)
@@ -28,7 +29,12 @@ class Siahost(Plugin):
         scheduler.add_job(f'{name}-list', self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
 
     async def check(self):
-        pass
+        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+        if not consensus.synced:
+            await self.__unsync_alert.send(f'Sia node is not synced, height {consensus.height}.')
+        else:
+            await self.__unsync_alert.reset('Sia node is synced again.')
+        await self.send(Plugin.Channel.debug, f'Synced: {consensus.synced} | Height: {consensus.height}')
 
     async def summary(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
@@ -36,6 +42,8 @@ class Siahost(Plugin):
         if consensus is None or contracts is None:
             await self.send(Plugin.Channel.info, 'No summary created, host is not available.')
             return
+
+        await self.send(Plugin.Channel.info, f'Synced: {consensus.synced}\nHeight: {consensus.height}')
 
         height = consensus.height
 
@@ -72,7 +80,7 @@ class Siahost(Plugin):
         nearest_proof = Conversions.siablocks_to_duration(nearest_proof - height)
 
         await self.send(Plugin.Channel.info, (f'{count} contracts (+ {ended_count} ended)\n'
-            f'Median contract: {start_median.days:.0f} d since start | {end_median.days:.0f} d untill end\n'
+            f'Median contract: {start_median.days:.0f} d since start | {end_median.days:.0f} d until end\n'
             f'New contracts: {recent_started}\n'
             f'Ending contracts: {soon_ending}\n'
             f'Next proof deadline in {(nearest_proof.total_seconds() / 3600.0):.0f} h')) 
