@@ -6,3 +6,5 @@ alert_mute_interval: <hours>
 host: <ip:port, usually 127.0.0.1:8555>
 password: <password>
 recent_intervall: <hours>
+history: <file>
+currency: <eur/usd>
