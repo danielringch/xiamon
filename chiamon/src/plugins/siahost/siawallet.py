@@ -27,7 +27,18 @@ class Siawallet:
     async def dump(self, host, wallet):
         free = int(wallet.balance + wallet.pending)
         locked = int(host.lockedcollateral)
+        risked = int(host.riskedcollateral)
         balance = free + locked
+
+        fiat_string, = await self.__coinprice.to_fiat_string(balance)
+        message = (
+            f'Balance: {balance} SC ({fiat_string})\n'
+            f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
+            f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
+            f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
+        )
+        await self.__plugin.send(Plugin.Channel.report, message)
+
         yesterday_balance = self.__history.get_balance(date.today() - timedelta(days=1))
         if yesterday_balance is None:
             yesterday_balance = 0

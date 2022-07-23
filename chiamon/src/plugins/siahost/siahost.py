@@ -2,8 +2,9 @@ from datetime import timedelta
 import statistics
 
 from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer
-from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata
+from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata
 from .siahealth import Siahealth
+from .siastorage import Siastorage
 from .siawallet import Siawallet
 
 class Siahost(Plugin):
@@ -25,10 +26,12 @@ class Siahost(Plugin):
             'consensus' : Alert(super(Siahost, self), mute_interval),
             'wallet' : Alert(super(Siahost, self), mute_interval),
             'host' : Alert(super(Siahost, self), mute_interval),
-            'host/contracts' : Alert(super(Siahost, self), mute_interval)
+            'host/contracts' : Alert(super(Siahost, self), mute_interval),
+            'host/storage' : Alert(super(Siahost, self), mute_interval)
         }
 
         self.__health = Siahealth(self, config_data)
+        self.__storage = Siastorage(self)
         self.__wallet = Siawallet(self, config_data)
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
@@ -47,14 +50,16 @@ class Siahost(Plugin):
     async def summary(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
+        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
         contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (consensus, host, contracts, wallet):
+        if None in (consensus, host, storage, contracts, wallet):
             await self.send(Plugin.Channel.info, 'No summary created, host is not available.')
             return
 
         await self.__health.summary(consensus, host, wallet)
         await self.__wallet.summary(host, wallet)
+        await self.__storage.summary(storage)
 
         height = consensus.height
 
@@ -99,10 +104,12 @@ class Siahost(Plugin):
     async def list(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
+        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
         contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None not in (consensus, host, contracts, wallet):
+        if None not in (consensus, host, storage, contracts, wallet):
             await self.__wallet.dump(host, wallet)
+            await self.__storage.report(storage)
 
             height = consensus.height
             id = 0

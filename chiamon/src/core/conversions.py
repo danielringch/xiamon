@@ -44,9 +44,9 @@ class Conversions:
             return bytes / (1024 * 1024 * 1024 * 1024)
 
     @staticmethod 
-    def byte_to_auto(bytes):
-        value, prefix = Conversions.autorange(bytes, 1024)
-        return value, f'{prefix}B'
+    def byte_to_auto(bytes, binary=True):
+        value, prefix = Conversions.autorange(bytes, 1024 if binary else 1000)
+        return value, f'{prefix}{"iB" if binary else "B"}'
 
     @staticmethod
     def siacoin_to_auto(siacoins):

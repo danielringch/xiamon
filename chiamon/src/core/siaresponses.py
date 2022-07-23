@@ -101,6 +101,58 @@ class Siahostdata:
     @property
     def statusok(self):
         return self.__statusok
+
+class Siastoragedata:
+    def __init__(self, json):
+        self.__folders = []
+        self.__total = 0
+        self.__remaining = 0
+        self.__used = 0
+        for json_folder in json['folders']:
+            folder = Siastoragedata.Folder(json_folder)
+            self.__total += folder.total_space
+            self.__remaining += folder.free_space
+            self.__used += folder.used_space
+            self.__folders.append(folder)
+
+    @property
+    def folders(self):
+        return self.__folders
+
+    @property
+    def total_space(self):
+        return self.__total
+
+    @property
+    def free_space(self):
+        return self.__remaining
+        
+    @property
+    def used_space(self):
+        return self.__used
+
+    class Folder:
+        def __init__(self, json):
+            self.__path = json['path']
+            self.__total = json['capacity']
+            self.__remaining = json['capacityremaining']
+            self.__used = self.__total - self.__remaining
+
+        @property
+        def path(self):
+            return self.__path
+
+        @property
+        def total_space(self):
+            return self.__total
+
+        @property
+        def free_space(self):
+            return self.__remaining
+        
+        @property
+        def used_space(self):
+            return self.__used
     
 
 class Siacontractsdata:
