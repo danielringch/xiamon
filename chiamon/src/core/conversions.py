@@ -46,7 +46,11 @@ class Conversions:
     @staticmethod 
     def byte_to_auto(bytes, binary=True):
         value, prefix = Conversions.autorange(bytes, 1024 if binary else 1000)
-        return value, f'{prefix}{"iB" if binary else "B"}'
+        if not binary or prefix == '':
+            unit = f'{prefix}B'
+        else:
+            unit = f'{prefix}iB'
+        return value, unit
 
     @staticmethod
     def siacoin_to_auto(siacoins):

@@ -10,17 +10,19 @@ class Siawallet:
         currency, _ = config.get_value_or_default('usd', 'currency')
         self.__coinprice = Coinprice('siacoin', currency)
 
-    async def summary(self, host, wallet):
+    async def summary(self, host, storage, wallet):
         free = int(wallet.balance + wallet.pending)
         locked = int(host.lockedcollateral)
         risked = int(host.riskedcollateral)
         balance = free + locked
         fiat_string, = await self.__coinprice.to_fiat_string(balance)
+        spare_balance_percent = 100 * (free / balance) / (storage.free_space / storage.total_space)
         message = (
             f'Balance: {balance} SC ({fiat_string})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
+            f'Free balance vs free space: {spare_balance_percent:.0f} %'
         )
         await self.__plugin.send(Plugin.Channel.info, message)
             

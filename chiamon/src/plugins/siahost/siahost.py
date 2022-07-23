@@ -58,7 +58,7 @@ class Siahost(Plugin):
             return
 
         await self.__health.summary(consensus, host, wallet)
-        await self.__wallet.summary(host, wallet)
+        await self.__wallet.summary(host, storage, wallet)
         await self.__storage.summary(storage)
 
         height = consensus.height
