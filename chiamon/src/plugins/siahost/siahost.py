@@ -3,6 +3,7 @@ import statistics
 
 from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata
+from .siahealth import Siahealth
 from .siawallet import Siawallet
 
 class Siahost(Plugin):
@@ -20,7 +21,6 @@ class Siahost(Plugin):
         password = config_data.data['password']
         self.__api = Siaapi(host, password)
 
-        self.__unsync_alert = Alert(super(Siahost, self), mute_interval)
         self.__request_alerts = {
             'consensus' : Alert(super(Siahost, self), mute_interval),
             'wallet' : Alert(super(Siahost, self), mute_interval),
@@ -28,6 +28,7 @@ class Siahost(Plugin):
             'host/contracts' : Alert(super(Siahost, self), mute_interval)
         }
 
+        self.__health = Siahealth(self, config_data)
         self.__wallet = Siawallet(self, config_data)
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
@@ -40,13 +41,8 @@ class Siahost(Plugin):
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         if None in (consensus, host, wallet):
             return
-
-        if not consensus.synced:
-            await self.__unsync_alert.send(f'Sia node is not synced, height {consensus.height}.')
-        else:
-            await self.__unsync_alert.reset('Sia node is synced again.')
-        await self.send(Plugin.Channel.debug, f'Synced: {consensus.synced} | Height: {consensus.height}')
-        await self.__wallet.check(host, wallet)
+        
+        await self.__health.check(consensus, host, wallet)
 
     async def summary(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
@@ -57,7 +53,7 @@ class Siahost(Plugin):
             await self.send(Plugin.Channel.info, 'No summary created, host is not available.')
             return
 
-        await self.send(Plugin.Channel.info, f'Synced: {consensus.synced}\nHeight: {consensus.height}')
+        await self.__health.summary(consensus, host, wallet)
         await self.__wallet.summary(host, wallet)
 
         height = consensus.height
