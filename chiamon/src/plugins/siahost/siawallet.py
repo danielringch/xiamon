@@ -11,28 +11,29 @@ class Siawallet:
         self.__coinprice = Coinprice('siacoin', currency)
 
     async def summary(self, host, storage, wallet):
-        free = int(wallet.balance + wallet.pending)
-        locked = int(host.lockedcollateral)
-        risked = int(host.riskedcollateral)
+        free = round(wallet.balance + wallet.pending)
+        locked = round(host.lockedcollateral)
+        risked = round(host.riskedcollateral)
         balance = free + locked
-        fiat_string, = await self.__coinprice.to_fiat_string(balance)
-        spare_balance_percent = 100 * (free / balance) / (storage.free_space / storage.total_space)
+
+        await self.__coinprice.update()
+        fiat_string, = self.__coinprice.to_fiat_string(balance)
         message = (
             f'Balance: {balance} SC ({fiat_string})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
-            f'Free balance vs free space: {spare_balance_percent:.0f} %'
         )
         await self.__plugin.send(Plugin.Channel.info, message)
             
     async def dump(self, host, wallet):
-        free = int(wallet.balance + wallet.pending)
-        locked = int(host.lockedcollateral)
-        risked = int(host.riskedcollateral)
+        free = round(wallet.balance + wallet.pending)
+        locked = round(host.lockedcollateral)
+        risked = round(host.riskedcollateral)
         balance = free + locked
 
-        fiat_string, = await self.__coinprice.to_fiat_string(balance)
+        await self.__coinprice.update()
+        fiat_string, = self.__coinprice.to_fiat_string(balance)
         message = (
             f'Balance: {balance} SC ({fiat_string})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
@@ -45,5 +46,4 @@ class Siawallet:
         if yesterday_balance is None:
             yesterday_balance = 0
         delta = balance - yesterday_balance
-        price = await self.__coinprice.get()
-        self.__history.add_balance(date.today(), delta, balance, price)
+        self.__history.add_balance(date.today(), delta, balance, self.__coinprice.price)

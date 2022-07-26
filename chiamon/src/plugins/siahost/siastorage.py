@@ -22,4 +22,3 @@ class Siastorage:
         total = Conversions.byte_to_auto(storage.total_space, binary=False)
         usage_percent = 100 * storage.used_space / storage.total_space
         await self.__plugin.send(Plugin.Channel.report, f'Storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]} ({usage_percent:.2f} %)')
-

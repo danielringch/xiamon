@@ -38,8 +38,13 @@ class Siahostdata:
     def __init__(self, json):
         self.__accepting = json['externalsettings']['acceptingcontracts']
         self.__address = json['externalsettings']['netaddress']
-        self.__totalstorage = Conversions.byte_to_megabyte(json['externalsettings']['totalstorage'])
-        self.__freestorage = Conversions.byte_to_megabyte(json['externalsettings']['remainingstorage'])
+        self.__contractprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['mincontractprice']))
+        self.__storageprice = Conversions.hastingsbyteblock_to_siacointerabytemonth(int(json['internalsettings']['minstorageprice']))
+        self.__collateral = Conversions.hastingsbyteblock_to_siacointerabytemonth(int(json['internalsettings']['collateral']))
+        self.__uploadprice = Conversions.hastingbyte_to_siacointerabyte(int(json['internalsettings']['minuploadbandwidthprice']))
+        self.__downloadprice = Conversions.hastingbyte_to_siacointerabyte(int(json['internalsettings']['mindownloadbandwidthprice']))
+        self.__sectorprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['minsectoraccessprice']))
+        self.__rpcprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['minbaserpcprice']))
         self.__contracts = json['financialmetrics']['contractcount']
         self.__collateralbudget = Conversions.hasting_to_siacoin(int(json['internalsettings']['collateralbudget']))
         self.__lockedcollateral = Conversions.hasting_to_siacoin(int(json['financialmetrics']['lockedstoragecollateral']))
@@ -59,12 +64,32 @@ class Siahostdata:
         return self.__address
 
     @property
-    def totalstorage(self):
-        return self.__totalstorage
+    def contractprice(self):
+        return self.__contractprice
 
     @property
-    def freestorage(self):
-        return self.__freestorage
+    def storageprice(self):
+        return self.__storageprice
+
+    @property
+    def collateral(self):
+        return self.__collateral
+
+    @property
+    def uploadprice(self):
+        return self.__uploadprice
+
+    @property
+    def downloadprice(self):
+        return self.__downloadprice
+
+    @property
+    def sectorprice(self):
+        return self.__sectorprice
+
+    @property
+    def rpcprice(self):
+        return self.__rpcprice
 
     @property
     def contracts(self):

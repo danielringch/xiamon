@@ -20,3 +20,17 @@ class Siaapi:
             return json
         else:
             raise ConnectionError()
+
+    async def post(self, session, cmd, input):
+        parameters = []
+        for key, value in input.items():
+            parameters.append(f'{key}={value}')
+        payload = '&'.join(parameters)
+        async with session.post(f'http://{self.__host}/{cmd}?{payload}') as response:
+            _ = await response.text()
+            status = response.status
+        if status >= 200 and status <= 299:
+            return
+        else:
+            raise ConnectionError()
+

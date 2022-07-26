@@ -48,7 +48,8 @@ class Chiawallet(Plugin):
                 return
             diff = balance - self.__balance
             self.__balance = balance
-            balance_fiat_string, delta_fiat_string = await self.__coinprice.to_fiat_string(self.__balance, diff)
+            await self.__coinprice.update()
+            balance_fiat_string, delta_fiat_string = self.__coinprice.to_fiat_string(self.__balance, diff)
             message = (
                 f'Balance changed of wallet {self.__wallet_id}:\n'
                 f'delta: {diff} XCH ({delta_fiat_string})\n'
@@ -63,7 +64,8 @@ class Chiawallet(Plugin):
             if balance is None:
                 await self.send(Plugin.Channel.info, 'Balance unknown, wallet is unavailable.')
                 return
-            fiat_string, = await self.__coinprice.to_fiat_string(balance)
+            await self.__coinprice.update()
+            fiat_string, = self.__coinprice.to_fiat_string(balance)
             await self.send(Plugin.Channel.info,
                 f'Balance: {balance} XCH ({fiat_string})')
 
@@ -73,7 +75,9 @@ class Chiawallet(Plugin):
             if balance is None:
                 return
         delta = balance - self.__yesterday_balance
-        price = await self.__coinprice.get()
+
+        await self.__coinprice.update()
+        price = self.__coinprice.price
         self.__history.add_balance(date.today(), delta, balance, price)
         self.__yesterday_balance = balance
 

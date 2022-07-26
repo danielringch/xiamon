@@ -3,6 +3,7 @@ import statistics
 
 from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata
+from .siaautoprice import Siaautoprice
 from .siahealth import Siahealth
 from .siastorage import Siastorage
 from .siawallet import Siawallet
@@ -33,6 +34,10 @@ class Siahost(Plugin):
         self.__health = Siahealth(self, config_data)
         self.__storage = Siastorage(self)
         self.__wallet = Siawallet(self, config_data)
+        self.__autoprice = None
+        if 'autoprice' in  config_data.data:
+            self.__autoprice = Siaautoprice(self, self.__api, config_data)
+            scheduler.add_job(f'{name}-autoprice' ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
@@ -59,6 +64,7 @@ class Siahost(Plugin):
 
         await self.__health.summary(consensus, host, wallet)
         await self.__wallet.summary(host, storage, wallet)
+        await self.__autoprice.summary(host, storage, wallet)
         await self.__storage.summary(storage)
 
         height = consensus.height
@@ -91,8 +97,8 @@ class Siahost(Plugin):
                 await self.send(Plugin.Channel.debug, f'No contracts.')
                 return
 
-        start_median = Conversions.siablocks_to_duration(int(statistics.median(start_heights)))
-        end_median = Conversions.siablocks_to_duration(int(statistics.median(end_heights)))
+        start_median = Conversions.siablocks_to_duration(round(statistics.median(start_heights)))
+        end_median = Conversions.siablocks_to_duration(round(statistics.median(end_heights)))
         nearest_proof = Conversions.siablocks_to_duration(nearest_proof - height)
 
         await self.send(Plugin.Channel.info, (f'{count} contracts (+ {ended_count} ended)\n'
@@ -129,7 +135,17 @@ class Siahost(Plugin):
                 data['Upload'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.upload_revenue)))
                 data['Download'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.download_revenue)))
                 id += 1
-            await self.send(Plugin.Channel.report, renderer.render())
+            await self.send(Plugin.Channel.debug, renderer.render())
+
+    async def price(self):
+        if self.__autoprice is None:
+            return
+        host = await self.__request('host', lambda x: Siahostdata(x))
+        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+        wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
+        if None in (host, storage, wallet):
+            return
+        await self.__autoprice.update(host, storage, wallet)
 
     async def __request(self, cmd, generator):
         alert = self.__request_alerts[cmd]
