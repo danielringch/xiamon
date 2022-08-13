@@ -1,4 +1,5 @@
 import os, yaml, ciso8601, copy, datetime
+from .smartsnapshot import SmartSnapshot
 
 class History:
     def __init__(self, dir, aggregation):
@@ -10,24 +11,19 @@ class History:
             self.__data = {}
         self.__aggregation = datetime.timedelta(hours=aggregation)
 
-    def update(self, parser):
-        drive = parser.identifier
-        attributes = parser.attributes
+    def update(self, snapshot):
+        drive = snapshot.identifier
+        attributes = snapshot.attributes
         drive_data = self.__data.setdefault(drive, {})
         if 'timestamp' not in drive_data or \
-            ciso8601.parse_datetime(drive_data['timestamp']) + self.__aggregation < datetime.datetime.now():
-            drive_data['timestamp'] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+            ciso8601.parse_datetime(drive_data['timestamp']) + self.__aggregation < snapshot.timestamp:
+            drive_data['timestamp'] = snapshot.timestamp.strftime("%Y-%m-%dT%H:%M:%S")
             drive_data['attributes'] = copy.deepcopy(attributes)
             with open(self.__file, "w") as stream:
                 yaml.safe_dump(self.__data, stream)
 
-    def get_diff(self, drive, id, current_value):
+    def get(self, drive):
         if drive not in self.__data:
-            return None, None
+            return None
         drive_data = self.__data[drive]
-        drive_attributes = drive_data['attributes']
-        if id not in drive_attributes:
-            return None, None
-        value = drive_attributes[id]
-        time_diff = datetime.datetime.now() - ciso8601.parse_datetime(drive_data['timestamp'])
-        return (current_value - value), time_diff        
+        return SmartSnapshot.from_history(drive, drive_data['timestamp'], drive_data['attributes'])     

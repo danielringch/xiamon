@@ -1,23 +1,29 @@
-import re
+import re, datetime, copy
 
-class SmartctlParser:
-    def __init__(self, data):
+class SmartSnapshot:
+    def __init__(self):
         self.__identifier = None
+        self.__timestamp = datetime.datetime.now()
         self.__attributes = {}
-        self.__model = None
-        self.__serial = None
+        self.__success = False
+
+    @classmethod
+    def from_smartctl(cls, smartctl_out):
+        instance = cls()
 
         header_found = False
+        model = None
+        serial = None
         header_regex = re.compile('^ID#.*RAW_VALUE$')
         no_whitespace_regex = re.compile('\\S+')
         id_index = 0
         value_index = None
-        for line in data.splitlines():
+        for line in smartctl_out.splitlines():
             if not header_found:
                 if line.startswith('Device Model:     '):
-                    self.__model = line[18:]
+                    model = line[18:]
                 elif line.startswith('Serial Number:    '):
-                    self.__serial = line[18:]
+                    serial = line[18:]
                 elif header_regex.search(line):
                     columns = no_whitespace_regex.findall(line)
                     value_index = len(columns) - 1
@@ -27,17 +33,31 @@ class SmartctlParser:
                 id = int(columns[id_index])
                 try:
                     value = int(columns[value_index])
-                    self.__attributes[id] = value
+                    instance.__attributes[id] = value
                 except ValueError:
                     pass
             else:
                 break
-        self.__success = self.__model is not None and self.__serial is not None
-        self.__identifier = f'{self.__model}-{self.__serial}'.replace(' ', '-') if self.__success else None
+        instance.__success = model is not None and serial is not None
+        instance.__identifier = f'{model}-{serial}'.replace(' ', '-') if instance.__success else None
+
+        return instance
+
+    @classmethod
+    def from_history(cls, identifier, timestamp, attributes):
+        instance = cls()
+        instance.__identifier = identifier
+        instance.__timestamp = timestamp
+        instance.__attributes = copy.deepcopy(attributes)
+        instance.__success = True
 
     @property
     def identifier(self):
         return self.__identifier
+
+    @property
+    def timestamp(self):
+        return self.__timestamp
 
     @property
     def success(self):

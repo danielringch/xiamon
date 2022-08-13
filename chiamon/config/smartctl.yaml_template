@@ -4,24 +4,15 @@ aggregation: <hours>
 binary: <smartctl binary file>
 db: <path to plugin database directory>
 global_limits:
-    start_stop_delta: <max delta>
-    reallocated_sector_delta: <max delta>
-    airflow_temperature_max: <max value>
-    load_cycle_delta: <max delta>
-    temperature_max: <max value>
-    pending_sector_delta: <max delta>
+    <attribute id>:
+        evaluation: <max/min/delta_max/delta_min>
+        value: <value>
 drives:
     <identifier>:
-        start_stop_delta: <max delta>
-        reallocated_sector_delta: <max delta>
-        airflow_temperature_max: <max value>
-        load_cycle_delta: <max delta>
-        temperature_max: <max value>
-        pending_sector_delta: <max delta>
-    <identifier>:
-        start_stop_delta: <max delta>
-        reallocated_sector_delta: <max delta>
-        airflow_temperature_max: <max value>
-        load_cycle_delta: <max delta>
-        temperature_max: <max value>
-        pending_sector_delta: <max delta>
+        <attribute id>:
+            evaluation: <max/min/delta_max/delta_min>
+            value: <value>
+alias:
+    <identifier>: <alias>
+blacklist:
+    - <identifier>
