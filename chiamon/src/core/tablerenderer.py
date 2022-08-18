@@ -17,7 +17,8 @@ class Tablerenderer:
             line = []
             for column in self.data.values():
                 try:
-                    line.append(column[i].rjust(self.columnwidth))
+                    cell_as_string = column[i] if isinstance(column[i], str) else str(column[i])
+                    line.append(cell_as_string.rjust(self.columnwidth))
                     data_available = True
                 except IndexError:
                     line.append(' '*self.columnwidth)
