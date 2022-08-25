@@ -38,8 +38,13 @@ class Siahostdata:
     def __init__(self, json):
         self.__accepting = json['externalsettings']['acceptingcontracts']
         self.__address = json['externalsettings']['netaddress']
-        self.__totalstorage = Conversions.byte_to_megabyte(json['externalsettings']['totalstorage'])
-        self.__freestorage = Conversions.byte_to_megabyte(json['externalsettings']['remainingstorage'])
+        self.__contractprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['mincontractprice']))
+        self.__storageprice = Conversions.hastingsbyteblock_to_siacointerabytemonth(int(json['internalsettings']['minstorageprice']))
+        self.__collateral = Conversions.hastingsbyteblock_to_siacointerabytemonth(int(json['internalsettings']['collateral']))
+        self.__uploadprice = Conversions.hastingbyte_to_siacointerabyte(int(json['internalsettings']['minuploadbandwidthprice']))
+        self.__downloadprice = Conversions.hastingbyte_to_siacointerabyte(int(json['internalsettings']['mindownloadbandwidthprice']))
+        self.__sectorprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['minsectoraccessprice']))
+        self.__rpcprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['minbaserpcprice']))
         self.__contracts = json['financialmetrics']['contractcount']
         self.__collateralbudget = Conversions.hasting_to_siacoin(int(json['internalsettings']['collateralbudget']))
         self.__lockedcollateral = Conversions.hasting_to_siacoin(int(json['financialmetrics']['lockedstoragecollateral']))
@@ -59,12 +64,32 @@ class Siahostdata:
         return self.__address
 
     @property
-    def totalstorage(self):
-        return self.__totalstorage
+    def contractprice(self):
+        return self.__contractprice
 
     @property
-    def freestorage(self):
-        return self.__freestorage
+    def storageprice(self):
+        return self.__storageprice
+
+    @property
+    def collateral(self):
+        return self.__collateral
+
+    @property
+    def uploadprice(self):
+        return self.__uploadprice
+
+    @property
+    def downloadprice(self):
+        return self.__downloadprice
+
+    @property
+    def sectorprice(self):
+        return self.__sectorprice
+
+    @property
+    def rpcprice(self):
+        return self.__rpcprice
 
     @property
     def contracts(self):
@@ -101,6 +126,58 @@ class Siahostdata:
     @property
     def statusok(self):
         return self.__statusok
+
+class Siastoragedata:
+    def __init__(self, json):
+        self.__folders = []
+        self.__total = 0
+        self.__remaining = 0
+        self.__used = 0
+        for json_folder in json['folders']:
+            folder = Siastoragedata.Folder(json_folder)
+            self.__total += folder.total_space
+            self.__remaining += folder.free_space
+            self.__used += folder.used_space
+            self.__folders.append(folder)
+
+    @property
+    def folders(self):
+        return self.__folders
+
+    @property
+    def total_space(self):
+        return self.__total
+
+    @property
+    def free_space(self):
+        return self.__remaining
+        
+    @property
+    def used_space(self):
+        return self.__used
+
+    class Folder:
+        def __init__(self, json):
+            self.__path = json['path']
+            self.__total = json['capacity']
+            self.__remaining = json['capacityremaining']
+            self.__used = self.__total - self.__remaining
+
+        @property
+        def path(self):
+            return self.__path
+
+        @property
+        def total_space(self):
+            return self.__total
+
+        @property
+        def free_space(self):
+            return self.__remaining
+        
+        @property
+        def used_space(self):
+            return self.__used
     
 
 class Siacontractsdata:
@@ -116,12 +193,38 @@ class Siacontractsdata:
     class Contract:
         def __init__(self, json):
             self.__datasize = int(json['datasize'])
+            self.__locked_collateral = Conversions.hasting_to_siacoin(int(json['lockedcollateral']))
+            self.__risked_collateral = Conversions.hasting_to_siacoin(int(json['riskedcollateral']))
+            self.__storage_revenue = Conversions.hasting_to_siacoin(int(json['potentialstoragerevenue']))
+            self.__upload_revenue = Conversions.hasting_to_siacoin(int(json['potentialuploadrevenue']))
+            self.__download_revenue = Conversions.hasting_to_siacoin(int(json['potentialdownloadrevenue']))
             self.__start = int(json['negotiationheight'])
             self.__end = int(json['expirationheight'])
             self.__proof_deadline = int(json['proofdeadline'])
 
-        def datasize(self, unit):
-            return Conversions.byte_to(unit, self.__datasize)
+        @property
+        def datasize(self):
+            return self.__datasize
+
+        @property
+        def locked_collateral(self):
+            return self.__locked_collateral
+
+        @property
+        def risked_collateral(self):
+            return self.__risked_collateral
+
+        @property
+        def storage_revenue(self):
+            return self.__storage_revenue
+
+        @property
+        def upload_revenue(self):
+            return self.__upload_revenue
+
+        @property
+        def download_revenue(self):
+            return self.__download_revenue
 
         @property
         def start(self):

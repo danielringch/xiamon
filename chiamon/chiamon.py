@@ -26,8 +26,6 @@ available_plugins = {'chiafarmer': Chiafarmer,
                      'pingdrive': Pingdrive,
                      'serviceping': Serviceping,
                      'siahost' : Siahost,
-                     'sianode' : Sianode,
-                     'siawallet' : Siawallet,
                      'smartctl': Smartctl,
                      'storjnode': Storjnode,
                      'sysmonitor': Sysmonitor}

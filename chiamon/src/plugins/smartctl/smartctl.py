@@ -2,17 +2,10 @@ import os, subprocess, re
 from collections import defaultdict
 from ...core import Plugin, Alert, Config
 from .history import History
-from .smartctlparser import SmartctlParser
+from .smartsnapshot import SmartSnapshot
+from .attributeevaluator import AttributeEvaluator
 
 class Smartctl(Plugin):
-    supported__attributes = {
-        4: 'Start_Stop_Count',
-        5: 'Reallocated_Sectors_Count',
-        190: 'Airflow_Temperature_Celsius',
-        193: 'Load_Cycle_Count',
-        194: 'Temperature_Celsius',
-        197: 'Current_Pending_Sector_Count'
-    }
 
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
@@ -26,37 +19,65 @@ class Smartctl(Plugin):
         self.__smartctl_call = os.path.join(smartctl_directory, f'./{smartctl_file}')
         self.__history = History(config_data.data['db'], self.__aggregation) 
 
-        self.__settings = {}
-        self.__drives = set()
+        self.__generic_evaluator = AttributeEvaluator(config_data.data['global_limits'], None)
+        self.__custom_evaluators = {}
+        if 'drives' in config_data.data:
+            for drive, drive_config in config_data.data['drives'].items():
+                self.__custom_evaluators[drive] = AttributeEvaluator(config_data.data['global_limits'], drive_config)
 
-        global_limits = config_data.data['global_limits']
-        self.__settings[None] = Smartctl.Setting(global_limits)
-        special_limits, special_limits_available = config_data.get_value_or_default(None, 'drives')
-        if special_limits_available:
-            for identifier, limits in special_limits.items():
-                self.__settings.setdefault(identifier, Smartctl.Setting(global_limits)).load_special_limits(limits)
+        self.__aliases, _ = config_data.get_value_or_default({}, 'alias')
+        self.__blacklist = set()
+        for drive in config_data.get_value_or_default([], 'blacklist')[0]:
+            self.__blacklist.add(drive)
 
         self.__mute_interval = self.__aggregation
-
-        self.__offline_alerts = {}
         self.__attribute_alerts = defaultdict(lambda: defaultdict(lambda: Alert(super(Smartctl, self), self.__mute_interval)))
 
-        scheduler.add_job(name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
+        scheduler.add_job(f'{name}-startup' ,self.startup, None)
+        scheduler.add_job(f'{name}-check' ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
+
+    async def startup(self):
+        message = []
+        drives =  self.__get_drives()
+        for device in drives:
+            snapshot = self.__get_smart_data(device)
+            if not snapshot.success or snapshot.identifier in self.__blacklist:
+                continue
+            identifier = snapshot.identifier
+            try:
+                alias = f'({self.__aliases[identifier]})'
+            except KeyError:
+                alias = ''
+            if identifier in self.__custom_evaluators:
+                config = 'custom'
+            else:
+                config = 'default'
+            message.append(f'Found drive {identifier} {alias} at {device} with {config} limits.')
+        await self.send(Plugin.Channel.debug, '\n'.join(message) if len(drives) > 0 else 'No drives found.')     
 
     async def run(self):
         drives =  self.__get_drives()
 
         for device in drives:
-            parser = self.__get_smart_data(device)
-            if not parser.success:
+            snapshot = self.__get_smart_data(device)
+            if not snapshot.success or snapshot.identifier in self.__blacklist:
                 continue
-            if parser.identifier not in self.__drives:
-                await self.send(Plugin.Channel.debug, f'Found new drive {parser.identifier}')
-            self.__drives.add(parser.identifier)
-            settings = self.__settings.get(parser.identifier, self.__settings[None])
-            self.__history.update(parser)
-            checker = Smartctl.Checker(parser, self.__history, settings, self.__attribute_alerts[parser.identifier])
-            await checker.run()
+
+            try:
+                evaluator = self.__custom_evaluators[snapshot.identifier]
+            except KeyError:
+                evaluator = self.__generic_evaluator
+
+            self.__history.update(snapshot)
+            history = self.__history.get(snapshot.identifier)
+
+            for error_key, error_message in evaluator.check(snapshot, history).items():
+                try:
+                    alias = self.__aliases[snapshot.identifier]
+                except KeyError:
+                    alias = snapshot.identifier
+                alert = self.__attribute_alerts[snapshot.identifier][error_key]
+                await alert.send(f'{alias}: {error_message}')
 
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)
@@ -72,59 +93,4 @@ class Smartctl(Plugin):
 
     def __get_smart_data(self, device):
         output = subprocess.run([self.__smartctl_call,"-iA" , device], text=True, stdout=subprocess.PIPE)
-        return SmartctlParser(output.stdout)
-
-    class Setting:
-        def __init__(self, global_limits):
-            self.start_stop_delta = global_limits['start_stop_delta']
-            self.reallocated_sector_delta = global_limits['reallocated_sector_delta']
-            self.airflow_temperature_max = global_limits['airflow_temperature_max']
-            self.load_cycle_delta = global_limits['load_cycle_delta']
-            self.temperature_max = global_limits['temperature_max']
-            self.pending_sector_delta = global_limits['pending_sector_delta']
-
-        def load_special_limits(self, limits):
-            if 'start_stop_delta' in limits:
-                self.start_stop_delta = limits['start_stop_delta']
-            if 'reallocated_sector_delta' in limits:
-                self.reallocated_sector_delta = limits['reallocated_sector_delta']
-            if 'airflow_temperature_max' in limits:
-                self.airflow_temperature_max = limits['airflow_temperature_max']
-            if 'load_cycle_delta' in limits:
-                self.load_cycle_delta = limits['load_cycle_delta']
-            if 'temperature_max' in limits:
-                self.temperature_max = limits['temperature_max']
-            if 'pending_sector_delta' in limits:
-                self.pending_sector_delta = limits['pending_sector_delta']
-
-    class Checker:
-        def __init__(self, parser, history, settings, alerts):
-            self.__parser = parser
-            self.__history = history
-            self.__settings = settings
-            self.__alerts = alerts
-
-        async def run(self):
-            await self.__check_delta(self.__parser, self.__history, 4, self.__settings.start_stop_delta)
-            await self.__check_delta(self.__parser, self.__history, 5, self.__settings.reallocated_sector_delta)
-            await self.__check_max(self.__parser, 190, self.__settings.airflow_temperature_max)
-            await self.__check_delta(self.__parser, self.__history, 193, self.__settings.load_cycle_delta)
-            await self.__check_max(self.__parser, 194, self.__settings.temperature_max)
-            await self.__check_delta(self.__parser, self.__history, 197, self.__settings.pending_sector_delta)
-
-        async def __check_max(self, parser, id, limit):
-            if id not in parser.attributes:
-                return
-            value = parser.attributes[id]
-            if value > limit:
-                await self.__alerts[id].send(f'Drive {parser.identifier}): attribute {Smartctl.supported__attributes[id]} exceeds maximum value (max={limit} value={value})')
-
-        async def __check_delta(self, parser, history, id, limit):
-            if id not in parser.attributes:
-                return
-            value = parser.attributes[id]
-            diff, ref_time = history.get_diff(parser.identifier, id, value)
-            if diff is None:
-                return
-            if diff > limit:
-                await self.__alerts[id].send(f'Drive {parser.identifier}: attribute {Smartctl.supported__attributes[id]} exceeds maximum value delta (change={diff}, ref_time={ref_time}')
+        return SmartSnapshot.from_smartctl(output.stdout)

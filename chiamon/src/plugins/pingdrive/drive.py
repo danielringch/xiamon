@@ -15,18 +15,17 @@ class Drive:
         self.__state.reset_statistics()
 
     def check(self):
+        message = None
         sectors_read, sectors_written = self.__get_stats()
 
         if sectors_read is None or sectors_written is None:
             self.__state.unavailable()
-            message = "drive is unavailable"
+            message = f'{self.alias}: drive is unavailable'
         else:
             if sectors_read == self.__sectors_read and sectors_written == self.__sectors_written:
                 self.__state.inactive()
-                message = f'{self.__state.countdown}m until next ping.'
             else:
                 self.__state.active()
-                message = 'drive was active.'
 
             self.__sectors_read = sectors_read
             self.__sectors_written = sectors_written
@@ -34,7 +33,7 @@ class Drive:
             if self.__state.ping_outstanding:
                 message = self.__ping()
 
-        return f'{self.alias}: {message} | {self.__state.ping_count} pings | {self.__state.active_count}m active'
+        return message
 
     def __get_stats(self):
         try:
@@ -49,10 +48,10 @@ class Drive:
     def __ping(self):
         if self.__read_plot():
             self.__state.pinged(True)
-            return f'ping successful.'
+            return f'{self.alias}: ping successful.'
         else:
             self.__state.pinged(False)
-            return f'ping failed.'
+            return f'{self.alias}: ping failed.'
 
     def __read_plot(self):
         try:

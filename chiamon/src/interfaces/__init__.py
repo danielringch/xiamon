@@ -1,3 +1,3 @@
-from .discordbot import Discordbot
-from .logfile import Logfile
-from .stdout import Stdout
+from .discordbot import *
+from .logfile import *
+from .stdout import *

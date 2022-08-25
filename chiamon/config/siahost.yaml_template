@@ -1,8 +1,24 @@
 name: <unique name>
+check_interval: <cron, e.g. "0 * * * *">
 summary_interval: <cron, e.g. "0 * * * *">
 list_interval: <cron, e.g. "0 * * * *">
-check_interval: <cron, e.g. "0 * * * *">
+price_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 host: <ip:port, usually 127.0.0.1:8555>
 password: <password>
 recent_intervall: <hours>
+history: <file>
+currency: <eur/usd>
+minimum_available_balance: <percent>
+autoprice:
+    currency: <eur/usd>
+    contract: <siacoin>
+    storage: <currency>
+    minimum_collateral_factor: <factor>
+    maximum_collateral_factor: <factor>
+    minimum_collateral_reserve: <percent>
+    target_collateral_reserve: <percent>
+    upload: <currency>
+    download: <currency>
+    sector_access: <siacoin>
+    base_rpc: <siacoin>

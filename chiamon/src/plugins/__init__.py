@@ -6,8 +6,6 @@ from .flexpool import *
 from .pingdrive import *
 from .serviceping import *
 from .siahost import *
-from .sianode import *
-from .siawallet import *
 from .smartctl import *
 from .storjnode import *
 from .sysmonitor import *

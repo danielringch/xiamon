@@ -7,6 +7,10 @@ info:
     id: <discord channel id>
     whitelist: <list of plugin to log or null>
     blacklist: <list excluded plugins or null>
+report:
+    id: <discord channel id>
+    whitelist: <list of plugin to log or null>
+    blacklist: <list excluded plugins or null>
 error:
     id: <discord channel id>
     whitelist: <list of plugin to log or null>

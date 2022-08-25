@@ -1,3 +1,4 @@
+from .attributeevaluator import AttributeEvaluator
 from .smartctl import Smartctl
 from .history import History
-from .smartctlparser import SmartctlParser
+from .smartsnapshot import SmartSnapshot
