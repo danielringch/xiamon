@@ -65,7 +65,7 @@ class Pingdrive(Plugin):
                     online += 1
             drive.reset_statistics()
         await self.send(Plugin.Channel.info, f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
-        await self.send(Plugin.Channel.debug, table.render())
+        await self.send(Plugin.Channel.report, table.render())
         self.__first_summary = False
 
     async def rescan(self):
