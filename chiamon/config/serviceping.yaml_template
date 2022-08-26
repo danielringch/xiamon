@@ -6,6 +6,8 @@ chia:
     cert: <file>
     key: <file>
     host: <ip:port, usually 127.0.0.1:8555>
+flexfarmer:
+    host: <ip:port, usually 127.0.0.1:29549>
 sia:
     host: <ip:port, usually 127.0.0.1:9980>
     password: <password>

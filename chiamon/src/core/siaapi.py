@@ -7,7 +7,7 @@ class Siaapi:
 
     def create_session(self):
         headers = {'User-Agent': 'Sia-Agent'}
-        auth = aiohttp.BasicAuth("", self.__password)
+        auth = aiohttp.BasicAuth("", self.__password) if self.__password is not None else None
         session = aiohttp.ClientSession(headers=headers, auth=auth)
         return session
 
