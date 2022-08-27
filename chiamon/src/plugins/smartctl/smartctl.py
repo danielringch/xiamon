@@ -53,7 +53,7 @@ class Smartctl(Plugin):
             else:
                 config = 'default'
             message.append(f'Found drive {identifier} {alias} at {device} with {config} limits.')
-        await self.send(Plugin.Channel.debug, '\n'.join(message) if len(drives) > 0 else 'No drives found.')     
+        await self.send(Plugin.Channel.debug, '\n'.join(message) if len(message) > 0 else 'No drives found.')     
 
     async def run(self):
         drives =  self.__get_drives()
