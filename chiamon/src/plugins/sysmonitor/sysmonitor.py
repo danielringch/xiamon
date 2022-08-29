@@ -25,9 +25,9 @@ class Sysmonitor(Plugin):
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('* * * * *', 'interval')[0])
 
     async def check(self):
-        load = await self.__check_resource('load', self.__get_load)
-        ram = await self.__check_resource('ram', self.__get_ram_usage)
-        swap = await self.__check_resource('swap', self.__get_swap_usage)
+        load = self.__check_resource('load', self.__get_load)
+        ram = self.__check_resource('ram', self.__get_ram_usage)
+        swap = self.__check_resource('swap', self.__get_swap_usage)
 
         resource_strings = []
 
@@ -39,9 +39,9 @@ class Sysmonitor(Plugin):
             resource_strings.append(f'{self.__prefixes["swap"]}: {swap:.0f} %')
 
         if len(resource_strings) == 0:
-            await self.send(Plugin.Channel.debug, 'No resources to monitor.')
+            self.send(Plugin.Channel.debug, 'No resources to monitor.')
         else:
-            await self.send(Plugin.Channel.debug, ' | '.join(resource_strings))
+            self.send(Plugin.Channel.debug, ' | '.join(resource_strings))
 
     def __add_resource(self, config, key, mute_interval):
         if key not in config:
@@ -49,7 +49,7 @@ class Sysmonitor(Plugin):
         self.__evaluators[key] = Resourceevaluator(config[key])
         self.__alerts[key] = Alert(super(Sysmonitor, self), mute_interval)
 
-    async def __check_resource(self, key, getter):
+    def __check_resource(self, key, getter):
         if key not in self.__evaluators:
             return None
         evaluator = self.__evaluators[key]
@@ -57,9 +57,9 @@ class Sysmonitor(Plugin):
         prefix = self.__prefixes[key]
         evaluator.update(percent)
         if evaluator.treshold_exceeded:
-            await self.__alerts[key].send(f'{prefix} is high: {percent:.2f} avg.')
+            self.__alerts[key].send(f'{prefix} is high: {percent:.2f} avg.')
         else:
-            await self.__alerts[key].reset(f'{prefix} is under treshold again.')
+            self.__alerts[key].reset(f'{prefix} is under treshold again.')
         return percent
 
 

@@ -30,7 +30,7 @@ class Flexpool(Plugin):
 
     async def summary(self):
         now = datetime.datetime.now()
-        await self.send(Plugin.Channel.debug, f'Creating summary for address {self.__address}.')
+        self.send(Plugin.Channel.debug, f'Creating summary for address {self.__address}.')
         async with aiohttp.ClientSession() as session:
             balance_task = self.__get_balance(session)
             workers_task = self.__get_worker_status(session)
@@ -39,14 +39,14 @@ class Flexpool(Plugin):
         open_xch = balance[0]
         open_money = balance[1]
         if open_xch is None or workers is None or payments is None:
-            await self.send(Plugin.Channel.info, 'The following summary is incomplete, since one or more requests failed.')
+            self.send(Plugin.Channel.info, 'The following summary is incomplete, since one or more requests failed.')
         else:
             self.__last_summary = now
         if open_xch is not None:
             message = (
                 f'Open balance: {open_xch} XCH ({open_money} {self.__currency})'
             )
-            await self.send(Plugin.Channel.info, message)
+            self.send(Plugin.Channel.info, message)
         if workers is not None:
             for worker in workers:
                 if self.__ignore_worker(worker.name):
@@ -56,20 +56,20 @@ class Flexpool(Plugin):
                     f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB\n'
                     f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
                 )
-                await self.send(Plugin.Channel.info, message)
+                self.send(Plugin.Channel.info, message)
         if payments is not None:
             if len(payments) == 0:
-                await self.send(Plugin.Channel.info, 'No new payments available')
+                self.send(Plugin.Channel.info, 'No new payments available')
             else:
                 for payment in payments:
                     message = (
                         f'Payment: {payment.value} XCH\n'
                         f'On {payment.timestamp} after {payment.duration:.1f} d'
                     )
-                    await self.send(Plugin.Channel.info, message)    
+                    self.send(Plugin.Channel.info, message)    
 
     async def check(self):
-        await self.send(Plugin.Channel.debug, f'Checking status for workers {",".join(self.__offline_alerts.keys())}.')
+        self.send(Plugin.Channel.debug, f'Checking status for workers {",".join(self.__offline_alerts.keys())}.')
         async with aiohttp.ClientSession() as session:
             workers = await self.__get_worker_status(session)
             if workers is None:
@@ -82,9 +82,9 @@ class Flexpool(Plugin):
                         self.__offline_mute_interval, self.__offline_tolerance)
                 alert = self.__offline_alerts[worker.name]
                 if not worker.online:
-                    await alert.send(f'Worker {worker.name} is offline.')
+                    alert.send(f'Worker {worker.name} is offline.')
                     continue
-                await alert.reset(f'Worker {worker.name} is online again.')
+                alert.reset(f'Worker {worker.name} is online again.')
 
     def __ignore_worker(self, name):
         if self.__worker_whitelist is not None and name not in self.__worker_whitelist:
@@ -140,30 +140,30 @@ class Flexpool(Plugin):
                 data =  await response.json()
         except asyncio.TimeoutError as e_timeout:
             if retry < self.__connection_retry:
-                await self.send(Plugin.Channel.debug, f'Retrying request {cmd} after timeout.')
+                self.send(Plugin.Channel.debug, f'Retrying request {cmd} after timeout.')
                 await asyncio.sleep(5)
                 return await self.__get(session, cmd, params, retry + 1)
             else:
-                await self.__handle_connection_error(False, cmd, f'Request {cmd}: timeout')
+                self.__handle_connection_error(False, cmd, f'Request {cmd}: timeout')
                 return None
         except Exception as e:
-            await self.__handle_connection_error(False, cmd, f'Request {cmd}: {repr(e)}')
+            self.__handle_connection_error(False, cmd, f'Request {cmd}: {repr(e)}')
             return None
         if data['error'] is not None:
-            await self.__handle_connection_error(False, cmd, f'Request {cmd}: {data["error"]}')
+            self.__handle_connection_error(False, cmd, f'Request {cmd}: {data["error"]}')
             return None
-        await self.__handle_connection_error(True, cmd, f'Request {cmd} successful again.')
+        self.__handle_connection_error(True, cmd, f'Request {cmd} successful again.')
         return data['result']
 
-    async def __handle_connection_error(self, success, cmd, message):
+    def __handle_connection_error(self, success, cmd, message):
         if cmd not in self.__connection_alerts:
             self.__connection_alerts[cmd] = Alert(super(Flexpool, self),
                 self.__connection_mute_interval, self.__connection_tolerance)
         alert = self.__connection_alerts[cmd]
         if success:
-            await alert.reset(message)
+            alert.reset(message)
         else:
-            await alert.send(message)
+            alert.send(message)
 
     class WorkerStatus:
         def __init__(self, json):

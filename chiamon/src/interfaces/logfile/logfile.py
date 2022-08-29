@@ -33,7 +33,7 @@ class Logfile(Interface):
         channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
         print(f'[logfile] Logfile ready, available channels: {channels}')
 
-    async def send_message(self, channel, sender, message):
+    def send_message(self, channel, sender, message):
         if channel not in self.__channels:
             return
         self.__channels[channel].send(sender, message)

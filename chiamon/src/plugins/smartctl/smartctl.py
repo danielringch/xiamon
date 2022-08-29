@@ -53,7 +53,7 @@ class Smartctl(Plugin):
             else:
                 config = 'default'
             message.append(f'Found drive {identifier} {alias} at {device} with {config} limits.')
-        await self.send(Plugin.Channel.debug, '\n'.join(message) if len(message) > 0 else 'No drives found.')     
+        self.send(Plugin.Channel.debug, '\n'.join(message) if len(message) > 0 else 'No drives found.')     
 
     async def run(self):
         drives =  self.__get_drives()
@@ -77,7 +77,7 @@ class Smartctl(Plugin):
                 except KeyError:
                     alias = snapshot.identifier
                 alert = self.__attribute_alerts[snapshot.identifier][error_key]
-                await alert.send(f'{alias}: {error_message}')
+                alert.send(f'{alias}: {error_message}')
 
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)

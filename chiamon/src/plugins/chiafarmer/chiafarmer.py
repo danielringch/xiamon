@@ -42,55 +42,55 @@ class Chiafarmer(Plugin):
         await asyncio.gather(farmer_task, harvester_task)
 
     async def evaluate(self):
-        await self.__history.cleanup()
+        self.__history.cleanup()
         factor_short = self.__history.get_factor(whole_day=False)
         factor_long = self.__history.get_factor(whole_day=True)
-        await self.__history.save()
+        self.__history.save()
 
         if factor_short is not None:
             if factor_short < self.__threshold_short:
-                await self.send(Plugin.Channel.alert, f"Short time harvest factor is below treshold, factor={factor_short}.")
+                self.send(Plugin.Channel.alert, f"Short time harvest factor is below treshold, factor={factor_short}.")
             else:
-                await self.send(Plugin.Channel.debug, f"Current harvest factor: {factor_short}.")
+                self.send(Plugin.Channel.debug, f"Current harvest factor: {factor_short}.")
 
         if factor_long is not None:
             if factor_long < self.__threshold_long:
-                await self.__underharvested_alert.send(f'Harvest factor is below treshold, factor={factor_long}.')
+                self.__underharvested_alert.send(f'Harvest factor is below treshold, factor={factor_long}.')
             else:
-                await self.__underharvested_alert.reset(f'Harvest factor is above treshold again.')
+                self.__underharvested_alert.reset(f'Harvest factor is above treshold again.')
 
     async def summary(self):
-        await self.send(Plugin.Channel.debug, 'Create summary.')
+        self.send(Plugin.Channel.debug, 'Create summary.')
         factor = self.__history.get_factor()
         if factor is None:
-            await self.send(Plugin.Channel.info, 'No harvest factor available.')
+            self.send(Plugin.Channel.info, 'No harvest factor available.')
         else:
             factor *= 100.0
-            await self.send(Plugin.Channel.info, f'Average harvest factor: {factor:.2f}%.')
+            self.send(Plugin.Channel.info, f'Average harvest factor: {factor:.2f}%.')
 
     async def __check_farmer(self):
         if self.__farmer_rpc is None:
             return
-        await self.send(Plugin.Channel.debug, 'Checking farmer state.')
+        self.send(Plugin.Channel.debug, 'Checking farmer state.')
         async with aiohttp.ClientSession() as session:
             await self.__get_signage_points(session)
 
     async def __check_harvester(self):
         if self.__harvester_rpc is None:
             return
-        await self.send(Plugin.Channel.debug, 'Checking harvester.')
+        self.send(Plugin.Channel.debug, 'Checking harvester.')
         async with aiohttp.ClientSession() as session:
             failed, not_found = await self.__get_plots(session)
         if failed is None:
             return
         failed_diff = failed - self.__failed_plots
         for failed_plot in failed_diff:
-            await self.__plot_error_alert.send(f'Failed to open plot: {failed_plot}')
+            self.__plot_error_alert.send(f'Failed to open plot: {failed_plot}')
         self.__failed_plots = failed
 
         not_found_diff = not_found - self.__not_found_plots
         for not_found_plot in not_found_diff:
-            await self.__plot_error_alert.send(f'Plot not found: {not_found_plot}')
+            self.__plot_error_alert.send(f'Plot not found: {not_found_plot}')
         self.__not_found_plots = not_found
 
     async def __get_signage_points(self, session):

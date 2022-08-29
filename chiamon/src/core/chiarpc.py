@@ -17,17 +17,17 @@ class Chiarpc:
                 response.raise_for_status()
                 data = await response.json()
         except Exception as e:
-            await self.__handle_connection_error(False, 'exception', cmd, f'Command {cmd}: {str(e)}')
+            self.__handle_connection_error(False, 'exception', cmd, f'Command {cmd}: {str(e)}')
             return None
         if data['success'] != True and data['success'] != 'true':
-            await self.__handle_connection_error(False, 'nosuccess', cmd, f'Command {cmd} returned no success.')
+            self.__handle_connection_error(False, 'nosuccess', cmd, f'Command {cmd} returned no success.')
             return None
-        await self.__handle_connection_error(True, None, cmd, None)
+        self.__handle_connection_error(True, None, cmd, None)
         return data
 
-    async def __handle_connection_error(self, success, key, cmd, message):
+    def __handle_connection_error(self, success, key, cmd, message):
         alert = self.__rpc_failed_alerts.setdefault(cmd, Alert(self.__plugin, self.__mute_interval))
         if success:
-            await alert.reset(f'Command {cmd} was successful again.')
+            alert.reset(f'Command {cmd} was successful again.')
         else:
-            await alert.send(message, key)
+            alert.send(message, key)

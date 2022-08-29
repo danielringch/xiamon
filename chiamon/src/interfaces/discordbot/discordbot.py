@@ -27,8 +27,8 @@ class Discordbot(Interface):
         channels = ','.join(self.channel_names[x] for x in self.__worker.bot.channels)
         print(f'[discordbot] Discord bot {self.__worker.bot.user} ready, available channels: {channels}')
 
-    async def send_message(self, channel, sender, message):
-        await self.__worker.bot.send_message(channel, sender, message)
+    def send_message(self, channel, sender, message):
+        self.__worker.bot.send_message(channel, sender, message)
 
     class Channel:
         def __init__(self, client, id, whitelist, blacklist):
@@ -42,7 +42,7 @@ class Discordbot(Interface):
         def activate(self):
             self.__channel = self.__client.get_channel(self.__id)
 
-        async def send(self, sender, message):
+        def send(self, sender, message):
             if self.__whitelist is not None and sender not in self.__whitelist:
                 return
             if self.__blacklist is not None and sender in self.__blacklist:
@@ -104,10 +104,10 @@ class Discordbot(Interface):
         async def before_flusher(self):
             await self.wait_until_ready()
 
-        async def send_message(self, channel, sender, message):
+        def send_message(self, channel, sender, message):
             if channel not in self.__channels:
                 return
-            await self.__channels[channel].send(sender, message)
+            self.__channels[channel].send(sender, message)
 
         @property
         def ready(self):

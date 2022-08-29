@@ -20,7 +20,7 @@ class Flexfarmer(Plugin):
         scheduler.add_job(name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
 
     async def run(self):
-        await self.send(Plugin.Channel.debug, f'Creating summary from {self.__file}.')
+        self.send(Plugin.Channel.debug, f'Creating summary from {self.__file}.')
         oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=self.__aggregation)
         parser = Flexfarmer.Parser(oldest_timestamp)
 
@@ -45,15 +45,13 @@ class Flexfarmer(Plugin):
         for category, partials in sorted(parser.lookup_times.items(), key=lambda x: x[0]):
             message = self.__add_statistic(message, f'Lookup time < {category + 1}s', partials)
 
-        sending_tasks = self.send(Plugin.Channel.info, message)
+        self.send(Plugin.Channel.info, message)
 
         self.__write_errors(parser.error_lines)
         self.__write_errors(parser.unknown_error_lines, 'unknown_')
 
         if self.__cleanup:
             open(self.__file, 'w').close()
-
-        await sending_tasks
 
     def __add_statistic(self, message, header, value):
         if value:

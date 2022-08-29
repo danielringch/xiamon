@@ -1,4 +1,4 @@
-import croniter, datetime, asyncio, traceback
+import croniter, datetime, traceback
 from collections import namedtuple
 from .interface import Interface
 
@@ -21,9 +21,9 @@ class Scheduler:
     async def start(self, interfaces):
         self.__interfaces.extend(interfaces)
         for job in self.__jobs.values():
-            await self.__print(Interface.Channel.debug, f'Job {job.name}; next execution: {job.next}')
+            self.__print(Interface.Channel.debug, f'Job {job.name}; next execution: {job.next}')
         for startup_job in self.__startup_jobs:
-            await self.__print(Interface.Channel.debug, f'Running startup job {startup_job.name}.')
+            self.__print(Interface.Channel.debug, f'Running startup job {startup_job.name}.')
             await self.__try_run(startup_job)
             
     def add_job(self, name, func, interval):
@@ -36,7 +36,7 @@ class Scheduler:
         if job in self.__jobs:
             await self.__try_run(self.__jobs[job])
         else:
-            await self.__print(Interface.Channel.error, f'Job {job} not found.')
+            self.__print(Interface.Channel.error, f'Job {job} not found.')
 
     async def run(self):
         time = datetime.datetime.now()
@@ -51,10 +51,8 @@ class Scheduler:
         except Exception as e:
             trace = traceback.format_exc()
             message = f'Job {job.name} failed:\n{repr(e)}\n{trace}'
-            await self.__print(Interface.Channel.error, message)
+            self.__print(Interface.Channel.error, message)
 
-    async def __print(self, channel, message):
-        tasks = []
+    def __print(self, channel, message):
         for interface in self.__interfaces:
-            tasks.append(interface.send_message(channel, 'scheduler', message))
-        await asyncio.gather(*tasks)
+            interface.send_message(channel, 'scheduler', message)

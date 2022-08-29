@@ -22,18 +22,18 @@ class Chianode(Plugin):
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
 
     async def check(self):
-        await self.send(Plugin.Channel.debug, 'Checking sync state.')
+        self.send(Plugin.Channel.debug, 'Checking sync state.')
         async with aiohttp.ClientSession() as session:
             state = await NodeSyncState.create(self.__rpc, session)
             if not state.available or (not state.synced and state.height is None):
-                await self.__node_unsynced_alert.send('Full node stalled.', 'stalled')
+                self.__node_unsynced_alert.send('Full node stalled.', 'stalled')
             elif state.synced:
-                await self.__node_unsynced_alert.reset('Full node synced again.')
+                self.__node_unsynced_alert.reset('Full node synced again.')
             else:
-                await self.__node_unsynced_alert.send(f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
+                self.__node_unsynced_alert.send(f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
 
     async def summary(self):
-        await self.send(Plugin.Channel.debug, f'Creating summary.')
+        self.send(Plugin.Channel.debug, f'Creating summary.')
         async with aiohttp.ClientSession() as session:
             state = await NodeSyncState.create(self.__rpc, session)
             connections = await Nodeconnections.create(self.__rpc, session, state.peak)
@@ -44,7 +44,7 @@ class Chianode(Plugin):
                 message = f'Full node syncing: {state.height}/{state.peak}.'
             else:
                 message = f'Full node not synced.'
-            await self.send(Plugin.Channel.info, message)
+            self.send(Plugin.Channel.info, message)
             if connections.available:
                 message = (
                     f'Connected full nodes: {connections.synced + connections.syncing + connections.unknown}\n'
@@ -52,6 +52,6 @@ class Chianode(Plugin):
                     f'Wallets: {connections.wallets}\n'
                     f'Other node types: {connections.other}'
                 )
-                await self.send(Plugin.Channel.info, message)
+                self.send(Plugin.Channel.info, message)
         else:
-            await self.send(Plugin.Channel.info, f'No summary created, since node is not available.')
+            self.send(Plugin.Channel.info, f'No summary created, since node is not available.')

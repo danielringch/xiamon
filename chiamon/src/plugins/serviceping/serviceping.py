@@ -41,10 +41,10 @@ class Serviceping(Plugin):
             alert  = self.__alerts[name]
             if not online:
                 self.__failed_pings[name] += 1
-                await alert.send(f'Service {name} is offline.')
+                alert.send(f'Service {name} is offline.')
             else:
                 self.__successful_pings[name] += 1
-                await alert.reset(f'Service {name} is online again.')
+                alert.reset(f'Service {name} is online again.')
 
     async def summary(self):
         lines = []
@@ -52,7 +52,7 @@ class Serviceping(Plugin):
             lines.append(f'{checker}: {self.__successful_pings[checker]} ping successful, {self.__failed_pings[checker]} failed.')
             self.__successful_pings[checker] = 0
             self.__failed_pings[checker] = 0
-        await self.send(Plugin.Channel.info, '\n'.join(lines))
+        self.send(Plugin.Channel.info, '\n'.join(lines))
         
     class Chia:
         def __init__(self, plugin, config, mute_interval):
