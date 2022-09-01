@@ -22,29 +22,29 @@ class Siaautoprice:
         self.__updaters.append(Siaautoprice.SectorUpdater(self.__coinprice, config.data['autoprice']['sector_access']))
         self.__updaters.append(Siaautoprice.RpcUpdater(self.__coinprice, config.data['autoprice']['base_rpc']))
 
-    async def summary(self, host, storage, wallet):
-        collateral_reserve = self.__get_collateral_reserve(host, storage, wallet)
-        await self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
+    def summary(self, storage, wallet, locked_collateral):
+        collateral_reserve = self.__get_collateral_reserve(storage, wallet, locked_collateral)
+        self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
 
-    async def update(self, host, storage, wallet):
+    async def update(self, host, storage, wallet, locked_collateral):
         debug_message = []
         info_message = []
         report_message = []
         prices = {}
 
         if not await self.__coinprice.update():
-            await self.__plugin.send(Plugin.Channel.alert, 'Price update failed, no coin price available.')
+            self.__plugin.send(Plugin.Channel.alert, 'Price update failed, no coin price available.')
             return
 
         debug_message.append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency.upper()} / SC')
 
         collateral_reserve = max(self.__minimum_collateral_reserve, 
             min(self.__target_collateral_reserve, 
-                self.__get_collateral_reserve(host, storage, wallet)))
+                self.__get_collateral_reserve(storage, wallet, locked_collateral)))
         range_percent = (collateral_reserve - self.__minimum_collateral_reserve) / \
             (self.__target_collateral_reserve - self.__minimum_collateral_reserve)
         collateral_factor = round(((1 - range_percent) * self.__minimum_collateral_factor) + (range_percent * self.__maximum_collateral_factor), 2)
-        await self.__plugin.send(Plugin.Channel.debug, (
+        self.__plugin.send(Plugin.Channel.debug, (
             f'Collateral reserve: {collateral_reserve} % in range {self.__minimum_collateral_reserve} % .. {self.__target_collateral_reserve} %\n'
             f'New collateral factor: {collateral_factor} in range {self.__minimum_collateral_factor} .. {self.__maximum_collateral_factor}'))
         self.__collateral_updater.target = self.__storage_price * collateral_factor
@@ -60,11 +60,11 @@ class Siaautoprice:
                 debug_message.append(f'Setting host parameter {key} to {value}')
                 prices[key] = value
 
-        await self.__plugin.send(Plugin.Channel.report, '\n'.join(report_message))
+        self.__plugin.send(Plugin.Channel.report, '\n'.join(report_message))
         if len(info_message) > 0:
-            await self.__plugin.send(Plugin.Channel.info, '\n'.join(info_message))
+            self.__plugin.send(Plugin.Channel.info, '\n'.join(info_message))
         if len(debug_message) > 0:
-            await self.__plugin.send(Plugin.Channel.debug, '\n'.join(debug_message))
+            self.__plugin.send(Plugin.Channel.debug, '\n'.join(debug_message))
         if len(prices) == 0:
             return
 
@@ -73,12 +73,12 @@ class Siaautoprice:
                 await self.__api.post(session, 'host', prices)
             except Exception as e:
                 print(e)
-                await self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
+                self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
                 return None
 
-    def __get_collateral_reserve(self, host, storage, wallet):
+    def __get_collateral_reserve(self, storage, wallet, locked_collateral):
         used_factor = storage.used_space / storage.total_space
-        locked_factor = host.lockedcollateral / (host.lockedcollateral + wallet.balance + wallet.pending)
+        locked_factor = locked_collateral / (locked_collateral + wallet.balance + wallet.pending)
         return round(100 * ((used_factor / locked_factor) - 1))
 
     class Updater:

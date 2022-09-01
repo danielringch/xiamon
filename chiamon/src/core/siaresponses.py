@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from .conversions import Conversions
 
 class Siaconsensusdata:
@@ -47,9 +46,6 @@ class Siahostdata:
         self.__rpcprice = Conversions.hasting_to_siacoin(int(json['internalsettings']['minbaserpcprice']))
         self.__contracts = json['financialmetrics']['contractcount']
         self.__collateralbudget = Conversions.hasting_to_siacoin(int(json['internalsettings']['collateralbudget']))
-        self.__lockedcollateral = Conversions.hasting_to_siacoin(int(json['financialmetrics']['lockedstoragecollateral']))
-        self.__riskedcollateral = Conversions.hasting_to_siacoin(int(json['financialmetrics']['riskedstoragecollateral']))
-        self.__lostcollateral = Conversions.hasting_to_siacoin(int(json['financialmetrics']['loststoragecollateral']))
         self.__storagerevenue = Conversions.hasting_to_siacoin(int(json['financialmetrics']['storagerevenue']))
         self.__downloadrevenue = Conversions.hasting_to_siacoin(int(json['financialmetrics']['downloadbandwidthrevenue']))
         self.__uploadrevenue = Conversions.hasting_to_siacoin(int(json['financialmetrics']['uploadbandwidthrevenue']))
@@ -98,18 +94,6 @@ class Siahostdata:
     @property
     def collateralbudget(self):
         return self.__collateralbudget
-
-    @property
-    def lockedcollateral(self):
-        return self.__lockedcollateral
-
-    @property
-    def riskedcollateral(self):
-        return self.__riskedcollateral
-
-    @property
-    def lostcollateral(self):
-        return self.__lostcollateral
 
     @property
     def storagerevenue(self):
@@ -178,7 +162,6 @@ class Siastoragedata:
         @property
         def used_space(self):
             return self.__used
-    
 
 class Siacontractsdata:
     def __init__(self, json):
@@ -191,16 +174,18 @@ class Siacontractsdata:
        return self.__contracts 
 
     class Contract:
+
         def __init__(self, json):
             self.__datasize = int(json['datasize'])
             self.__locked_collateral = Conversions.hasting_to_siacoin(int(json['lockedcollateral']))
             self.__risked_collateral = Conversions.hasting_to_siacoin(int(json['riskedcollateral']))
             self.__storage_revenue = Conversions.hasting_to_siacoin(int(json['potentialstoragerevenue']))
-            self.__upload_revenue = Conversions.hasting_to_siacoin(int(json['potentialuploadrevenue']))
-            self.__download_revenue = Conversions.hasting_to_siacoin(int(json['potentialdownloadrevenue']))
+            self.__io_revenue = Conversions.hasting_to_siacoin(int(json['potentialuploadrevenue'])) + \
+                Conversions.hasting_to_siacoin(int(json['potentialdownloadrevenue']))
+            self.__ephemeral_revenue = Conversions.hasting_to_siacoin(int(json['potentialaccountfunding']))
             self.__start = int(json['negotiationheight'])
-            self.__end = int(json['expirationheight'])
-            self.__proof_deadline = int(json['proofdeadline'])
+            self.__end = int(json['proofdeadline'])
+            self.__proof_success = json['obligationstatus'] == 'obligationSucceeded'
 
         @property
         def datasize(self):
@@ -219,12 +204,12 @@ class Siacontractsdata:
             return self.__storage_revenue
 
         @property
-        def upload_revenue(self):
-            return self.__upload_revenue
+        def io_revenue(self):
+            return self.__io_revenue
 
         @property
-        def download_revenue(self):
-            return self.__download_revenue
+        def ephemeral_revenue(self):
+            return self.__ephemeral_revenue
 
         @property
         def start(self):
@@ -235,6 +220,5 @@ class Siacontractsdata:
             return self.__end
 
         @property
-        def proof_deadline(self):
-            return self.__proof_deadline
-
+        def proof_success(self):
+            return self.__proof_success

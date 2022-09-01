@@ -9,7 +9,7 @@ password: <password>
 recent_intervall: <hours>
 history: <file>
 currency: <eur/usd>
-minimum_available_balance: <percent>
+minimum_available_balance: <siacoin>
 autoprice:
     currency: <eur/usd>
     contract: <siacoin>

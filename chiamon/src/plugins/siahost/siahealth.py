@@ -11,29 +11,27 @@ class Siahealth:
         self.__wallet_locked_alert = Alert(plugin, mute_interval)
         self.__low_unlocked_balance_alert = Alert(plugin, mute_interval)
 
-    async def check(self, consensus, host, wallet):
+    def check(self, consensus, host, wallet):
         if not consensus.synced:
-            await self.__unsync_alert.send(f'Sia node is not synced, height {consensus.height}')
+            self.__unsync_alert.send(f'Sia node is not synced, height {consensus.height}')
         else:
-            await self.__unsync_alert.reset('Sia node is synced again.')
+            self.__unsync_alert.reset('Sia node is synced again.')
 
         if wallet.unlocked:
-            await self.__wallet_locked_alert.reset('Wallet is unlocked again.')
+            self.__wallet_locked_alert.reset('Wallet is unlocked again.')
         else:
-            await self.__wallet_locked_alert.send('Wallet is locked.')
+            self.__wallet_locked_alert.send('Wallet is locked.')
 
-        free_balance = wallet.balance + wallet.pending
-        locked_balance = host.lockedcollateral
-        available_percent = 100 * free_balance / (free_balance + locked_balance)
-        if available_percent < self.__minimum_available_balance:
-            await self.__low_unlocked_balance_alert.send(f'Available balance is low: {available_percent:.0f} %')
+        available_balance = wallet.balance + wallet.pending
+        if available_balance < self.__minimum_available_balance:
+            self.__low_unlocked_balance_alert.send(f'Available balance is low: {available_balance:.0f} SC')
         else:
-            await self.__low_unlocked_balance_alert.reset('Available balance is above treshold again.')
+            self.__low_unlocked_balance_alert.reset('Available balance is above treshold again.')
 
-    async def summary(self, consensus, host, wallet):
+    def summary(self, consensus, host, wallet):
         message = (
             f'Synced: {consensus.synced} @{consensus.height}\n'
             f'Accepting contracts: {host.accepting}\n'
             f'Wallet unlocked: {wallet.unlocked}'
         )
-        await self.__plugin.send(Plugin.Channel.info, message)
+        self.__plugin.send(Plugin.Channel.info, message)

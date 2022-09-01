@@ -10,10 +10,10 @@ class Siawallet:
         currency, _ = config.get_value_or_default('usd', 'currency')
         self.__coinprice = Coinprice('siacoin', currency)
 
-    async def summary(self, host, storage, wallet):
+    async def summary(self, wallet, locked_collateral, risked_collateral):
         free = round(wallet.balance + wallet.pending)
-        locked = round(host.lockedcollateral)
-        risked = round(host.riskedcollateral)
+        locked = round(locked_collateral)
+        risked = round(risked_collateral)
         balance = free + locked
 
         await self.__coinprice.update()
@@ -24,12 +24,12 @@ class Siawallet:
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
         )
-        await self.__plugin.send(Plugin.Channel.info, message)
+        self.__plugin.send(Plugin.Channel.info, message)
             
-    async def dump(self, host, wallet):
+    async def dump(self, wallet, locked_collateral, risked_collateral):
         free = round(wallet.balance + wallet.pending)
-        locked = round(host.lockedcollateral)
-        risked = round(host.riskedcollateral)
+        locked = round(locked_collateral)
+        risked = round(risked_collateral)
         balance = free + locked
 
         await self.__coinprice.update()
@@ -40,7 +40,7 @@ class Siawallet:
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
         )
-        await self.__plugin.send(Plugin.Channel.report, message)
+        self.__plugin.send(Plugin.Channel.report, message)
 
         yesterday_balance = self.__history.get_balance(date.today() - timedelta(days=1))
         if yesterday_balance is None:
