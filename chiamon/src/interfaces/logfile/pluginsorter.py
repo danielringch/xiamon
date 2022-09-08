@@ -38,8 +38,7 @@ class Pluginsorter:
 
     def __write_day_header(self, file):
         file.write(
-            f'{"#"*120}\n'
+            f'{"~"*120}\n'
             f'{"#"*54} {datetime.datetime.now().strftime("%d.%m.%Y")} {"#"*54}\n'
-            f'{"#"*120}\n'
         )
 
