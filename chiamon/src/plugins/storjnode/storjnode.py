@@ -1,5 +1,5 @@
 from typing import overload
-from ...core import Plugin, Alert, Storjapi, Storjnodedata, Config, Byteunit
+from ...core import Plugin, Alert, Storjapi, Storjnodedata, Config, Conversions
 
 class Storjnode(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -48,14 +48,10 @@ class Storjnode(Plugin):
             else:
                 self.__suspended_alert.reset('Node is no longer suspended for any satellite.')
 
-            overused_space = data.overused_space(Byteunit.b)
-            if overused_space > 0:
-                self.__overused_alert.send(f'Node overuses {overused_space} bytes storage.')
+            if data.overused_space > 0:
+                self.__overused_alert.send(f'Node overuses {data.overused_space} bytes storage.')
             else:
                 self.__overused_alert.reset('Node does no longer overuse storage.')
-
-            self.__print_traffic(data, Plugin.Channel.debug)
-            self.__print_usage(data, Plugin.Channel.debug)
 
     async def summary(self):
         json = await self.__request('sno')
@@ -65,18 +61,22 @@ class Storjnode(Plugin):
             self.__print_usage(data, Plugin.Channel.info)
     
     def __print_traffic(self, data, channel):
-        traffic = data.traffic(Byteunit.gb)
-        self.send(channel, f'Traffic: {traffic:.0f} GB')
+        traffic = Conversions.byte_to_auto(data.traffic, binary=False)
+        self.send(channel, f'Traffic: {traffic[0]:.2f} {traffic[1]}')
 
     def __print_usage(self, data, channel):
-        total_space = data.total_space(Byteunit.gb)
-        used_space = data.used_space(Byteunit.gb)
-        trash_space = data.trash_space(Byteunit.gb)
+        total_space = data.total_space
+        used_space = data.used_space
+        trash_space = data.trash_space
 
-        used_percent = (used_space + trash_space) / total_space * 100.0
+        used_percent = used_space / total_space * 100.0
         trash_percent = trash_space / (used_space + trash_space) * 100.0
 
-        self.send(channel, f'Memory usage: {used_space:.0f} GB ({used_percent:.2f} %) [{trash_space:.2f} GB trash ({trash_percent:.2f} %)]')
+        used_space = Conversions.byte_to_auto(used_space, binary=False)
+        trash_space = Conversions.byte_to_auto(trash_space, binary=False)
+
+        self.send(channel, f'Memory usage: {used_space[0]:.2f} {used_space[1]} ({used_percent:.1f} %)')
+        self.send(channel, f'Trash: {trash_space[0]:.2f} {trash_space[1]} ({trash_percent:.2f} %)')
 
     async def __request(self, cmd):
         alert = self.__request_alerts[cmd]
