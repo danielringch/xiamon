@@ -38,6 +38,7 @@ class Discordbot(Interface):
             self.__whitelist = set(whitelist) if whitelist is not None else None
             self.__blacklist = set(blacklist) if blacklist is not None else None
             self.__buffer = Queue(maxsize=100)
+            self.__last_sender = None
 
         def activate(self):
             self.__channel = self.__client.get_channel(self.__id)
@@ -47,7 +48,9 @@ class Discordbot(Interface):
                 return
             if self.__blacklist is not None and sender in self.__blacklist:
                 return
-            message = f'{sender} {message}'
+            if sender != self.__last_sender:
+                message = f'__**{sender}**__\n{message}'
+            self.__last_sender = sender
             max_length = 2000
             size_limited_messages = [message[i:i+max_length] for i in range(0,len(message), max_length)]
             for sub_message in size_limited_messages:
