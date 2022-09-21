@@ -35,6 +35,7 @@ class Siawallet:
         await self.__coinprice.update()
         fiat_string, = self.__coinprice.to_fiat_string(balance)
         message = (
+            f'Coin price: {self.__coinprice.price:.4f} {self.__coinprice.currency}/SC\n'
             f'Balance: {balance} SC ({fiat_string})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
