@@ -1,6 +1,6 @@
 import os, subprocess, re
 from collections import defaultdict
-from ...core import Plugin, Alert, Config
+from ...core import Plugin, Alert, Config, Tablerenderer
 from .history import History
 from .smartsnapshot import SmartSnapshot
 from .attributeevaluator import AttributeEvaluator
@@ -19,11 +19,14 @@ class Smartctl(Plugin):
         self.__smartctl_call = os.path.join(smartctl_directory, f'./{smartctl_file}')
         self.__history = History(config_data.data['db'], self.__aggregation) 
 
+        self.__attributes_of_interest = set(int(x) for x in config_data.data['global_limits'].keys())
+
         self.__generic_evaluator = AttributeEvaluator(config_data.data['global_limits'], None)
         self.__custom_evaluators = {}
         if 'drives' in config_data.data:
             for drive, drive_config in config_data.data['drives'].items():
                 self.__custom_evaluators[drive] = AttributeEvaluator(config_data.data['global_limits'], drive_config)
+                self.__attributes_of_interest.union(int(x) for x in drive_config.keys())
 
         self.__aliases, _ = config_data.get_value_or_default({}, 'alias')
         self.__blacklist = set()
@@ -34,10 +37,14 @@ class Smartctl(Plugin):
         self.__attribute_alerts = defaultdict(lambda: defaultdict(lambda: Alert(super(Smartctl, self), self.__mute_interval)))
 
         scheduler.add_job(f'{name}-startup' ,self.startup, None)
-        scheduler.add_job(f'{name}-check' ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
+        scheduler.add_job(f'{name}-check' ,self.run, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
+        report_intervall, report_enabled = config_data.get_value_or_default(None, 'report_interval')
+        if report_enabled:
+            scheduler.add_job(f'{name}-report' ,self.report, report_intervall)
 
     async def startup(self):
         message = []
+        message.append(f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}')
         drives =  self.__get_drives()
         for device in drives:
             snapshot = self.__get_smart_data(device)
@@ -56,9 +63,7 @@ class Smartctl(Plugin):
         self.send(Plugin.Channel.debug, '\n'.join(message) if len(message) > 0 else 'No drives found.')     
 
     async def run(self):
-        drives =  self.__get_drives()
-
-        for device in drives:
+        for device in self.__get_drives():
             snapshot = self.__get_smart_data(device)
             if not snapshot.success or snapshot.identifier in self.__blacklist:
                 continue
@@ -79,6 +84,25 @@ class Smartctl(Plugin):
                 alert = self.__attribute_alerts[snapshot.identifier][error_key]
                 alert.send(f'{alias}: {error_message}')
 
+    async def report(self):
+        table = Tablerenderer(['Device', 'Alias'] + [str(x) for x in self.__attributes_of_interest])
+
+        snapshots = [self.__get_smart_data(x) for x in self.__get_drives()]
+        snapshots = [x for x in snapshots if (x.success and x.identifier not in self.__blacklist)]
+
+        for snapshot in sorted(snapshots, key=lambda y: y.identifier):
+            table.data['Device'].append(snapshot.identifier)
+            try:
+                alias = self.__aliases[snapshot.identifier]
+            except KeyError:
+                alias = ''
+            table.data['Alias'].append(alias)
+            for attribute, value in snapshot.attributes.items():
+                table.data[str(attribute)].append(value)
+
+        self.send(Plugin.Channel.report, table.render())
+        
+
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)
         drive_pattern = re.compile("sd\\D+$")
@@ -93,4 +117,4 @@ class Smartctl(Plugin):
 
     def __get_smart_data(self, device):
         output = subprocess.run([self.__smartctl_call,"-iA" , device], text=True, stdout=subprocess.PIPE)
-        return SmartSnapshot.from_smartctl(output.stdout)
+        return SmartSnapshot.from_smartctl(output.stdout, self.__attributes_of_interest)

@@ -124,7 +124,7 @@ class Siahost(Plugin):
             risked_collateral = 0
 
             id = 0
-            renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Locked', 'Storage', 'IO', 'Ephemeral'], 10)
+            renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Locked', 'Storage', 'IO', 'Ephemeral'])
             data = renderer.data
             for contract in sorted(contracts.contracts, key=lambda x: x.end):
                 if contract.end <= height:

@@ -8,7 +8,7 @@ class SmartSnapshot:
         self.__success = False
 
     @classmethod
-    def from_smartctl(cls, smartctl_out):
+    def from_smartctl(cls, smartctl_out, attributes_of_interest):
         instance = cls()
 
         header_found = False
@@ -31,6 +31,8 @@ class SmartSnapshot:
             elif line:
                 columns = no_whitespace_regex.findall(line)
                 id = int(columns[id_index])
+                if id not in attributes_of_interest:
+                    continue
                 try:
                     value = int(columns[value_index])
                     instance.__attributes[id] = value
