@@ -14,11 +14,14 @@ autoprice:
     currency: <eur/usd>
     contract: <siacoin>
     storage: <currency>
+    storage_max: <siacoin>
     minimum_collateral_factor: <factor>
     maximum_collateral_factor: <factor>
     minimum_collateral_reserve: <percent>
     target_collateral_reserve: <percent>
     upload: <currency>
+    upload_max: <siacoin>
     download: <currency>
+    download_max: <siacoin>
     sector_access: <siacoin>
     base_rpc: <siacoin>
