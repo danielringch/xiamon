@@ -18,9 +18,8 @@ class Chiawallet(Plugin):
 
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
 
-        self.__currency, _ = config_data.get_value_or_default('usd', 'currency')
         self.__history = Balancehistory(config_data.data['history'])
-        self.__coinprice = Coinprice('chia', self.__currency)
+        self.__coinprice = Coinprice('chia', config_data.get_value_or_default('usd', 'currency')[0])
 
         self.__yesterday_balance = None
         self.__balance = None
@@ -49,11 +48,10 @@ class Chiawallet(Plugin):
             diff = balance - self.__balance
             self.__balance = balance
             await self.__coinprice.update()
-            balance_fiat_string, delta_fiat_string = self.__coinprice.to_fiat_string(self.__balance, diff)
             message = (
                 f'Balance changed of wallet {self.__wallet_id}:\n'
-                f'delta: {diff} XCH ({delta_fiat_string})\n'
-                f'new: {self.__balance} XCH ({balance_fiat_string})'
+                f'delta: {diff} XCH ({self.__coinprice.to_fiat_string(diff)})\n'
+                f'new: {self.__balance} XCH ({self.__coinprice.to_fiat_string(self.__balance)})'
             )
             self.send(Plugin.Channel.info, message)
             self.send(Plugin.Channel.report, message)
@@ -65,9 +63,8 @@ class Chiawallet(Plugin):
                 self.send(Plugin.Channel.info, 'Balance unknown, wallet is unavailable.')
                 return
             await self.__coinprice.update()
-            fiat_string, = self.__coinprice.to_fiat_string(balance)
             self.send(Plugin.Channel.info,
-                f'Balance: {balance} XCH ({fiat_string})')
+                f'Balance: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})')
 
     async def dump(self):
         async with aiohttp.ClientSession() as session:
@@ -81,13 +78,11 @@ class Chiawallet(Plugin):
         self.__history.add_balance(date.today(), delta, balance, price)
         self.__yesterday_balance = balance
 
-        fiat_balance = balance * price
-        currency = self.__currency.upper()
         message = (
             f'Wallet {self.__wallet_id}: '
             f'{balance:.12f} XCH; '
-            f'{price:.4f} {currency}/XCH; '
-            f'{fiat_balance:.2f} {currency}\n'
+            f'{price:.4f} {self.__coinprice.currency}/XCH; '
+            f'{self.__coinprice.to_fiat_string(balance)}\n'
         )
         self.send(Plugin.Channel.report, message)
 

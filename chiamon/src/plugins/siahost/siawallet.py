@@ -1,14 +1,13 @@
 from datetime import date, timedelta
-from ...core import Plugin, Alert, Balancehistory, Coinprice
+from ...core import Plugin, Balancehistory
 
 class Siawallet:
-    def __init__(self, plugin, config):
+    def __init__(self, plugin, coinprice, config):
 
         self.__plugin = plugin
 
         self.__history = Balancehistory(config.data['history'])
-        currency, _ = config.get_value_or_default('usd', 'currency')
-        self.__coinprice = Coinprice('siacoin', currency)
+        self.__coinprice = coinprice
 
     async def summary(self, wallet, locked_collateral, risked_collateral):
         free = round(wallet.balance + wallet.pending)
@@ -16,10 +15,8 @@ class Siawallet:
         risked = round(risked_collateral)
         balance = free + locked
 
-        await self.__coinprice.update()
-        fiat_string, = self.__coinprice.to_fiat_string(balance)
         message = (
-            f'Balance: {balance} SC ({fiat_string})\n'
+            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
@@ -32,11 +29,9 @@ class Siawallet:
         risked = round(risked_collateral)
         balance = free + locked
 
-        await self.__coinprice.update()
-        fiat_string, = self.__coinprice.to_fiat_string(balance)
         message = (
-            f'Coin price: {self.__coinprice.price:.4f} {self.__coinprice.currency}/SC\n'
-            f'Balance: {balance} SC ({fiat_string})\n'
+            f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC\n'
+            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})\n'
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
             f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'

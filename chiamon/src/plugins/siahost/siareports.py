@@ -22,11 +22,8 @@ class Siareports:
         if last_execution > max_timestamp:
             last_execution = iter.get_prev(datetime)
         if last_execution > max_timestamp:
-            self.__plugin.send(Plugin.Channel.error, 'Unable to create accounting report, failed to calculate previous report time.')
+            self.__plugin.send(Plugin.Channel.error, 'Accounting failed: unabled to calculate previous report time.')
             return
-        
-        if not await self.__coinprice.update():
-            self.__plugin.send(Plugin.Channel.error, 'Unable to get coin price.')
 
         table = Tablerenderer(['Date', 'Contracts', 'Storage', 'IO', 'Ephemeral', 'Sum', 'Coinprice', 'Fiat'])
 
@@ -81,14 +78,14 @@ class Siareports:
             io += contract.io_revenue
             ephemeral += contract.ephemeral_revenue
         total = storage + io + ephemeral
-        fiat = total * self.__coinprice.price
+        fiat = self.__coinprice.to_fiat(total)
         table.data['Date'].append(date.strftime("%d.%m.%Y"))
         table.data['Contracts'].append(count)
         table.data['Storage'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(storage)))
         table.data['IO'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(io)))
         table.data['Ephemeral'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(ephemeral)))
         table.data['Sum'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(total)))
-        table.data['Coinprice'].append(f'{self.__coinprice.price} {self.__coinprice.currency}')
+        table.data['Coinprice'].append(f'{self.__coinprice.price} {self.__coinprice.currency}/SC')
         table.data['Fiat'].append(f'{fiat:.2f} {self.__coinprice.currency}')
         return self.RewardTypes(storage, io, ephemeral, total, fiat)
 

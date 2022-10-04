@@ -68,9 +68,6 @@ class Siaautoprice:
         messages = defaultdict(list)
         prices = {}
 
-        if not await self.__coinprice.update():
-            self.__plugin.send(Plugin.Channel.alert, 'Price update failed, no coin price available.')
-            return
         messages[Plugin.Channel.debug].append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency} / SC')
 
         for updater in self.__updaters.values():
