@@ -13,3 +13,8 @@ swap:
     treshold: <percent>
     hysteresis: <percent>
     samples: <number>
+temperature:
+    sensor: <path, e.g. /sys/class/thermal/thermal_zone0/temp>
+    treshold: <percent>
+    hysteresis: <percent>
+    samples: <number>

@@ -14,11 +14,14 @@ class Sysmonitor(Plugin):
 
         self.__evaluators = {}
         self.__alerts = {}
-        self.__prefixes = {'load' : 'Load', 'ram' : 'RAM usage', 'swap' : 'Swap usage'}
+        self.__prefixes = {'load' : 'Load', 'ram' : 'RAM usage', 'swap' : 'Swap usage', 'temperature' : 'Temperature'}
 
         self.__add_resource(config_data.data, 'load', mute_interval)
         self.__add_resource(config_data.data, 'ram', mute_interval)
         self.__add_resource(config_data.data, 'swap', mute_interval)
+        self.__add_resource(config_data.data, 'temperature', mute_interval)
+
+        self.__temperature_source, _ = config_data.get_value_or_default(None, 'temperature', 'sensor')
 
         self.print(f'Monitored resources: {",".join(self.__evaluators.keys())}')
 
@@ -28,6 +31,7 @@ class Sysmonitor(Plugin):
         load = self.__check_resource('load', self.__get_load)
         ram = self.__check_resource('ram', self.__get_ram_usage)
         swap = self.__check_resource('swap', self.__get_swap_usage)
+        temperature = self.__check_resource('temperature', self.__get_temperature)
 
         resource_strings = []
 
@@ -37,6 +41,8 @@ class Sysmonitor(Plugin):
             resource_strings.append(f'{self.__prefixes["ram"]}: {ram:.0f} %')
         if swap is not None:
             resource_strings.append(f'{self.__prefixes["swap"]}: {swap:.0f} %')
+        if temperature is not None:
+            resource_strings.append(f'{self.__prefixes["temperature"]}: {temperature:.1f} °C')
 
         if len(resource_strings) == 0:
             self.send(Plugin.Channel.debug, 'No resources to monitor.')
@@ -53,14 +59,14 @@ class Sysmonitor(Plugin):
         if key not in self.__evaluators:
             return None
         evaluator = self.__evaluators[key]
-        percent = getter()
+        value = getter()
         prefix = self.__prefixes[key]
-        evaluator.update(percent)
+        evaluator.update(value)
         if evaluator.treshold_exceeded:
-            self.__alerts[key].send(f'{prefix} is high: {percent:.2f} avg.')
+            self.__alerts[key].send(f'{prefix} is high: {value:.2f} avg.')
         else:
             self.__alerts[key].reset(f'{prefix} is under treshold again.')
-        return percent
+        return value
 
 
     def __get_ram_usage(self):
@@ -72,3 +78,7 @@ class Sysmonitor(Plugin):
 
     def __get_load(self):
         return psutil.getloadavg()[0]
+
+    def __get_temperature(self):
+        with open(self.__temperature_source, "r") as temp:
+            return round(float(temp.read())/1000, 1)
