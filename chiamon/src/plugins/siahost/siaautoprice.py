@@ -26,10 +26,10 @@ class Siaautoprice:
         Category.rpc : UpdaterConfig('RPC', 'minbaserpcprice', lambda x: x.rpcprice, 'SC', 10, lambda x, _: x, Conversions.siacoin_to_hasting),
     }
 
-    def __init__(self, plugin, api, config):
+    def __init__(self, plugin, api, coinprice, config):
         self.__plugin = plugin
         self.__api = api
-        self.__coinprice = Coinprice('siacoin', config.data['autoprice']['currency'])
+        self.__coinprice = coinprice
 
         contract_price = config.data['autoprice']['contract']
 
@@ -71,7 +71,7 @@ class Siaautoprice:
         if not await self.__coinprice.update():
             self.__plugin.send(Plugin.Channel.alert, 'Price update failed, no coin price available.')
             return
-        messages[Plugin.Channel.debug].append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency.upper()} / SC')
+        messages[Plugin.Channel.debug].append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency} / SC')
 
         for updater in self.__updaters.values():
             self.__trigger_updater(host, updater, prices, messages)

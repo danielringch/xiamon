@@ -2,6 +2,7 @@ name: <unique name>
 check_interval: <cron, e.g. "0 * * * *">
 summary_interval: <cron, e.g. "0 * * * *">
 list_interval: <cron, e.g. "0 * * * *">
+accounting_interval: <cron, e.g. "0 * * * *">
 price_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 host: <ip:port, usually 127.0.0.1:8555>
@@ -11,7 +12,6 @@ history: <file>
 currency: <eur/usd>
 minimum_available_balance: <siacoin>
 autoprice:
-    currency: <eur/usd>
     contract: <siacoin>
     storage: <currency>
     storage_max: <siacoin>

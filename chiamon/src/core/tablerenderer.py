@@ -4,6 +4,14 @@ class Tablerenderer:
     def __init__(self, header = []):
         self.data = defaultdict(list, { x:[] for x in header })
 
+    def reverse(self):
+        rows = max(len(x) for x in self.data.values())
+        for column in self.data.values():
+            for _ in range(len(column), rows):
+                column.append('')
+        for key in self.data.keys():
+            self.data[key] = list(reversed(self.data[key]))
+
     def render(self):
         for column in self.data.values():
             for i in range(len(column)):
@@ -11,6 +19,8 @@ class Tablerenderer:
 
         widths = {x: len(x) for x in self.data.keys()}
         for key, value in self.data.items():
+            if len(value) == 0:
+                continue
             widths[key] = max(widths[key], max(len(x) for x in value)) + 1
 
         header = [x.rjust(widths[x]) for x in self.data.keys()]

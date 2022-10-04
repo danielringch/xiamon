@@ -1,4 +1,4 @@
-from ...core import Plugin, Alert
+from ...core import Plugin, Alert, Conversions
 
 class Siahealth:
     def __init__(self, plugin, config):
@@ -10,6 +10,11 @@ class Siahealth:
         self.__unsync_alert = Alert(plugin, mute_interval)
         self.__wallet_locked_alert = Alert(plugin, mute_interval)
         self.__low_unlocked_balance_alert = Alert(plugin, mute_interval)
+
+        self.__proof_deadlines = []
+
+    def update_proof_deadlines(self, contracts):
+        self.__proof_deadlines = sorted(x.end for x in contracts.contracts)
 
     def check(self, consensus, host, wallet):
         if not consensus.synced:
@@ -27,6 +32,15 @@ class Siahealth:
             self.__low_unlocked_balance_alert.send(f'Available balance is low: {available_balance:.0f} SC')
         else:
             self.__low_unlocked_balance_alert.reset('Available balance is above treshold again.')
+
+        block_diff = None
+        for deadline in self.__proof_deadlines:
+            if deadline < consensus.height:
+                continue
+            block_diff = deadline - consensus.height
+            break
+        if block_diff is not None:
+            self.__plugin.send(Plugin.Channel.debug, f'Blocks until next proof: {block_diff} (~ {Conversions.siablocks_to_duration(block_diff)})')
 
     def summary(self, consensus, host, wallet):
         message = (
