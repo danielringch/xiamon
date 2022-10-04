@@ -1,3 +1,4 @@
+import ciso8601
 from .conversions import Conversions
 
 class Siaconsensusdata:
@@ -162,6 +163,24 @@ class Siastoragedata:
         @property
         def used_space(self):
             return self.__used
+
+class Siatrafficdata:
+    def __init__(self, json):
+        self.__start = ciso8601.parse_datetime(json['starttime'])
+        self.__download = int(json['download'])
+        self.__upload = int(json['upload'])
+
+    @property
+    def start(self):
+        return self.__start
+
+    @property
+    def download(self):
+        return self.__download
+
+    @property
+    def upload(self):
+        return self.__upload
 
 class Siacontractsdata:
     def __init__(self, json):

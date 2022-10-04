@@ -53,6 +53,11 @@ class Conversions:
         return value, unit
 
     @staticmethod
+    def bit_to_auto(bits):
+        value, prefix = Conversions.autorange(bits, 1024)
+        return value, f'{prefix}bit'
+
+    @staticmethod
     def siacoin_to_auto(siacoins):
         value, prefix = Conversions.autorange(siacoins)
         return value, f'{prefix}SC'

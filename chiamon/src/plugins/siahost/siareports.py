@@ -1,4 +1,3 @@
-from croniter import croniter
 from datetime import datetime, timedelta
 from collections import namedtuple
 
@@ -9,18 +8,15 @@ class Siareports:
 
     RewardTypes = namedtuple("RewardTypes", "storage io ephemeral total fiat")
 
-    def __init__(self, plugin, coinprice, cron):
+    def __init__(self, plugin, coinprice, scheduler):
         self.__plugin = plugin
         self.__coinprice = coinprice
-        self.__cron = cron
+        self.__scheduler = scheduler
 
     async def accounting(self, consensus, contracts):
         now = datetime.now()
-        iter = croniter(self.__cron, now)
         max_timestamp = now - timedelta(hours=1)
-        last_execution = iter.get_prev(datetime)
-        if last_execution > max_timestamp:
-            last_execution = iter.get_prev(datetime)
+        last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-accounting')
         if last_execution > max_timestamp:
             self.__plugin.send(Plugin.Channel.error, 'Accounting failed: unabled to calculate previous report time.')
             return

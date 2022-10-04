@@ -8,10 +8,10 @@ class Scheduler:
     class __bundle:
         def __init__(self, name, func, interval):
             self.name = name
+            self.cron = interval
             self.func = func
             self.iter = croniter.croniter(interval, datetime.datetime.now())
             self.next = self.iter.get_next(datetime.datetime)
-
 
     def __init__(self):
         self.__jobs = {}
@@ -38,6 +38,11 @@ class Scheduler:
         else:
             self.__print(Interface.Channel.error, f'Job {job} not found.')
 
+    def get_last_execution(self, job):
+        bundle = self.__jobs[job]
+        iter = croniter.croniter(bundle.cron, bundle.next)
+        return iter.get_prev(datetime.datetime)
+        
     async def run(self):
         time = datetime.datetime.now()
         for job in self.__jobs.values():
