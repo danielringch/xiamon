@@ -42,7 +42,6 @@ class Chiawallet(Plugin):
             balance = await self.__get_balance(session)
             if balance is None:
                 return
-            self.send(Plugin.Channel.debug, f'Wallet balance: {balance} XCH.')
             if balance == self.__balance:
                 return
             diff = balance - self.__balance

@@ -60,7 +60,6 @@ class Chiafarmer(Plugin):
                 self.__underharvested_alert.reset(f'Harvest factor is above treshold again.')
 
     async def summary(self):
-        self.send(Plugin.Channel.debug, 'Create summary.')
         factor = self.__history.get_factor()
         if factor is None:
             self.send(Plugin.Channel.info, 'No harvest factor available.')
@@ -71,14 +70,12 @@ class Chiafarmer(Plugin):
     async def __check_farmer(self):
         if self.__farmer_rpc is None:
             return
-        self.send(Plugin.Channel.debug, 'Checking farmer state.')
         async with aiohttp.ClientSession() as session:
             await self.__get_signage_points(session)
 
     async def __check_harvester(self):
         if self.__harvester_rpc is None:
             return
-        self.send(Plugin.Channel.debug, 'Checking harvester.')
         async with aiohttp.ClientSession() as session:
             failed, not_found = await self.__get_plots(session)
         if failed is None:

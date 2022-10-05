@@ -30,7 +30,6 @@ class Flexpool(Plugin):
 
     async def summary(self):
         now = datetime.datetime.now()
-        self.send(Plugin.Channel.debug, f'Creating summary for address {self.__address}.')
         async with aiohttp.ClientSession() as session:
             balance_task = self.__get_balance(session)
             workers_task = self.__get_worker_status(session)
@@ -69,7 +68,6 @@ class Flexpool(Plugin):
                     self.send(Plugin.Channel.info, message)    
 
     async def check(self):
-        self.send(Plugin.Channel.debug, f'Checking status for workers {",".join(self.__offline_alerts.keys())}.')
         async with aiohttp.ClientSession() as session:
             workers = await self.__get_worker_status(session)
             if workers is None:

@@ -33,7 +33,6 @@ class Flexfarmer(Plugin):
         scheduler.add_job(name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
 
     async def run(self):
-        self.send(Plugin.Channel.debug, f'Creating summary from {self.__file}.')
         oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=self.__aggregation)
 
         with open(self.__file, "r") as stream:

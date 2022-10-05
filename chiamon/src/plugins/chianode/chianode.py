@@ -22,7 +22,6 @@ class Chianode(Plugin):
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
 
     async def check(self):
-        self.send(Plugin.Channel.debug, 'Checking sync state.')
         async with aiohttp.ClientSession() as session:
             state = await NodeSyncState.create(self.__rpc, session)
             if not state.available or (not state.synced and state.height is None):
@@ -33,7 +32,6 @@ class Chianode(Plugin):
                 self.__node_unsynced_alert.send(f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
 
     async def summary(self):
-        self.send(Plugin.Channel.debug, f'Creating summary.')
         async with aiohttp.ClientSession() as session:
             state = await NodeSyncState.create(self.__rpc, session)
             connections = await Nodeconnections.create(self.__rpc, session, state.peak)
