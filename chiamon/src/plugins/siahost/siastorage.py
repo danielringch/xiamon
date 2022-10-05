@@ -53,14 +53,6 @@ class Siastorage:
         if len(self.__traffic_history) > 10:
             self.__traffic_history.popitem()
 
-        class x:
-            def __init__(self, y):
-                self.start = y
-                self.download = 0
-                self.upload = 0
-
-        self.__traffic_history[reference_time] = x(traffic.start)
-
         last_traffic = None
         duration = None
         for timestamp, payload in self.__traffic_history.items():
