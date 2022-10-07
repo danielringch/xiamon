@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.10.0"
+__version__ = "0.12.0"
 
 warnings.filterwarnings(
     "ignore",
