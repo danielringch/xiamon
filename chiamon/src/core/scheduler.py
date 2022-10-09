@@ -53,9 +53,17 @@ class Scheduler:
     async def run(self):
         time = datetime.datetime.now()
         for job in self.__jobs.values():
-            if job.next < time:
+            diff = (job.next - time).total_seconds()
+            if diff < 2:
                 await self.__try_run(job)
                 job.next = job.iter.get_next(datetime.datetime)
+
+        next_run = 3600
+        for job in self.__jobs.values():
+            diff = (job.next - time).total_seconds()
+            if diff < next_run:
+                next_run = diff
+        return round(next_run)
 
     async def __try_run(self, job):
         try:

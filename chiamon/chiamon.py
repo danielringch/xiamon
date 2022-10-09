@@ -82,8 +82,8 @@ async def main():
 
 async def schedule_plugins(scheduler):
     while True:
-        time.sleep(20)
-        await scheduler.run()
+        sleep_time = await scheduler.run()
+        time.sleep(sleep_time)
 
 def get_config_path(item, available_items, config, config_root_dir):
     if item not in available_items:
