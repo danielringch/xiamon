@@ -42,6 +42,13 @@ class Scheduler:
         bundle = self.__jobs[job]
         iter = croniter.croniter(bundle.cron, bundle.next)
         return iter.get_prev(datetime.datetime)
+
+    def get_current_interval(self, job):
+        bundle = self.__jobs[job]
+        now = datetime.datetime.now()
+        next_iter = croniter.croniter(bundle.cron, now)
+        prev_iter = croniter.croniter(bundle.cron, now)
+        return next_iter.get_next(datetime.datetime) - prev_iter.get_prev(datetime.datetime)
         
     async def run(self):
         time = datetime.datetime.now()

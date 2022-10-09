@@ -4,9 +4,9 @@ import ciso8601
 from ...core import Plugin
 
 class ChallengeCache:
-    def __init__(self, plugin, file, aggregation):
+    def __init__(self, plugin, file):
         self.__plugin = plugin
-        self.aggregation = aggregation
+        self.__last_cleanup = datetime.datetime.now()
         self.__file = file
         self.__current_challenge = None
         self.__challenges = dict()
@@ -25,9 +25,8 @@ class ChallengeCache:
             self.__current_challenge = ChallengeCache.Challenge(hash)
             self.__current_challenge.update(index)
 
-    def get_factor(self, whole_day=True):
-        hour_delta = self.aggregation if whole_day else 1
-        time_limit = datetime.datetime.now() - datetime.timedelta(hours=hour_delta)
+    def get_factor(self, interval):
+        time_limit = datetime.datetime.now() - interval
         oldest_timestamp = datetime.datetime.now()
 
         expected = 0
@@ -46,10 +45,10 @@ class ChallengeCache:
 
     def cleanup(self):
         old_len = len(self.__challenges)
-        oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=(self.aggregation + 1))
-        self.__challenges = {k: v for k, v in self.__challenges.items() if v.time > oldest_timestamp}
+        self.__challenges = {k: v for k, v in self.__challenges.items() if v.time > self.__last_cleanup}
         cleared = old_len - len(self.__challenges)
         self.__plugin.send(Plugin.Channel.debug, f"Cleared {cleared} item(s) from challenge cache.")
+        self.__last_cleanup = datetime.datetime.now()
 
     def save(self):
         self.__write_file()

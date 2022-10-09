@@ -1,7 +1,6 @@
 name: <unique name>
 summary_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
-aggregation: <hours>
 underharvested_threshold_short: <factor>
 underharvested_threshold_long: <factor>
 db: <path to plugin database directory>

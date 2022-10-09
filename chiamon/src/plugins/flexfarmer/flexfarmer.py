@@ -7,9 +7,11 @@ from .flexfarmerparsers import *
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('flexfarmer', 'name')
-        super(Flexfarmer, self).__init__(name, outputs)
-        self.print(f'Plugin flexfarmer; name: {name}')
+        self.__name, _ = config_data.get_value_or_default('flexfarmer', 'name')
+        super(Flexfarmer, self).__init__(self.__name, outputs)
+        self.print(f'Plugin flexfarmer; name: {self.__name}')
+
+        self.__scheduler = scheduler
 
         self.__signage_point_parser = SignagePointParser()
         self.__partial_accepted_parser = PartialAcceptedParser()
@@ -26,14 +28,13 @@ class Flexfarmer(Plugin):
         ]
 
         self.__file = config_data.data['log_path']
-        self.__aggregation, _ = config_data.get_value_or_default(24, 'aggregation')
         self.__output_path = config_data.data['output_path']
         self.__cleanup, _ = config_data.get_value_or_default(False, 'reset_logs')
 
-        scheduler.add_job(name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
+        self.__scheduler.add_job(self.__name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
 
     async def run(self):
-        oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=self.__aggregation)
+        oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
 
         with open(self.__file, "r") as stream:
             error_lines, warning_lines = self.__parse_log(stream, oldest_timestamp)

@@ -1,4 +1,5 @@
-import asyncio, datetime, os, re
+import asyncio, os, re
+from datetime import timedelta
 from typing import DefaultDict, OrderedDict
 import aiohttp
 from ...core import Plugin, Alert, Chiarpc, Config, ApiRequestFailedException
@@ -11,7 +12,11 @@ class Chiafarmer(Plugin):
         super(Chiafarmer, self).__init__(name, outputs)
         self.print(f'Plugin chiafarmer; name: {name}')
 
-        aggregation, _ = config_data.get_value_or_default(24, 'aggregation')
+        self.__scheduler = scheduler
+        self.__check_job = f'{name}-check'
+        self.__evaluate_job = f'{name}-evaluate'
+        self.__summary_job = f'{name}-summary'
+
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
         farmer_host, _ = config_data.get_value_or_default('127.0.0.1:8559','farmer_host')
@@ -27,14 +32,15 @@ class Chiafarmer(Plugin):
         self.__threshold_long = float(config_data.get_value_or_default(0.99, 'underharvested_threshold_long')[0])
 
         db_path = os.path.join(config_data.data['db'], f"{re.sub('[^a-zA-Z0-9]+', '', name)}.yaml")
-        self.__history = ChallengeCache(super(Chiafarmer, self), db_path, aggregation)
+        self.__history = ChallengeCache(super(Chiafarmer, self), db_path)
 
         self.__failed_plots = set()
         self.__not_found_plots = set()
 
-        scheduler.add_job(f'{name}-check' ,self.check, "*/5 * * * *")
-        scheduler.add_job(f'{name}-evaluate', self.evaluate, "0 * * * *")
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        self.__scheduler.add_job(self.__check_job ,self.check, "*/5 * * * *")
+        self.__scheduler.add_job(self.__evaluate_job, self.evaluate, "0 * * * *")
+        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        self.__interval = self.__scheduler.get_current_interval(self.__summary_job)
 
     async def check(self):
         farmer_task = self.__check_farmer()
@@ -42,9 +48,8 @@ class Chiafarmer(Plugin):
         await asyncio.gather(farmer_task, harvester_task)
 
     async def evaluate(self):
-        self.__history.cleanup()
-        factor_short = self.__history.get_factor(whole_day=False)
-        factor_long = self.__history.get_factor(whole_day=True)
+        factor_short = self.__history.get_factor(timedelta(hours=1))
+        factor_long = self.__history.get_factor(self.__interval)
         self.__history.save()
 
         if factor_short is not None:
@@ -60,12 +65,14 @@ class Chiafarmer(Plugin):
                 self.__underharvested_alert.reset(f'Harvest factor is above treshold again.')
 
     async def summary(self):
-        factor = self.__history.get_factor()
+        factor = self.__history.get_factor(self.__interval)
         if factor is None:
             self.send(Plugin.Channel.info, 'No harvest factor available.')
         else:
             factor *= 100.0
             self.send(Plugin.Channel.info, f'Average harvest factor: {factor:.2f}%.')
+        self.__history.cleanup()
+        self.__interval = self.__scheduler.get_current_interval(self.__summary_job)
 
     async def __check_farmer(self):
         if self.__farmer_rpc is None:
@@ -105,7 +112,7 @@ class Chiafarmer(Plugin):
         try:
             json = await self.__harvester_rpc.post(session, 'get_plots')
         except ApiRequestFailedException:
-            return None,
+            return None, None
         failed = set(json['failed_to_open_filenames'])
         not_found = set(json['not_found_filenames'])
         return failed, not_found

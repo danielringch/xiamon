@@ -1,5 +1,3 @@
-from datetime import datetime, timedelta
-
 from ...core import Plugin, Siaapi, Config, Conversions, Byteunit, Tablerenderer, Coinprice, ApiRequestFailedException
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
@@ -16,8 +14,14 @@ class Siahost(Plugin):
         super(Siahost, self).__init__(name, outputs)
         self.print(f'Plugin siahost; name: {name}')
 
+        self.__scheduler = scheduler
+        self.__check_job = f'{name}-check'
+        self.__summary_job = f'{name}-summary'
+        self.__list_job = f'{name}-list'
+        self.__accounting_job = f'{name}-accounting'
+        self.__autoprice_job = f'{name}-autoprice'
+
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
-        self.__recent_intervall = timedelta(hours=config_data.get_value_or_default(24, 'recent_intervall')[0])
 
         host, _ = config_data.get_value_or_default('127.0.0.1:9980','host')
         password = config_data.data['password']
@@ -26,18 +30,18 @@ class Siahost(Plugin):
         self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
 
         self.__health = Siahealth(self, config_data)
-        self.__storage = Siastorage(self, scheduler)
+        self.__storage = Siastorage(self, self.__scheduler)
         self.__wallet = Siawallet(self, self.__coinprice, config_data)
         self.__autoprice = None
-        self.__reports = Siareports(self, self.__coinprice, scheduler)
+        self.__reports = Siareports(self, self.__coinprice, self.__scheduler)
         if 'autoprice' in  config_data.data:
             self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, config_data)
-            scheduler.add_job(f'{name}-autoprice' ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
+            self.__scheduler.add_job(self.__autoprice_job ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-list', self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
-        scheduler.add_job(f'{name}-accounting', self.accounting, config_data.get_value_or_default('0 0 * * MON', 'accounting_interval')[0])
+        self.__scheduler.add_job(self.__check_job ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
+        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        self.__scheduler.add_job(self.__list_job, self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
+        self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get_value_or_default('0 0 * * MON', 'accounting_interval')[0])
 
     async def check(self):
         try:
@@ -65,9 +69,8 @@ class Siahost(Plugin):
         if not await self.__coinprice.update():
             self.send(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
 
-        now = datetime.now()
         height = consensus.height
-        recent_height = Siablocks.at_time(now - self.__recent_intervall, consensus)
+        recent_height = Siablocks.at_time(self.__scheduler.get_last_execution(self.__summary_job), consensus)
 
         contracts_count = 0
         locked_collateral = 0
