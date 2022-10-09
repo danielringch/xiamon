@@ -4,6 +4,7 @@ from .chiarpc import Chiarpc
 from .coinprice import Coinprice
 from .config import Config
 from .conversions import Conversions, Byteunit
+from .exceptions import *
 from .interface import Interface
 from .otherdefaultdict import otherdefaultdict
 from .plugin import Plugin

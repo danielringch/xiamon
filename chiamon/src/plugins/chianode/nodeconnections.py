@@ -1,10 +1,12 @@
+from ...core import ApiRequestFailedException
 
 class Nodeconnections:
     @classmethod
     async def create(cls, rpc, session, peak):
         result = Nodeconnections()
-        json = await rpc.post(session, 'get_connections')
-        if json is None:
+        try:
+            json = await rpc.post(session, 'get_connections')
+        except ApiRequestFailedException:
             return result
         result.available = True
         for node in json['connections']:

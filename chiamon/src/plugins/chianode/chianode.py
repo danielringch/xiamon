@@ -13,8 +13,7 @@ class Chianode(Plugin):
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
         host, _ = config_data.get_value_or_default('127.0.0.1:8555','host')
-        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'],
-            super(Chianode, self), mute_interval)
+        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'], super(Chianode, self))
 
         self.__node_unsynced_alert = Alert(super(Chianode, self), mute_interval)
 

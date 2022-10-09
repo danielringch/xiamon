@@ -1,6 +1,6 @@
 import aiohttp
 from datetime import date, timedelta
-from ...core import Plugin, Alert, Chiarpc, Config, Balancehistory, Coinprice
+from ...core import Plugin, Alert, Chiarpc, Config, Balancehistory, Coinprice, ApiRequestFailedException
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -12,8 +12,7 @@ class Chiawallet(Plugin):
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
         host, _ = config_data.get_value_or_default('127.0.0.1:9256', 'host')
-        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'],
-            super(Chiawallet, self), mute_interval)
+        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'], super(Chiawallet, self))
         self.__wallet_id, _ = config_data.get_value_or_default(1, 'wallet_id')
 
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
@@ -88,14 +87,16 @@ class Chiawallet(Plugin):
     async def __get_balance(self, session):
         if not await self.__get_synced(session):
             return None
-        json = await self.__rpc.post(session, 'get_wallet_balance', {'wallet_id': self.__wallet_id})
-        if json is None:
+        try:
+            json = await self.__rpc.post(session, 'get_wallet_balance', {'wallet_id': self.__wallet_id})
+        except ApiRequestFailedException:
             return None
         return self.__mojo_to_xch(json['wallet_balance']['confirmed_wallet_balance'])
 
     async def __get_synced(self, session):
-        json = await self.__rpc.post(session, 'get_sync_status')
-        if json is None:
+        try:
+            json = await self.__rpc.post(session, 'get_sync_status')
+        except ApiRequestFailedException:
             return False
         synced = json['synced']
         if not synced:

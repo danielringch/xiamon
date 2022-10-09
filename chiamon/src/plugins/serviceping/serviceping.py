@@ -1,7 +1,7 @@
 import aiohttp
 from collections import defaultdict
 from ...core import Plugin, Alert, Config
-from ...core import Chiarpc, Siaapi
+from ...core import Chiarpc, Siaapi, ApiRequestFailedException
 
 class Serviceping(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -15,13 +15,13 @@ class Serviceping(Plugin):
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
 
         if 'chia' in config_data.data:
-            self.__checkers['chia'] = Serviceping.Chia(super(Serviceping, self), config_data, mute_interval)
+            self.__checkers['chia'] = Serviceping.Chia(config_data, super(Serviceping, self))
             self.__alerts['chia'] = Alert(super(Serviceping, self), mute_interval)
         if 'flexfarmer' in config_data.data:
             self.__checkers['flexfarmer'] = Serviceping.Flexfarmer(config_data)
             self.__alerts['flexfarmer'] = Alert(super(Serviceping, self), mute_interval)
         if 'sia' in config_data.data:
-            sia_checker = Serviceping.Sia(config_data)
+            sia_checker = Serviceping.Sia(config_data, super(Serviceping, self))
             self.__checkers['sia'] = sia_checker
             self.__alerts['sia'] = Alert(super(Serviceping, self), mute_interval)
         if 'storj' in config_data.data:
@@ -55,15 +55,17 @@ class Serviceping(Plugin):
         self.send(Plugin.Channel.info, '\n'.join(lines))
         
     class Chia:
-        def __init__(self, plugin, config, mute_interval):
+        def __init__(self, config, plugin):
             host, _ = config.get_value_or_default('127.0.0.1:8555','chia','host')
-            self.__rpc = Chiarpc(host, config.data['chia']['cert'], config.data['chia']['key'],
-                plugin, mute_interval)
+            self.__rpc = Chiarpc(host, config.data['chia']['cert'], config.data['chia']['key'], plugin)
 
         async def check(self):
             async with aiohttp.ClientSession() as session:
-                response = await self.__rpc.post(session, 'healthz')
-                return response is not None
+                try:
+                    await self.__rpc.post(session, 'healthz')
+                    return True
+                except ApiRequestFailedException:
+                    return False
 
     class Flexfarmer:
         def __init__(self, config):
@@ -75,20 +77,20 @@ class Serviceping(Plugin):
                     async with session.get(f'http://{self.__host}/stats') as response:
                         status = response.status
                         return status >= 200 and status <= 299
-                except Exception as e:
+                except Exception:
                     return False
 
     class Sia:
-        def __init__(self, config):
+        def __init__(self, config, plugin):
             host, _ = config.get_value_or_default('127.0.0.1:9980', 'sia', 'host')
-            self.__api = Siaapi(host, None)
+            self.__api = Siaapi(host, None, plugin)
 
         async def check(self):
             async with self.__api.create_session() as session:
                 try:
-                    _ = await self.__api.get(session, 'daemon/version')
+                    await self.__api.get(session, 'daemon/version')
                     return True
-                except Exception as e:
+                except ApiRequestFailedException:
                     return False
 
     class Storj:

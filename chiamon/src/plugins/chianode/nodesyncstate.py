@@ -1,10 +1,12 @@
+from ...core import ApiRequestFailedException
 
 class NodeSyncState:
     @classmethod
     async def create(cls, rpc, session):
         result = NodeSyncState()
-        json = await rpc.post(session, 'get_blockchain_state')
-        if json is None:
+        try:
+            json = await rpc.post(session, 'get_blockchain_state')
+        except ApiRequestFailedException:
             return result
         result.available = True
         json = json['blockchain_state']

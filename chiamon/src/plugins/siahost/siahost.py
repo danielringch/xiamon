@@ -1,7 +1,6 @@
 from datetime import datetime, timedelta
-import statistics
 
-from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer, Coinprice
+from ...core import Plugin, Siaapi, Config, Conversions, Byteunit, Tablerenderer, Coinprice, ApiRequestFailedException
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
 from .siablocks import Siablocks
@@ -22,18 +21,9 @@ class Siahost(Plugin):
 
         host, _ = config_data.get_value_or_default('127.0.0.1:9980','host')
         password = config_data.data['password']
-        self.__api = Siaapi(host, password)
+        self.__api = Siaapi(host, password, super(Siahost, self))
 
         self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
-
-        self.__request_alerts = {
-            'consensus' : Alert(super(Siahost, self), mute_interval),
-            'wallet' : Alert(super(Siahost, self), mute_interval),
-            'host' : Alert(super(Siahost, self), mute_interval),
-            'host/contracts' : Alert(super(Siahost, self), mute_interval),
-            'host/storage' : Alert(super(Siahost, self), mute_interval),
-            'host/bandwidth' : Alert(super(Siahost, self), mute_interval)
-        }
 
         self.__health = Siahealth(self, config_data)
         self.__storage = Siastorage(self, scheduler)
@@ -50,23 +40,25 @@ class Siahost(Plugin):
         scheduler.add_job(f'{name}-accounting', self.accounting, config_data.get_value_or_default('0 0 * * MON', 'accounting_interval')[0])
 
     async def check(self):
-        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-        host = await self.__request('host', lambda x: Siahostdata(x))
-        wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (consensus, host, wallet):
+        try:
+            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+            host = await self.__request('host', lambda x: Siahostdata(x))
+            wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
+        except ApiRequestFailedException:
             self.send(Plugin.Channel.debug, 'Report failed: some host queries failed.')
             return
         
         self.__health.check(consensus, host, wallet)
 
     async def summary(self):
-        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-        host = await self.__request('host', lambda x: Siahostdata(x))
-        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
-        traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
-        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
-        wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (consensus, host, storage, traffic, contracts, wallet):
+        try:
+            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+            host = await self.__request('host', lambda x: Siahostdata(x))
+            storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+            traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+            wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
+        except ApiRequestFailedException:
             self.send(Plugin.Channel.info, 'No summary created, host is not available.')
             return
 
@@ -122,13 +114,13 @@ class Siahost(Plugin):
             f'Earnings: {round(earnings)} SC ({self.__coinprice.to_fiat_string(earnings)})'))
 
     async def list(self):
-        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-        host = await self.__request('host', lambda x: Siahostdata(x))
-        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
-        traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
-        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
-        wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (consensus, host, storage, traffic, contracts, wallet):
+        try:
+            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+            storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+            traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+            wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
+        except ApiRequestFailedException:
             self.send(Plugin.Channel.error, 'Report failed: some host queries failed.')
             return
 
@@ -167,9 +159,10 @@ class Siahost(Plugin):
         self.__storage.report(storage, traffic)
 
     async def accounting(self):
-        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
-        if None in (consensus, contracts):
+        try:
+            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+        except ApiRequestFailedException:
             self.send(Plugin.Channel.error, 'Accounting failed: some host queries failed.')
             return
 
@@ -181,13 +174,13 @@ class Siahost(Plugin):
     async def price(self):
         if self.__autoprice is None:
             return
-        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-        host = await self.__request('host', lambda x: Siahostdata(x))
-        storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
-        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
-        wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-
-        if None in (consensus, host, storage, contracts, wallet):
+        try:
+            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+            host = await self.__request('host', lambda x: Siahostdata(x))
+            storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+            wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
+        except ApiRequestFailedException:
             self.send(Plugin.Channel.error, 'Autoprice failed: some host queries failed.')
             return
 
@@ -204,13 +197,10 @@ class Siahost(Plugin):
         await self.__autoprice.update(host, storage, wallet, locked_collateral)
 
     async def __request(self, cmd, generator):
-        alert = self.__request_alerts[cmd]
         async with self.__api.create_session() as session:
             try:
                 json = await self.__api.get(session, cmd)
                 result = generator(json)
-                alert.reset(f'Request "{cmd}" is successful again.')
                 return result
-            except Exception as e:
-                alert.send(f'Request "{cmd}" failed.')
-                return None
+            except ApiRequestFailedException:
+                raise

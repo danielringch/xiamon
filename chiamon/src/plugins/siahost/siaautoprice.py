@@ -1,6 +1,6 @@
 from collections import namedtuple, defaultdict
 from enum import Enum
-from ...core import Plugin, Conversions, Coinprice
+from ...core import Plugin, Conversions, ApiRequestFailedException
 
 class Siaautoprice:
 
@@ -89,10 +89,8 @@ class Siaautoprice:
         async with self.__api.create_session() as session:
             try:
                 await self.__api.post(session, 'host', prices)
-            except Exception as e:
-                print(e)
+            except ApiRequestFailedException:
                 self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
-                return None
 
     def __get_collateral_reserve(self, storage, wallet, locked_collateral):
         used_factor = storage.used_space / storage.total_space

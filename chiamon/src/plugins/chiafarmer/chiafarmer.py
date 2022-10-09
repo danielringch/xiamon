@@ -1,7 +1,7 @@
 import asyncio, datetime, os, re
 from typing import DefaultDict, OrderedDict
 import aiohttp
-from ...core import Plugin, Alert, Chiarpc, Config
+from ...core import Plugin, Alert, Chiarpc, Config, ApiRequestFailedException
 from .challengecache import ChallengeCache
 
 class Chiafarmer(Plugin):
@@ -17,9 +17,9 @@ class Chiafarmer(Plugin):
         farmer_host, _ = config_data.get_value_or_default('127.0.0.1:8559','farmer_host')
         harvester_host, _ = config_data.get_value_or_default('127.0.0.1:8560', 'harvester_host')
         self.__farmer_rpc = Chiarpc(farmer_host, config_data.data['farmer_cert'], config_data.data['farmer_key'],
-            super(Chiafarmer, self), mute_interval) if farmer_host is not None else None
+            super(Chiafarmer, self)) if farmer_host is not None else None
         self.__harvester_rpc = Chiarpc(harvester_host, config_data.data['harvester_cert'], config_data.data['harvester_key'],
-            super(Chiafarmer, self), mute_interval) if harvester_host is not None else None
+            super(Chiafarmer, self)) if harvester_host is not None else None
 
         self.__plot_error_alert = Alert(super(Chiafarmer, self), None)
         self.__underharvested_alert = Alert(super(Chiafarmer, self), mute_interval)
@@ -91,9 +91,10 @@ class Chiafarmer(Plugin):
         self.__not_found_plots = not_found
 
     async def __get_signage_points(self, session):
-        json = await self.__farmer_rpc.post(session, 'get_signage_points')
-        if json is None:
-            return None
+        try:
+            json = await self.__farmer_rpc.post(session, 'get_signage_points')
+        except ApiRequestFailedException:
+            return
         for sp in json['signage_points']:
             sp_data = sp['signage_point']
             hash = sp_data['challenge_hash']
@@ -101,9 +102,10 @@ class Chiafarmer(Plugin):
             self.__history.add_point(hash, index)
 
     async def __get_plots(self, session):
-        json = await self.__harvester_rpc.post(session, 'get_plots')
-        if json is None:
-            return None, None
+        try:
+            json = await self.__harvester_rpc.post(session, 'get_plots')
+        except ApiRequestFailedException:
+            return None,
         failed = set(json['failed_to_open_filenames'])
         not_found = set(json['not_found_filenames'])
         return failed, not_found
