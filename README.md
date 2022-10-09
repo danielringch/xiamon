@@ -8,6 +8,7 @@ croniter
 discord.py
 ciso8601
 psutil
+pyaml
 
 How to enable smart support:
 

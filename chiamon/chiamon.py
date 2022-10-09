@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "0.10.0"
+__version__ = "0.12.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -71,12 +71,10 @@ async def main():
 
     await scheduler.start(interfaces.values())
 
-    manual_tasks = []
     if args.manual:
         for manual_job in args.manual:
             print(prefix.format(f'Manual run of job {manual_job}.'))
-            manual_tasks.append(scheduler.manual(manual_job))
-    await asyncio.gather(*manual_tasks)
+            await scheduler.manual(manual_job)
 
     print(prefix.format('Startup complete.'))
 

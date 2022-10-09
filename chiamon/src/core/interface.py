@@ -18,5 +18,5 @@ class Interface(ABC):
         pass
 
     @abstractmethod
-    async def send_message(self, channel, prefix, message):
+    def send_message(self, channel, prefix, message):
         pass

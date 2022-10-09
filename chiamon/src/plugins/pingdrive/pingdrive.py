@@ -36,11 +36,11 @@ class Pingdrive(Plugin):
             if message is not None:
                 messages.append(message)
             if drive.online:
-                await self.__alerts[drive.alias].reset(f'{drive.alias} is online again')
+                self.__alerts[drive.alias].reset(f'{drive.alias} is online again')
             else:
-                await self.__alerts[drive.alias].send(f'{drive.alias} is offline')
+                self.__alerts[drive.alias].send(f'{drive.alias} is offline')
         if len(messages) > 0:
-            await self.send(Plugin.Channel.debug, '\n'.join(messages))
+            self.send(Plugin.Channel.debug, '\n'.join(messages))
 
     async def summary(self):
         online = 0
@@ -59,13 +59,13 @@ class Pingdrive(Plugin):
                 table.data['Expected'].append(expected_active)
                 table.data['Pings'].append(drive.pings)
                 if not self.__first_summary and real_active < expected_active:
-                    await self.send(Plugin.Channel.alert, f'{drive.alias} was too inactive: {real_active}/{expected_active} minutes')
+                    self.send(Plugin.Channel.alert, f'{drive.alias} was too inactive: {real_active}/{expected_active} minutes')
                     inactive += 1
                 else:
                     online += 1
             drive.reset_statistics()
-        await self.send(Plugin.Channel.info, f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
-        await self.send(Plugin.Channel.debug, table.render())
+        self.send(Plugin.Channel.info, f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
+        self.send(Plugin.Channel.report, table.render())
         self.__first_summary = False
 
     async def rescan(self):
@@ -73,7 +73,7 @@ class Pingdrive(Plugin):
         # remove old devices
         for device in list(self.__drives.keys()):
             if device not in drives:
-                await self.send(Plugin.Channel.debug, f'Removed drive {device} ({self.__drives[device].alias}).')
+                self.send(Plugin.Channel.debug, f'Removed drive {device} ({self.__drives[device].alias}).')
                 del self.__drives[device]
         # add new devices
         for device, mounts in drives.items():
@@ -84,7 +84,7 @@ class Pingdrive(Plugin):
                 if len(matching_mount) > 1:
                     self.send(Plugin.Channel.error, f'Device {device} has more than one monitored directory, some will be ignored.')
                 self.__drives[device] = Drive(device, self.__drive_configs[next(iter(matching_mount))])
-                await self.send(Plugin.Channel.debug, f'Added drive {device} ({self.__drives[device].alias}).')
+                self.send(Plugin.Channel.debug, f'Added drive {device} ({self.__drives[device].alias}).')
 
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME,MOUNTPOINT"], text=True, stdout=subprocess.PIPE)

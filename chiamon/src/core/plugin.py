@@ -1,5 +1,4 @@
-import asyncio
-from abc import ABC, abstractmethod
+from abc import ABC
 from .interface import Interface
 
 class Plugin(ABC):
@@ -18,9 +17,6 @@ class Plugin(ABC):
         for line in message.splitlines():
             print(f'    {line}')
 
-    async def send(self, channel, message):
-        sending_tasks = []
+    def send(self, channel, message):
         for output in self.__outputs:
-            sending_tasks.append(output.send_message(channel, self.name, message))
-
-        await asyncio.gather(*sending_tasks)
+            output.send_message(channel, self.name, message)

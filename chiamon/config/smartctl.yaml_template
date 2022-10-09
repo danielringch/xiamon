@@ -1,5 +1,6 @@
 name: <unique name>
-interval: <cron, e.g. "0 * * * *">
+check_interval: <cron, e.g. "0 * * * *">
+report_interval: <cron, e.g. "0 0 * * *">
 aggregation: <hours>
 binary: <smartctl binary file>
 db: <path to plugin database directory>

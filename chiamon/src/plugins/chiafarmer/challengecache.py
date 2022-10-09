@@ -44,15 +44,15 @@ class ChallengeCache:
         else:
             return actual / float(expected)
 
-    async def cleanup(self):
+    def cleanup(self):
         old_len = len(self.__challenges)
         oldest_timestamp = datetime.datetime.now() - datetime.timedelta(hours=(self.aggregation + 1))
         self.__challenges = {k: v for k, v in self.__challenges.items() if v.time > oldest_timestamp}
         cleared = old_len - len(self.__challenges)
-        await self.__plugin.send(Plugin.Channel.debug, f"Cleared {cleared} item(s) from challenge cache.")
+        self.__plugin.send(Plugin.Channel.debug, f"Cleared {cleared} item(s) from challenge cache.")
 
-    async def save(self):
-        await self.__write_file()
+    def save(self):
+        self.__write_file()
 
     def __read_file(self):
         try:
@@ -67,14 +67,14 @@ class ChallengeCache:
         except Exception as e:
             self.__plugin.print(f'Reading config file {self.__file} failed: {e}')
 
-    async def __write_file(self):
+    def __write_file(self):
         data = {}
         for hash, challenge in self.__challenges.items():
             challenge_as_dict = {'hash': challenge.hash, 'points': list(challenge.points), 'timestamp': challenge.time.strftime("%Y-%m-%dT%H:%M:%S")}
             data[hash] = challenge_as_dict
         with open(self.__file, "w") as stream:
             yaml.safe_dump(data, stream)
-        await self.__plugin.send(Plugin.Channel.debug, f"Wrote {len(data)} challenge(s) to {self.__file}")
+        self.__plugin.send(Plugin.Channel.debug, f"Wrote {len(data)} challenge(s) to {self.__file}")
 
     class Challenge:
         def __init__(self, hash):

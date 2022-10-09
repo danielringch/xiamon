@@ -1,10 +1,12 @@
-from datetime import timedelta
+from datetime import datetime, timedelta
 import statistics
 
-from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer
-from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata
+from ...core import Plugin, Alert, Siaapi, Config, Conversions, Byteunit, Tablerenderer, Coinprice
+from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
+from .siablocks import Siablocks
 from .siahealth import Siahealth
+from .siareports import Siareports
 from .siastorage import Siastorage
 from .siawallet import Siawallet
 
@@ -16,136 +18,190 @@ class Siahost(Plugin):
         self.print(f'Plugin siahost; name: {name}')
 
         mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
-        self.__recent_intervall = Conversions.duration_to_siablocks(
-            timedelta(hours=config_data.get_value_or_default(24, 'recent_intervall')[0]))
+        self.__recent_intervall = timedelta(hours=config_data.get_value_or_default(24, 'recent_intervall')[0])
 
         host, _ = config_data.get_value_or_default('127.0.0.1:9980','host')
         password = config_data.data['password']
         self.__api = Siaapi(host, password)
+
+        self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
 
         self.__request_alerts = {
             'consensus' : Alert(super(Siahost, self), mute_interval),
             'wallet' : Alert(super(Siahost, self), mute_interval),
             'host' : Alert(super(Siahost, self), mute_interval),
             'host/contracts' : Alert(super(Siahost, self), mute_interval),
-            'host/storage' : Alert(super(Siahost, self), mute_interval)
+            'host/storage' : Alert(super(Siahost, self), mute_interval),
+            'host/bandwidth' : Alert(super(Siahost, self), mute_interval)
         }
 
         self.__health = Siahealth(self, config_data)
-        self.__storage = Siastorage(self)
-        self.__wallet = Siawallet(self, config_data)
+        self.__storage = Siastorage(self, scheduler)
+        self.__wallet = Siawallet(self, self.__coinprice, config_data)
         self.__autoprice = None
+        self.__reports = Siareports(self, self.__coinprice, scheduler)
         if 'autoprice' in  config_data.data:
-            self.__autoprice = Siaautoprice(self, self.__api, config_data)
+            self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, config_data)
             scheduler.add_job(f'{name}-autoprice' ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
         scheduler.add_job(f'{name}-list', self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
+        scheduler.add_job(f'{name}-accounting', self.accounting, config_data.get_value_or_default('0 0 * * MON', 'accounting_interval')[0])
 
     async def check(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         if None in (consensus, host, wallet):
+            self.send(Plugin.Channel.debug, 'Report failed: some host queries failed.')
             return
         
-        await self.__health.check(consensus, host, wallet)
+        self.__health.check(consensus, host, wallet)
 
     async def summary(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
         storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+        traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
         contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (consensus, host, storage, contracts, wallet):
-            await self.send(Plugin.Channel.info, 'No summary created, host is not available.')
+        if None in (consensus, host, storage, traffic, contracts, wallet):
+            self.send(Plugin.Channel.info, 'No summary created, host is not available.')
             return
 
-        await self.__health.summary(consensus, host, wallet)
-        await self.__wallet.summary(host, storage, wallet)
-        await self.__autoprice.summary(host, storage, wallet)
-        await self.__storage.summary(storage)
+        if not await self.__coinprice.update():
+            self.send(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
 
+        now = datetime.now()
         height = consensus.height
+        recent_height = Siablocks.at_time(now - self.__recent_intervall, consensus)
 
-        ended_count = 0
-        count = 0
-        start_heights = []
-        end_heights = []
-        nearest_proof = None
+        contracts_count = 0
+        locked_collateral = 0
+        risked_collateral = 0
+
         recent_started = 0
-        soon_ending = 0
+        recent_ended = 0
+        failed_proofs = 0
+
+        earnings = 0
 
         for contract in contracts.contracts:
-            if contract.proof_deadline > height and (nearest_proof is None or contract.proof_deadline < nearest_proof):
-                nearest_proof = contract.proof_deadline
-            if contract.end <= height:
-                ended_count += 1
-                continue
-            count += 1
-            blocks_since_start = height - contract.start
-            blocks_unitl_end = contract.end - height
-            start_heights.append(blocks_since_start)
-            end_heights.append(blocks_unitl_end)
-            if blocks_since_start <= self.__recent_intervall:
+            if contract.start > recent_height:
                 recent_started += 1
-            if blocks_unitl_end <= self.__recent_intervall:
-                soon_ending += 1
-            
-            if count == 0:
-                await self.send(Plugin.Channel.debug, f'No contracts.')
-                return
+            if contract.end > recent_height and contract.end <= height:
+                recent_ended += 1
+                if contract.proof_success:
+                    earnings += contract.storage_revenue
+                    earnings += contract.io_revenue
+                    earnings += contract.ephemeral_revenue
+                else:
+                    failed_proofs += 1
 
-        start_median = Conversions.siablocks_to_duration(round(statistics.median(start_heights)))
-        end_median = Conversions.siablocks_to_duration(round(statistics.median(end_heights)))
-        nearest_proof = Conversions.siablocks_to_duration(nearest_proof - height)
+            if contract.end <= height:
+                continue
+            contracts_count += 1
+            locked_collateral += contract.locked_collateral
+            risked_collateral += contract.risked_collateral
 
-        await self.send(Plugin.Channel.info, (f'{count} contracts (+ {ended_count} ended)\n'
-            f'Median contract: {start_median.days:.0f} d since start | {end_median.days:.0f} d until end\n'
+        self.__health.update_proof_deadlines(contracts)
+        self.__health.summary(consensus, host, wallet)
+        await self.__wallet.summary(wallet, locked_collateral, risked_collateral)
+        self.__autoprice.summary(storage, wallet, locked_collateral)
+        self.__storage.summary(storage, traffic)
+
+        if contracts_count == 0:
+            self.send(Plugin.Channel.debug, f'No contracts.')
+            return
+
+        self.send(Plugin.Channel.info, (f'{contracts_count} contracts\n'
             f'New contracts: {recent_started}\n'
-            f'Ending contracts: {soon_ending}\n'
-            f'Next proof deadline in {(nearest_proof.total_seconds() / 3600.0):.0f} h')) 
+            f'Ended contracts: {recent_ended}\n'
+            f'Failed proofs: {failed_proofs}\n'
+            f'Earnings: {round(earnings)} SC ({self.__coinprice.to_fiat_string(earnings)})'))
 
     async def list(self):
         consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
         storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+        traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
         contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None not in (consensus, host, storage, contracts, wallet):
-            await self.__wallet.dump(host, wallet)
-            await self.__storage.report(storage)
+        if None in (consensus, host, storage, traffic, contracts, wallet):
+            self.send(Plugin.Channel.error, 'Report failed: some host queries failed.')
+            return
 
-            height = consensus.height
-            id = 0
-            renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Proof', 'Locked', 'Storage', 'Upload', 'Download'], 10)
-            data = renderer.data
-            for contract in sorted(contracts.contracts, key=lambda x: x.end):
-                if contract.proof_deadline < height:
-                    continue
+        if not await self.__coinprice.update():
+            self.send(Plugin.Channel.error, 'Report incomplete: coin price not available.')
 
-                data['ID'].append(f'{id}')
-                data['Size'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.byte_to_auto(contract.datasize)))
-                data['Started'].append(f'{Conversions.siablocks_to_duration(height - contract.start).days} d')
-                data['Ending'].append(f'{Conversions.siablocks_to_duration(contract.end - height).days} d')
-                data['Proof'].append(f'{Conversions.siablocks_to_duration(contract.proof_deadline - height).days} d')
-                data['Locked'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.locked_collateral)))
-                data['Storage'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.storage_revenue)))
-                data['Upload'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.upload_revenue)))
-                data['Download'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.download_revenue)))
-                id += 1
-            await self.send(Plugin.Channel.debug, renderer.render())
+        self.__health.update_proof_deadlines(contracts)
+
+        height = consensus.height
+
+        locked_collateral = 0
+        risked_collateral = 0
+
+        id = 0
+        renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Locked', 'Storage', 'IO', 'Ephemeral'])
+        data = renderer.data
+        for contract in sorted(contracts.contracts, key=lambda x: x.end):
+            if contract.end <= height:
+                continue
+
+            locked_collateral += contract.locked_collateral
+            risked_collateral += contract.risked_collateral
+
+            data['ID'].append(f'{id}')
+            data['Size'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.byte_to_auto(contract.datasize)))
+            data['Started'].append(f'{Conversions.siablocks_to_duration(height - contract.start).days} d')
+            data['Ending'].append(f'{Conversions.siablocks_to_duration(contract.end - height).days} d')
+            data['Locked'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.locked_collateral)))
+            data['Storage'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.storage_revenue)))
+            data['IO'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.io_revenue)))
+            data['Ephemeral'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.ephemeral_revenue)))
+            id += 1
+        self.send(Plugin.Channel.debug, renderer.render())
+
+        await self.__wallet.dump(wallet, locked_collateral, risked_collateral)
+        self.__storage.report(storage, traffic)
+
+    async def accounting(self):
+        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
+        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+        if None in (consensus, contracts):
+            self.send(Plugin.Channel.error, 'Accounting failed: some host queries failed.')
+            return
+
+        if not await self.__coinprice.update():
+            self.send(Plugin.Channel.error, 'Autoprice incomplete: coin price not available.')
+
+        await self.__reports.accounting(consensus, contracts)
 
     async def price(self):
         if self.__autoprice is None:
             return
+        consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
         host = await self.__request('host', lambda x: Siahostdata(x))
         storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
+        contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
-        if None in (host, storage, wallet):
+
+        if None in (consensus, host, storage, contracts, wallet):
+            self.send(Plugin.Channel.error, 'Autoprice failed: some host queries failed.')
             return
-        await self.__autoprice.update(host, storage, wallet)
+
+        if not await self.__coinprice.update():
+            self.send(Plugin.Channel.error, 'Autoprice failed: coin price not available.')
+            return
+
+        locked_collateral = 0
+        for contract in contracts.contracts:
+            if contract.end <= consensus.height:
+                continue
+            locked_collateral += contract.locked_collateral
+
+        await self.__autoprice.update(host, storage, wallet, locked_collateral)
 
     async def __request(self, cmd, generator):
         alert = self.__request_alerts[cmd]
@@ -153,8 +209,8 @@ class Siahost(Plugin):
             try:
                 json = await self.__api.get(session, cmd)
                 result = generator(json)
-                await alert.reset(f'Request "{cmd}" is successful again.')
+                alert.reset(f'Request "{cmd}" is successful again.')
                 return result
             except Exception as e:
-                await alert.send(f'Request "{cmd}" failed.')
+                alert.send(f'Request "{cmd}" failed.')
                 return None

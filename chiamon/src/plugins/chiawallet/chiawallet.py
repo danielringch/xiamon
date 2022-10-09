@@ -18,9 +18,8 @@ class Chiawallet(Plugin):
 
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
 
-        self.__currency, _ = config_data.get_value_or_default('usd', 'currency')
         self.__history = Balancehistory(config_data.data['history'])
-        self.__coinprice = Coinprice('chia', self.__currency)
+        self.__coinprice = Coinprice('chia', config_data.get_value_or_default('usd', 'currency')[0])
 
         self.__yesterday_balance = None
         self.__balance = None
@@ -43,31 +42,28 @@ class Chiawallet(Plugin):
             balance = await self.__get_balance(session)
             if balance is None:
                 return
-            await self.send(Plugin.Channel.debug, f'Wallet balance: {balance} XCH.')
             if balance == self.__balance:
                 return
             diff = balance - self.__balance
             self.__balance = balance
             await self.__coinprice.update()
-            balance_fiat_string, delta_fiat_string = self.__coinprice.to_fiat_string(self.__balance, diff)
             message = (
                 f'Balance changed of wallet {self.__wallet_id}:\n'
-                f'delta: {diff} XCH ({delta_fiat_string})\n'
-                f'new: {self.__balance} XCH ({balance_fiat_string})'
+                f'delta: {diff} XCH ({self.__coinprice.to_fiat_string(diff)})\n'
+                f'new: {self.__balance} XCH ({self.__coinprice.to_fiat_string(self.__balance)})'
             )
-            await self.send(Plugin.Channel.info, message)
-            await self.send(Plugin.Channel.report, message)
+            self.send(Plugin.Channel.info, message)
+            self.send(Plugin.Channel.report, message)
 
     async def summary(self):
         async with aiohttp.ClientSession() as session:
             balance = await self.__get_balance(session)
             if balance is None:
-                await self.send(Plugin.Channel.info, 'Balance unknown, wallet is unavailable.')
+                self.send(Plugin.Channel.info, 'Balance unknown, wallet is unavailable.')
                 return
             await self.__coinprice.update()
-            fiat_string, = self.__coinprice.to_fiat_string(balance)
-            await self.send(Plugin.Channel.info,
-                f'Balance: {balance} XCH ({fiat_string})')
+            self.send(Plugin.Channel.info,
+                f'Balance: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})')
 
     async def dump(self):
         async with aiohttp.ClientSession() as session:
@@ -81,15 +77,13 @@ class Chiawallet(Plugin):
         self.__history.add_balance(date.today(), delta, balance, price)
         self.__yesterday_balance = balance
 
-        fiat_balance = balance * price
-        currency = self.__currency.upper()
         message = (
             f'Wallet {self.__wallet_id}: '
             f'{balance:.12f} XCH; '
-            f'{price:.4f} {currency}/XCH; '
-            f'{fiat_balance:.2f} {currency}\n'
+            f'{price:.4f} {self.__coinprice.currency}/XCH; '
+            f'{self.__coinprice.to_fiat_string(balance)}\n'
         )
-        await self.send(Plugin.Channel.report, message)
+        self.send(Plugin.Channel.report, message)
 
     async def __get_balance(self, session):
         if not await self.__get_synced(session):
@@ -106,11 +100,11 @@ class Chiawallet(Plugin):
         synced = json['synced']
         if not synced:
             if json['syncing']:
-                await self.__wallet_unsynced_alert.send(f'Wallet is syncing.', 'syncing')
+                self.__wallet_unsynced_alert.send(f'Wallet is syncing.', 'syncing')
             else:
-                await self.__wallet_unsynced_alert.send(f'Wallet is not synced.', 'unsynced')
+                self.__wallet_unsynced_alert.send(f'Wallet is not synced.', 'unsynced')
         else:
-            await self.__wallet_unsynced_alert.reset(f'Wallet is synced again.')
+            self.__wallet_unsynced_alert.reset(f'Wallet is synced again.')
         return synced
 
     def __mojo_to_xch(self, mojo):

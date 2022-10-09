@@ -26,20 +26,25 @@ class Storjnodedata:
     def uptodate(self):
         return self.__uptodate
 
-    def traffic(self, unit):
-        return Conversions.byte_to(unit, self.__traffic)
+    @property
+    def traffic(self):
+        return self.__traffic
 
-    def total_space(self, unit):
-        return Conversions.byte_to(unit, self.__total_space)
+    @property
+    def total_space(self):
+        return self.__total_space
 
-    def used_space(self, unit):
-        return Conversions.byte_to(unit, self.__used_space)
+    @property
+    def used_space(self):
+        return self.__used_space
 
-    def trash_space(self, unit):
-        return Conversions.byte_to(unit, self.__trash_space)
+    @property
+    def trash_space(self):
+        return self.__trash_space
 
-    def overused_space(self, unit):
-        return Conversions.byte_to(unit, self.__overused_space)
+    @property
+    def overused_space(self):
+        return self.__overused_space
 
     @property
     def satellites(self):

@@ -1,70 +1,88 @@
+from collections import namedtuple, defaultdict
+from enum import Enum
 from ...core import Plugin, Conversions, Coinprice
 
 class Siaautoprice:
-    def __init__(self, plugin, api, config):
+
+    # name:
+    # parameter:
+    # target:
+    # getter: 
+    # unit: 
+    # accurancy: 
+    # converter: 
+    # apiconverter: 
+    UpdaterConfig = namedtuple("UpdaterConfig", "name parameter getter unit accurancy converter apiconverter")
+
+    Category = Enum('Category', 'contract storage collateral upload download sector rpc')
+
+    configs = {
+        Category.contract : UpdaterConfig('contract', 'mincontractprice', lambda x: x.contractprice, 'SC', 4, lambda x, _: x, Conversions.siacoin_to_hasting),
+        Category.storage : UpdaterConfig('storage', 'minstorageprice', lambda x: x.storageprice, 'SC / TB / month', 0, lambda x, y: x / y, Conversions.siacointerabytemonth_to_hastingsbyteblock),
+        Category.collateral : UpdaterConfig('collateral', 'collateral', lambda x: x.collateral, 'SC / TB / month', 0, lambda x, y: x / y, Conversions.siacointerabytemonth_to_hastingsbyteblock),
+        Category.upload : UpdaterConfig('upload', 'minuploadbandwidthprice', lambda x: x.uploadprice, 'SC / TB', 0, lambda x, y: x / y, Conversions.siacointerabyte_to_hastingbyte),
+        Category.download : UpdaterConfig('download', 'mindownloadbandwidthprice', lambda x: x.downloadprice, 'SC / TB', 0, lambda x, y: x / y, Conversions.siacointerabyte_to_hastingbyte),
+        Category.sector : UpdaterConfig('sector access', 'minsectoraccessprice', lambda x: x.sectorprice, 'SC', 10, lambda x, _: x, Conversions.siacoin_to_hasting),
+        Category.rpc : UpdaterConfig('RPC', 'minbaserpcprice', lambda x: x.rpcprice, 'SC', 10, lambda x, _: x, Conversions.siacoin_to_hasting),
+    }
+
+    def __init__(self, plugin, api, coinprice, config):
         self.__plugin = plugin
         self.__api = api
-        self.__coinprice = Coinprice('siacoin', config.data['autoprice']['currency'])
+        self.__coinprice = coinprice
 
-        self.__storage_price = config.data['autoprice']['storage']
+        contract_price = config.data['autoprice']['contract']
+
+        storage_price_fiat = config.data['autoprice']['storage']
+        storage_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'storage_max')
+
+        upload_price_fiat = config.data['autoprice']['upload']
+        upload_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'upload_max')
+
+        download_price_fiat = config.data['autoprice']['download']
+        download_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'download_max')
+
+        sector_price = config.data['autoprice']['sector_access']
+
+        rpc_price = config.data['autoprice']['base_rpc']
+
         self.__minimum_collateral_factor = config.data['autoprice']['minimum_collateral_factor']
         self.__maximum_collateral_factor = config.data['autoprice']['maximum_collateral_factor']
         self.__minimum_collateral_reserve = config.data['autoprice']['minimum_collateral_reserve']
         self.__target_collateral_reserve = config.data['autoprice']['target_collateral_reserve']
 
-        self.__updaters = []
-        self.__updaters.append(Siaautoprice.ContractUpdater(self.__coinprice, config.data['autoprice']['contract']))
-        self.__updaters.append(Siaautoprice.StorageUpdater(self.__coinprice, self.__storage_price))
-        self.__collateral_updater = Siaautoprice.CollateralUpdater(self.__coinprice, 0)
-        self.__updaters.append(self.__collateral_updater)
-        self.__updaters.append(Siaautoprice.UploadUpdater(self.__coinprice, config.data['autoprice']['upload']))
-        self.__updaters.append(Siaautoprice.DownloadUpdater(self.__coinprice, config.data['autoprice']['download']))
-        self.__updaters.append(Siaautoprice.SectorUpdater(self.__coinprice, config.data['autoprice']['sector_access']))
-        self.__updaters.append(Siaautoprice.RpcUpdater(self.__coinprice, config.data['autoprice']['base_rpc']))
+        self.__updaters = {
+            self.Category.contract : self.Updater(self.configs[self.Category.contract], self.__coinprice, None, contract_price),
+            self.Category.storage : self.Updater(self.configs[self.Category.storage], self.__coinprice, storage_price_fiat, storage_price_sc),
+            self.Category.upload : self.Updater(self.configs[self.Category.upload], self.__coinprice, upload_price_fiat, upload_price_sc),
+            self.Category.download : self.Updater(self.configs[self.Category.download], self.__coinprice, download_price_fiat, download_price_sc),
+            self.Category.sector : self.Updater(self.configs[self.Category.sector], self.__coinprice, None, sector_price),
+            self.Category.rpc : self.Updater(self.configs[self.Category.rpc], self.__coinprice, None, rpc_price)
+        }
 
-    async def summary(self, host, storage, wallet):
-        collateral_reserve = self.__get_collateral_reserve(host, storage, wallet)
-        await self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
+    def summary(self, storage, wallet, locked_collateral):
+        collateral_reserve = self.__get_collateral_reserve(storage, wallet, locked_collateral)
+        self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
 
-    async def update(self, host, storage, wallet):
-        debug_message = []
-        info_message = []
-        report_message = []
+    async def update(self, host, storage, wallet, locked_collateral):
+        messages = defaultdict(list)
         prices = {}
 
-        if not await self.__coinprice.update():
-            await self.__plugin.send(Plugin.Channel.alert, 'Price update failed, no coin price available.')
-            return
+        messages[Plugin.Channel.debug].append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency} / SC')
 
-        debug_message.append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency.upper()} / SC')
+        for updater in self.__updaters.values():
+            self.__trigger_updater(host, updater, prices, messages)
 
-        collateral_reserve = max(self.__minimum_collateral_reserve, 
-            min(self.__target_collateral_reserve, 
-                self.__get_collateral_reserve(host, storage, wallet)))
-        range_percent = (collateral_reserve - self.__minimum_collateral_reserve) / \
-            (self.__target_collateral_reserve - self.__minimum_collateral_reserve)
-        collateral_factor = round(((1 - range_percent) * self.__minimum_collateral_factor) + (range_percent * self.__maximum_collateral_factor), 2)
-        await self.__plugin.send(Plugin.Channel.debug, (
-            f'Collateral reserve: {collateral_reserve} % in range {self.__minimum_collateral_reserve} % .. {self.__target_collateral_reserve} %\n'
-            f'New collateral factor: {collateral_factor} in range {self.__minimum_collateral_factor} .. {self.__maximum_collateral_factor}'))
-        self.__collateral_updater.target = self.__storage_price * collateral_factor
+        new_collateral = self.__update_collateral(
+            self.__updaters[self.Category.storage].current_price,
+            self.__get_collateral_reserve(storage, wallet, locked_collateral),
+            messages)
+        collateral_updater = self.Updater(self.configs[self.Category.collateral], self.__coinprice, None, new_collateral)
+        self.__trigger_updater(host, collateral_updater, prices, messages)
 
-        for updater in self.__updaters:
-            new_price = updater.update(host)
-            report_message.append(updater.report_message)
-            if(updater.info_message is not None):
-                info_message.append(updater.info_message)
-            if new_price is not None:
-                key = new_price[0]
-                value = f'{new_price[1]:d}'
-                debug_message.append(f'Setting host parameter {key} to {value}')
-                prices[key] = value
+        for channel, lines in messages.items():
+            self.__plugin.send(channel, '\n'.join(lines))
 
-        await self.__plugin.send(Plugin.Channel.report, '\n'.join(report_message))
-        if len(info_message) > 0:
-            await self.__plugin.send(Plugin.Channel.info, '\n'.join(info_message))
-        if len(debug_message) > 0:
-            await self.__plugin.send(Plugin.Channel.debug, '\n'.join(debug_message))
         if len(prices) == 0:
             return
 
@@ -73,116 +91,58 @@ class Siaautoprice:
                 await self.__api.post(session, 'host', prices)
             except Exception as e:
                 print(e)
-                await self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
+                self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
                 return None
 
-    def __get_collateral_reserve(self, host, storage, wallet):
+    def __get_collateral_reserve(self, storage, wallet, locked_collateral):
         used_factor = storage.used_space / storage.total_space
-        locked_factor = host.lockedcollateral / (host.lockedcollateral + wallet.balance + wallet.pending)
+        locked_factor = locked_collateral / (locked_collateral + wallet.balance + wallet.pending)
         return round(100 * ((used_factor / locked_factor) - 1))
 
+    def __update_collateral(self, storage_price, collateral_reserve, messages):
+        collateral_reserve = max(self.__minimum_collateral_reserve, 
+            min(self.__target_collateral_reserve, collateral_reserve))
+        range_percent = (collateral_reserve - self.__minimum_collateral_reserve) / \
+            (self.__target_collateral_reserve - self.__minimum_collateral_reserve)
+        collateral_factor = round(((1 - range_percent) * self.__minimum_collateral_factor) + (range_percent * self.__maximum_collateral_factor), 2)
+        messages[Plugin.Channel.debug].append(
+            f'Collateral reserve: {collateral_reserve} % in range {self.__minimum_collateral_reserve} % .. {self.__target_collateral_reserve} %\n'
+            f'New collateral factor: {collateral_factor} in range {self.__minimum_collateral_factor} .. {self.__maximum_collateral_factor}')
+        return storage_price * collateral_factor
+
+    def __trigger_updater(self, host, updater, prices, messages):
+        new_price = updater.update(host, messages)
+        if new_price is not None:
+            key = new_price[0]
+            value = f'{new_price[1]:d}'
+            messages[Plugin.Channel.debug].append(f'Setting host parameter {key} to {value}')
+            prices[key] = value
+
     class Updater:
-        def __init__(self, name, parameter, target, getter, coinprice, unit='SC', accurancy=0, converter=lambda x, _: x, api_converter=Conversions.siacoin_to_hasting):
-            self.__name = name
-            self.__parameter = parameter
-            self.target = target
-            self.__unit = unit
-            self.__accurancy = accurancy
-            self.__converter = converter
-            self.__api_converter = api_converter
-            self.__getter = getter
+        def __init__(self, config, coinprice, target_fiat, target_sc):
+            self.__config = config
             self.__coinprice = coinprice
-            self.report_message = None
-            self.info_message = None
+            self.__target_fiat = target_fiat
+            self.__target_sc = target_sc
 
-        def update(self, data):
-            current = self.__getter(data)
-            target = round(self.__converter(self.target, self.__coinprice.price), self.__accurancy)
-            if current != target:
-                self.report_message = f'new {self.__name} price: {current} -> {target} {self.__unit}'
-                self.info_message = self.report_message
-                return (self.__parameter, self.__api_converter(target))
+        def update(self, data, messages):
+            current_price = self.__config.getter(data)
+
+            new_prices = [
+                round(self.__config.converter(self.__target_fiat, self.__coinprice.price), self.__config.accurancy) \
+                    if self.__target_fiat is not None else None,
+                self.__target_sc
+            ]
+
+            new_price = min((x for x in new_prices if x is not None), default=current_price)
+            self.current_price = new_price
+
+            if current_price != new_price:
+                message = f'new {self.__config.name} price: {current_price} -> {new_price} {self.__config.unit}'
+                messages[Plugin.Channel.report].append(message)
+                messages[Plugin.Channel.info].append(message)
+                return (self.__config.parameter, self.__config.apiconverter(new_price))
             else:
-                self.report_message = f'{self.__name} price: {current} {self.__unit}'
-                self.info_message = None
+                messages[Plugin.Channel.report].append(f'{self.__config.name} price: {current_price} {self.__config.unit}')
                 return None
-
-
-    class ContractUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='contract',
-                parameter='mincontractprice',
-                target=target,
-                getter=lambda x: x.contractprice,
-                coinprice=coinprice,
-                accurancy=4)
-
-    class StorageUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='storage',
-                parameter='minstorageprice',
-                target=target,
-                getter=lambda x: x.storageprice,
-                coinprice=coinprice,
-                unit='SC / TB / month',
-                converter=lambda x,y: x / y,
-                api_converter=Conversions.siacointerabytemonth_to_hastingsbyteblock)
-
-    class CollateralUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='collateral',
-                parameter='collateral',
-                target=target,
-                getter=lambda x: x.collateral,
-                coinprice=coinprice,
-                unit='SC / TB / month',
-                converter=lambda x,y: x / y,
-                api_converter=Conversions.siacointerabytemonth_to_hastingsbyteblock)
-
-    class UploadUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='upload',
-                parameter='minuploadbandwidthprice',
-                target=target,
-                getter=lambda x: x.uploadprice,
-                coinprice=coinprice,
-                unit='SC / TB',
-                converter=lambda x,y: x / y,
-                api_converter=Conversions.siacointerabyte_to_hastingbyte)
-
-    class DownloadUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='download',
-                parameter='mindownloadbandwidthprice',
-                target=target,
-                getter=lambda x: x.downloadprice,
-                coinprice=coinprice,
-                unit='SC / TB',
-                converter=lambda x,y: x / y,
-                api_converter=Conversions.siacointerabyte_to_hastingbyte)
-
-    class SectorUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='sector access',
-                parameter='minsectoraccessprice',
-                target=target,
-                getter=lambda x: x.sectorprice,
-                coinprice=coinprice,
-                accurancy=10)
-
-    class RpcUpdater(Updater):
-        def __init__(self, coinprice, target):
-            Siaautoprice.Updater.__init__(self,
-                name='RPC',
-                parameter='minbaserpcprice',
-                target=target,
-                getter=lambda x: x.rpcprice,
-                coinprice=coinprice,
-                accurancy=10)
 

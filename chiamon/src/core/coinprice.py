@@ -8,7 +8,7 @@ class Coinprice:
 
     @property
     def currency(self):
-        return self.__currency
+        return self.__currency.upper()
 
     @property
     def price(self):
@@ -30,21 +30,12 @@ class Coinprice:
             self.__price = None
             return False
 
-    def to_fiat(self, *balances):
-        try:
-            result = []
-            for balance in balances:
-                result.append(balance * self.__price)
-            return result
-        except:
-            return [None] * len(balances)
+    def to_fiat(self, balance, digits=None):
+        if self.__price is None:
+            print(f'{balance}, {self.__price}')
+            return None
+        fiat = balance * self.__price
+        return fiat if digits is None else round(fiat, digits)
 
-    def to_fiat_string(self, *balances):
-        try:
-            fiats = self.to_fiat(*balances)
-            result = []
-            for fiat in fiats:
-                result.append(f'{fiat:.2f} {self.__currency.upper()}')
-            return result
-        except:
-            return [''] * len(balances)
+    def to_fiat_string(self, balance, digits=2):
+        return f'{self.to_fiat(balance, digits)} {self.currency}'
