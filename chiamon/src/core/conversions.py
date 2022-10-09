@@ -58,6 +58,14 @@ class Conversions:
         return value, f'{prefix}bit'
 
     @staticmethod
+    def mojo_to_xch(mojo):
+        return mojo / 1000000000000.0
+
+    @staticmethod
+    def xch_to_mojo(xch):
+        return xch * 1000000000000
+
+    @staticmethod
     def siacoin_to_auto(siacoins):
         value, prefix = Conversions.autorange(siacoins)
         return value, f'{prefix}SC'

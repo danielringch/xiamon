@@ -1,12 +1,11 @@
-from copy import deepcopy
-from datetime import datetime, timedelta
+from datetime import datetime
 from ...core import Plugin, Conversions
 
 class Siastorage:
-    def __init__(self, plugin, scheduler):
+    def __init__(self, plugin, scheduler, database):
         self.__plugin = plugin
         self.__scheduler = scheduler
-        self.__traffic_history = {}
+        self.__db = database
 
     def summary(self, storage, traffic):
         message = []
@@ -48,23 +47,14 @@ class Siastorage:
         )
 
     def __get_traffic(self, traffic, reference_time):
-        now = datetime.now()
-        self.__traffic_history[now] = traffic
-        if len(self.__traffic_history) > 10:
-            self.__traffic_history.popitem()
+        self.__db.update_traffic(traffic.start, traffic.upload, traffic.download)
+        
+        last_epoch, last_upload, last_download = self.__db.get_traffic(reference_time)
 
-        last_traffic = None
-        duration = None
-        for timestamp, payload in self.__traffic_history.items():
-            if abs(timestamp - reference_time) < timedelta(minutes=5):
-                last_traffic = payload
-                duration = now - timestamp
-                break
-
-        if last_traffic is None or last_traffic.start != traffic.start:
+        if None in (last_epoch, last_upload, last_download) or last_epoch != traffic.start:
             return None, None, None
 
-        download = traffic.download - last_traffic.download
-        upload = traffic.upload - last_traffic.upload
+        download = traffic.download - last_download
+        upload = traffic.upload - last_upload
 
-        return download, upload, duration
+        return download, upload, (datetime.now() - reference_time)

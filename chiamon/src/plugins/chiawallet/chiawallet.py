@@ -1,6 +1,6 @@
 import aiohttp
-from datetime import date, timedelta
-from ...core import Plugin, Alert, Chiarpc, Config, Balancehistory, Coinprice, ApiRequestFailedException
+from ...core import Plugin, Alert, Chiarpc, Config, Coinprice, ApiRequestFailedException, Conversions
+from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -17,11 +17,8 @@ class Chiawallet(Plugin):
 
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
 
-        self.__history = Balancehistory(config_data.data['history'])
+        self.__db = Chiawalletdb(config_data.data['database'])
         self.__coinprice = Coinprice('chia', config_data.get_value_or_default('usd', 'currency')[0])
-
-        self.__yesterday_balance = None
-        self.__balance = None
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
@@ -29,11 +26,10 @@ class Chiawallet(Plugin):
         scheduler.add_job(f'{name}-dump', self.dump, '55 23 * * *')
 
     async def startup(self):
-        self.__yesterday_balance = self.__history.get_balance(date.today() - timedelta(days=1))
-        if self.__yesterday_balance is None:
-            self.__yesterday_balance = 0
-        self.__balance = self.__yesterday_balance
-
+        if self.__db.balance is None:
+            self.send(Plugin.Channel.debug, 'No balance data available in database.')
+        else:
+            self.send(Plugin.Channel.debug, f'Old balance from database: {self.__db.balance} XCH.')
         await self.check()
 
     async def check(self):
@@ -41,15 +37,18 @@ class Chiawallet(Plugin):
             balance = await self.__get_balance(session)
             if balance is None:
                 return
-            if balance == self.__balance:
+            if self.__db.balance is None:
+                self.__db.update_balance(balance, None)
                 return
-            diff = balance - self.__balance
-            self.__balance = balance
+            diff = balance - self.__db.balance
+            if diff == 0:
+                return
             await self.__coinprice.update()
+            self.__db.update_balance(balance, self.__coinprice.price)
             message = (
                 f'Balance changed of wallet {self.__wallet_id}:\n'
                 f'delta: {diff} XCH ({self.__coinprice.to_fiat_string(diff)})\n'
-                f'new: {self.__balance} XCH ({self.__coinprice.to_fiat_string(self.__balance)})'
+                f'new: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})'
             )
             self.send(Plugin.Channel.info, message)
             self.send(Plugin.Channel.report, message)
@@ -69,12 +68,9 @@ class Chiawallet(Plugin):
             balance = await self.__get_balance(session)
             if balance is None:
                 return
-        delta = balance - self.__yesterday_balance
 
         await self.__coinprice.update()
         price = self.__coinprice.price
-        self.__history.add_balance(date.today(), delta, balance, price)
-        self.__yesterday_balance = balance
 
         message = (
             f'Wallet {self.__wallet_id}: '
@@ -91,7 +87,7 @@ class Chiawallet(Plugin):
             json = await self.__rpc.post(session, 'get_wallet_balance', {'wallet_id': self.__wallet_id})
         except ApiRequestFailedException:
             return None
-        return self.__mojo_to_xch(json['wallet_balance']['confirmed_wallet_balance'])
+        return Conversions.mojo_to_xch(json['wallet_balance']['confirmed_wallet_balance'])
 
     async def __get_synced(self, session):
         try:
@@ -107,7 +103,3 @@ class Chiawallet(Plugin):
         else:
             self.__wallet_unsynced_alert.reset(f'Wallet is synced again.')
         return synced
-
-    def __mojo_to_xch(self, mojo):
-        return mojo / 1000000000000.0
-

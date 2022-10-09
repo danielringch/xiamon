@@ -7,7 +7,7 @@ price_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 host: <ip:port, usually 127.0.0.1:8555>
 password: <password>
-history: <file>
+database: <file>
 currency: <eur/usd>
 minimum_available_balance: <siacoin>
 autoprice:

@@ -1,12 +1,11 @@
-from datetime import date, timedelta
-from ...core import Plugin, Balancehistory
+from ...core import Plugin
 
 class Siawallet:
-    def __init__(self, plugin, coinprice, config):
+    def __init__(self, plugin, database, coinprice):
 
         self.__plugin = plugin
+        self.__db = database
 
-        self.__history = Balancehistory(config.data['history'])
         self.__coinprice = coinprice
 
     async def summary(self, wallet, locked_collateral, risked_collateral):
@@ -29,6 +28,8 @@ class Siawallet:
         risked = round(risked_collateral)
         balance = free + locked
 
+        self.__db.update_balance(free, locked, risked, self.__coinprice.price)
+
         message = (
             f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC\n'
             f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})\n'
@@ -37,9 +38,3 @@ class Siawallet:
             f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
         )
         self.__plugin.send(Plugin.Channel.report, message)
-
-        yesterday_balance = self.__history.get_balance(date.today() - timedelta(days=1))
-        if yesterday_balance is None:
-            yesterday_balance = 0
-        delta = balance - yesterday_balance
-        self.__history.add_balance(date.today(), delta, balance, self.__coinprice.price)

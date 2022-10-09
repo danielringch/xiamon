@@ -6,5 +6,5 @@ cert: <file>
 key: <file>
 host: <ip:port, usually 127.0.0.1:9256>
 wallet_id = <id>
-history: <file>
+database: <file>
 currency: <eur/usd>
