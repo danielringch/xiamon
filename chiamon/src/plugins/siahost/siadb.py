@@ -1,17 +1,20 @@
-from dataclasses import dataclass
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timedelta
 
 class Siadb():
     __tables = [
+        """CREATE TABLE IF NOT EXISTS coinprice (
+            id integer PRIMARY KEY,
+            timestamp integer NOT NULL,
+            price real
+        );""",
         """CREATE TABLE IF NOT EXISTS balance (
             id integer PRIMARY KEY,
             timestamp integer NOT NULL,
             free int NOT NULL,
             locked int NOT NULL,
-            risked int NOT NULL,
-            price real
+            risked int NOT NULL
         );""",
         """CREATE TABLE IF NOT EXISTS traffic (
             id integer PRIMARY KEY,
@@ -19,13 +22,25 @@ class Siadb():
             epoch text NOT NULL,
             upload integer NOT NULL,
             download integer NOT_NULL
+        );""",
+        """CREATE TABLE IF NOT EXISTS contracts (
+            id integer PRIMARY KEY,
+            timestamp int NOT NULL,
+            count int NOT NULL,
+            storage integer NOT NULL,
+            io integer NOT_NULL,
+            ephemeral integer NOT_NULL
         );"""
     ]
     __inserters = {
-        'balance' : """INSERT INTO balance(timestamp, free, locked, risked, price)
-                        VALUES(?,?,?,?,?)""",
+        'coinprice' : """INSERT INTO coinprice(timestamp, price)
+                        VALUES(?,?)""",
+        'balance' : """INSERT INTO balance(timestamp, free, locked, risked)
+                        VALUES(?,?,?,?)""",
         'traffic' : """INSERT INTO traffic(timestamp, epoch, upload, download)
-                        VALUES(?,?,?,?)"""
+                        VALUES(?,?,?,?)""",
+        'contracts' : """INSERT INTO contracts(timestamp, count, storage, io, ephemeral)
+                        VALUES(?,?,?,?,?)"""
     }
 
     def __init__(self, file):
@@ -40,27 +55,49 @@ class Siadb():
     def __del__(self):
         self.__db.close()
 
+    def update_coinprice(self, price):
+        self.__add_row('coinprice', (int(datetime.now().timestamp()), price))
+
     def update_balance(self, free, locked, risked, price):
-        self.__add_row('balance', (int(datetime.now().timestamp()), free, locked, risked, price))
+        self.__add_row('balance', (int(datetime.now().timestamp()), free, locked, risked))
 
     def update_traffic(self, epoch, upload, download):
         self.__add_row('traffic', (int(datetime.now().timestamp()), epoch, upload, download))
 
-    def get_balance(self, timestamp):
-        command = """SELECT free, locked, risked, price FROM balance {0};"""
+    def update_contracts(self, count, storage, io, ephemeral):
+        self.__add_row('contracts', (int(datetime.now().timestamp()), count, storage, io, ephemeral))
+
+    def get_coinprice(self, timestamp):
+        command = """SELECT price FROM balance {0};"""
         rows = self.__get_rows(command.format(self.__create_time_filter(timestamp)))
         if rows is None:
             return None
-        row = rows[len[rows]//2]
-        return row[0], row[1], row[2], row[3]
+        row = rows[len(rows)//2]
+        return row[0]
+
+    def get_balance(self, timestamp):
+        command = """SELECT free, locked, risked FROM balance {0};"""
+        rows = self.__get_rows(command.format(self.__create_time_filter(timestamp)))
+        if rows is None:
+            return None
+        row = rows[len(rows)//2]
+        return row[0], row[1], row[2]
 
     def get_traffic(self, timestamp):
         command = """SELECT epoch, upload, download FROM traffic {0};"""
         rows = self.__get_rows(command.format(self.__create_time_filter(timestamp)))
         if rows is None:
             return None, None, None
-        row = rows[len[rows]//2]
+        row = rows[len(rows)//2]
         return row[0], row[1], row[2]
+
+    def get_contracts(self, timestamp):
+        command = """SELECT count, storage, io, ephemeral FROM contracts {0};"""
+        rows = self.__get_rows(command.format(self.__create_time_filter(timestamp)))
+        if rows is None:
+            return None, None, None, None
+        row = rows[len(rows)//2]
+        return row[0], row[1], row[2], row[3]
 
     def __add_row(self, table, data):
         self.__db.cursor().execute(Siadb.__inserters[table], data)

@@ -28,7 +28,7 @@ class Siawallet:
         risked = round(risked_collateral)
         balance = free + locked
 
-        self.__db.update_balance(free, locked, risked, self.__coinprice.price)
+        self.__db.update_balance(free, locked, risked)
 
         message = (
             f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC\n'
