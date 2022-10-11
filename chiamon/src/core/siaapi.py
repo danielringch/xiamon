@@ -14,9 +14,13 @@ class Siaapi:
         session = aiohttp.ClientSession(headers=headers, auth=auth)
         return session
 
-    async def get(self, session, cmd):
+    async def get(self, session, cmd, input = {}):
         try:
-            async with session.get(f'http://{self.__host}/{cmd}') as response:
+            parameters = []
+            for key, value in input.items():
+                parameters.append(f'{key}={value}')
+            payload = '?'+'&'.join(parameters) if len(parameters) > 0 else ''
+            async with session.get(f'http://{self.__host}/{cmd}{payload}') as response:
                 json = await response.json()
                 status = response.status
         except Exception as e:

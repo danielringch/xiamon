@@ -2,22 +2,22 @@ from datetime import datetime, timedelta
 from collections import namedtuple
 
 from ...core import Plugin, Conversions, Tablerenderer
-from .siablocks import Siablocks
 
 class Siacontracts:
 
     RewardTypes = namedtuple("RewardTypes", "storage io ephemeral total fiat")
 
-    def __init__(self, plugin, coinprice, scheduler, database):
+    def __init__(self, plugin, coinprice, scheduler, database, blocks):
         self.__plugin = plugin
         self.__coinprice = coinprice
         self.__scheduler = scheduler
         self.__db = database
+        self.__blocks = blocks
 
-    def summary(self, consensus, contracts, last_execution):
+    async def summary(self, consensus, contracts, last_execution):
         messages = []
         height = consensus.height
-        last_height = Siablocks.at_time(last_execution, consensus)
+        last_height = await self.__blocks.at_time(last_execution, consensus)
 
         active_contracts = 0
         recent_started = 0
@@ -68,11 +68,13 @@ class Siacontracts:
         if last_pending_earnings is not None:
             non_settled_earnings = pendings_earnings - last_pending_earnings
             messages.append(f'Non-settled earnings: {round(non_settled_earnings)} SC ({self.__coinprice.to_fiat_string(non_settled_earnings)})')
+        else:
+            messages.append(f'Non-settled earnings are not available.')
         messages.append(f'Non-settled balance: {round(pendings_earnings)} SC ({self.__coinprice.to_fiat_string(pendings_earnings)})')
 
         self.__plugin.send(Plugin.Channel.info, '\n'.join(messages))
 
-    def contract_list(self, consensus, contracts):
+    async def contract_list(self, consensus, contracts):
         height = consensus.height
         id = 0
         renderer = Tablerenderer(['ID', 'Size', 'Started', 'Ending', 'Locked', 'Storage', 'IO', 'Ephemeral'])
@@ -83,16 +85,16 @@ class Siacontracts:
 
             data['ID'].append(f'{id}')
             data['Size'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.byte_to_auto(contract.datasize)))
-            data['Started'].append(f'{Conversions.siablocks_to_duration(height - contract.start).days} d')
-            data['Ending'].append(f'{Conversions.siablocks_to_duration(contract.end - height).days} d')
+            data['Started'].append(f'{(await self.__blocks.duration(contract.start, height, consensus)).days} d')
+            data['Ending'].append(f'{(await self.__blocks.duration(height, contract.end, consensus)).days} d')
             data['Locked'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.locked_collateral)))
             data['Storage'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.storage_revenue)))
             data['IO'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.io_revenue)))
             data['Ephemeral'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.ephemeral_revenue)))
             id += 1
-        self.send(Plugin.Channel.debug, renderer.render())
+        self.__plugin.send(Plugin.Channel.debug, renderer.render())
 
-    def accounting(self, consensus, contracts):
+    async def accounting(self, consensus, contracts):
         now = datetime.now()
         max_timestamp = now - timedelta(hours=1)
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-accounting')
@@ -100,7 +102,7 @@ class Siacontracts:
             self.__plugin.send(Plugin.Channel.error, 'Accounting failed: unabled to calculate previous report time.')
             return
 
-        table = Tablerenderer(['Date', 'Contracts', 'Storage', 'IO', 'Ephemeral', 'Sum', 'Coinprice', 'Fiat'])
+        table = Tablerenderer(['Date', 'Height', 'Contracts', 'Storage', 'IO', 'Ephemeral', 'Sum', 'Coinprice', 'Fiat'])
 
         now = now.date()
         last_execution = last_execution.date()
@@ -109,14 +111,14 @@ class Siacontracts:
 
         while now > last_execution:
             yesterday = now - timedelta(days=1)
+
+            begin_height = await self.__blocks.at_time(datetime.combine(yesterday, datetime.min.time()), consensus) + 1
+            end_height = await self.__blocks.at_time(datetime.combine(now, datetime.min.time()), consensus)
+
             day_rewards = self.__add_to_table(
                 yesterday,
-                self.__extract_contracts(
-                    consensus, 
-                    contracts, 
-                    datetime.combine(yesterday, datetime.min.time()), 
-                    datetime.combine(now, datetime.min.time())
-                ),
+                begin_height,
+                list(filter(lambda x: x.end >= begin_height and x.end < end_height, contracts.contracts)),
                 table
             )
             total_rewards = self.RewardTypes(
@@ -135,13 +137,6 @@ class Siacontracts:
 
         self.__plugin.send(Plugin.Channel.report, table.render())
 
-
-    def __extract_contracts(self, consensus, contracts, begin, end):
-        begin_height = Siablocks.at_time(begin, consensus)
-        end_height = Siablocks.at_time(end, consensus)
-
-        return list(filter(lambda x: x.end >= begin_height and x.end < end_height, contracts.contracts))
-
     def __get_rewards(self, contracts):
         storage = sum(x.storage_revenue for x in contracts)
         io = sum(x.io_revenue for x in contracts)
@@ -158,9 +153,10 @@ class Siacontracts:
         table.data['Sum'].append(f'{round(rewards.total)} SC')
         table.data['Fiat'].append(f'{rewards.fiat:.2f} {self.__coinprice.currency}')
 
-    def __add_to_table(self, date, contracts, table):
+    def __add_to_table(self, date, height, contracts, table):
         rewards = self.__get_rewards(contracts)
         table.data['Date'].append(date.strftime("%d.%m.%Y"))
+        table.data['Height'].append(height)
         table.data['Contracts'].append(len(contracts))
         table.data['Coinprice'].append(f'{self.__coinprice.price} {self.__coinprice.currency}/SC')
         self.__add_row(table, rewards)
@@ -168,11 +164,13 @@ class Siacontracts:
 
     def __add_summary(self, table, rewards):
         table.data['Date'].append('Total')
+        table.data['Height'].append('')
         table.data['Contracts'].append('')
         table.data['Coinprice'].append('')
         self.__add_row(table, rewards)
 
         table.data['Date'].append('Percent')
+        table.data['Height'].append('')
         table.data['Contracts'].append('')
         table.data['Storage'].append(f'{(rewards.storage / rewards.total * 100):.0f} %')
         table.data['IO'].append(f'{(rewards.io / rewards.total * 100):.0f} %')

@@ -29,14 +29,14 @@ class Siahost(Plugin):
         self.__api = Siaapi(host, password, super(Siahost, self))
 
         self.__db = Siadb(config_data.data['database'])
-
+        self.__blocks = Siablocks(super(Siahost, self), self.__api, self.__db)
         self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
 
         self.__health = Siahealth(self, config_data)
         self.__storage = Siastorage(self, self.__scheduler, self.__db)
         self.__wallet = Siawallet(self, self.__db, self.__coinprice)
         self.__autoprice = None
-        self.__reports = Siacontracts(self, self.__coinprice, self.__scheduler, self.__db)
+        self.__reports = Siacontracts(self, self.__coinprice, self.__scheduler, self.__db, self.__blocks)
         if 'autoprice' in  config_data.data:
             self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, config_data)
             self.__scheduler.add_job(self.__autoprice_job ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
@@ -55,6 +55,7 @@ class Siahost(Plugin):
             self.send(Plugin.Channel.debug, 'Report failed: some host queries failed.')
             return
         
+        await self.__blocks.update(consensus)
         self.__health.check(consensus, host, wallet)
 
     async def summary(self):
@@ -70,6 +71,7 @@ class Siahost(Plugin):
             return
 
         await self.__update_coinprice(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
+        await self.__blocks.update(consensus)
 
         locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
 
@@ -78,7 +80,7 @@ class Siahost(Plugin):
         await self.__wallet.summary(wallet, locked_collateral, risked_collateral)
         self.__autoprice.summary(storage, wallet, locked_collateral)
         self.__storage.summary(storage, traffic)
-        self.__reports.summary(consensus, contracts, self.__scheduler.get_last_execution(self.__summary_job))
+        await self.__reports.summary(consensus, contracts, self.__scheduler.get_last_execution(self.__summary_job))
 
     async def list(self):
         try:
@@ -92,13 +94,14 @@ class Siahost(Plugin):
             return
 
         await self.__update_coinprice(Plugin.Channel.error, 'Report incomplete: coin price not available.')
+        await self.__blocks.update(consensus)
 
         self.__health.update_proof_deadlines(contracts)
 
         locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
         await self.__wallet.dump(wallet, locked_collateral, risked_collateral)
         self.__storage.report(storage, traffic)
-        self.__reports.contract_list(consensus, contracts)
+        await self.__reports.contract_list(consensus, contracts)
 
     async def accounting(self):
         try:
@@ -109,8 +112,8 @@ class Siahost(Plugin):
             return
 
         await self.__update_coinprice(Plugin.Channel.error, 'Autoprice incomplete: coin price not available.')
-
-        self.__reports.accounting(consensus, contracts)
+        await self.__blocks.update(consensus)
+        await self.__reports.accounting(consensus, contracts)
 
     async def price(self):
         if self.__autoprice is None:

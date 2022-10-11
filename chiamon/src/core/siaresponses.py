@@ -1,4 +1,5 @@
 import ciso8601
+from datetime import datetime
 from .conversions import Conversions
 
 class Siaconsensusdata:
@@ -13,6 +14,19 @@ class Siaconsensusdata:
     @property
     def height(self):
         return self.__height
+
+class Siablockdata:
+    def __init__(self, json):
+        self.__height = json['height']
+        self.__timestamp = datetime.fromtimestamp(int(json['timestamp']))
+
+    @property
+    def height(self):
+        return self.__height
+
+    @property
+    def timestamp(self):
+        return self.__timestamp
 
 class Siawalletdata:
     def __init__(self, json):

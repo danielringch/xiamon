@@ -30,6 +30,10 @@ class Siadb():
             storage integer NOT NULL,
             io integer NOT_NULL,
             ephemeral integer NOT_NULL
+        );""",
+        """CREATE TABLE IF NOT EXISTS blocks (
+            height integer PRIMARY KEY,
+            timestamp int NOT NULL
         );"""
     ]
     __inserters = {
@@ -40,7 +44,9 @@ class Siadb():
         'traffic' : """INSERT INTO traffic(timestamp, epoch, upload, download)
                         VALUES(?,?,?,?)""",
         'contracts' : """INSERT INTO contracts(timestamp, count, storage, io, ephemeral)
-                        VALUES(?,?,?,?,?)"""
+                        VALUES(?,?,?,?,?)""",
+        'blocks' : """INSERT OR IGNORE INTO blocks(height, timestamp)
+                        VALUES(?,?)"""
     }
 
     def __init__(self, file):
@@ -58,7 +64,7 @@ class Siadb():
     def update_coinprice(self, price):
         self.__add_row('coinprice', (int(datetime.now().timestamp()), price))
 
-    def update_balance(self, free, locked, risked, price):
+    def update_balance(self, free, locked, risked):
         self.__add_row('balance', (int(datetime.now().timestamp()), free, locked, risked))
 
     def update_traffic(self, epoch, upload, download):
@@ -66,6 +72,9 @@ class Siadb():
 
     def update_contracts(self, count, storage, io, ephemeral):
         self.__add_row('contracts', (int(datetime.now().timestamp()), count, storage, io, ephemeral))
+
+    def add_blocks(self, data):
+        self.__add_rows('blocks', list((x, int(y.timestamp())) for x, y in data))
 
     def get_coinprice(self, timestamp):
         command = """SELECT price FROM balance {0};"""
@@ -99,8 +108,38 @@ class Siadb():
         row = rows[len(rows)//2]
         return row[0], row[1], row[2], row[3]
 
+    def get_height(self, timestamp):
+        unix = int(timestamp.timestamp())
+        command = f'SELECT height FROM blocks WHERE timestamp < {unix} ORDER BY timestamp DESC LIMIT 1'
+        rows = self.__get_rows(command)
+        return rows[0][0] if rows is not None else None
+
+    def get_timestamp(self, height):
+        command = f'SELECT timestamp FROM blocks WHERE height == {height}'
+        rows = self.__get_rows(command)
+        return datetime.fromtimestamp(rows[0][0]) if rows is not None else None
+
+    def get_oldest_height(self):
+        command = f'SELECT height, timestamp FROM blocks ORDER BY height ASC LIMIT 1'
+        rows = self.__get_rows(command)
+        if rows is None:
+            return None, None
+        return rows[0][0], datetime.fromtimestamp(rows[0][1])
+
+    def get_newest_height(self):
+        command = f'SELECT height, timestamp FROM blocks ORDER BY height DESC LIMIT 1'
+        rows = self.__get_rows(command)
+        if rows is None:
+            return None, None
+        return rows[0][0], datetime.fromtimestamp(rows[0][1])
+
     def __add_row(self, table, data):
         self.__db.cursor().execute(Siadb.__inserters[table], data)
+        self.__db.commit()
+
+    def __add_rows(self, table, data):
+        for row in data:
+            self.__db.cursor().execute(Siadb.__inserters[table], row)
         self.__db.commit()
 
     def __get_rows(self, command):
