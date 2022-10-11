@@ -60,7 +60,7 @@ class Scheduler:
 
         next_run = 3600
         for job in self.__jobs.values():
-            diff = (job.next - time).total_seconds()
+            diff = max(0, (job.next - time).total_seconds())
             if diff < next_run:
                 next_run = diff
         return round(next_run)
