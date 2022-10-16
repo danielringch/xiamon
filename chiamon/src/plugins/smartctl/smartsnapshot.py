@@ -52,6 +52,7 @@ class SmartSnapshot:
         instance.__timestamp = timestamp
         instance.__attributes = copy.deepcopy(attributes)
         instance.__success = True
+        return instance
 
     @property
     def identifier(self):
