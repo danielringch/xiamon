@@ -1,5 +1,6 @@
 from collections import namedtuple, defaultdict
 from enum import Enum
+from unicodedata import category
 from ...core import Plugin, Conversions, ApiRequestFailedException
 
 class Siaautoprice:
@@ -46,10 +47,7 @@ class Siaautoprice:
 
         rpc_price = config.data['autoprice']['base_rpc']
 
-        self.__minimum_collateral_factor = config.data['autoprice']['minimum_collateral_factor']
-        self.__maximum_collateral_factor = config.data['autoprice']['maximum_collateral_factor']
-        self.__minimum_collateral_reserve = config.data['autoprice']['minimum_collateral_reserve']
-        self.__target_collateral_reserve = config.data['autoprice']['target_collateral_reserve']
+        self.__collateral_factor = config.data['autoprice']['collateral_factor']
 
         self.__updaters = {
             self.Category.contract : self.Updater(self.configs[self.Category.contract], self.__coinprice, None, contract_price),
@@ -61,10 +59,12 @@ class Siaautoprice:
         }
 
     def summary(self, storage, wallet, locked_collateral):
-        collateral_reserve = self.__get_collateral_reserve(storage, wallet, locked_collateral)
+        used_factor = storage.used_space / storage.total_space
+        locked_factor = locked_collateral / (locked_collateral + wallet.balance + wallet.pending)
+        collateral_reserve = round(100 * ((used_factor / locked_factor) - 1))
         self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
 
-    async def update(self, host, storage, wallet, locked_collateral):
+    async def update(self, host):
         messages = defaultdict(list)
         prices = {}
 
@@ -73,11 +73,13 @@ class Siaautoprice:
         for updater in self.__updaters.values():
             self.__trigger_updater(host, updater, prices, messages)
 
-        new_collateral = self.__update_collateral(
-            self.__updaters[self.Category.storage].current_price,
-            self.__get_collateral_reserve(storage, wallet, locked_collateral),
-            messages)
-        collateral_updater = self.Updater(self.configs[self.Category.collateral], self.__coinprice, None, new_collateral)
+        new_collateral = prices[self.Category.storage] * self.__collateral_factor if self.Category.storage in prices \
+            else host.storageprice * self.__collateral_factor
+        collateral_updater = self.Updater(
+            self.configs[self.Category.collateral], 
+            self.__coinprice, 
+            None, 
+            new_collateral)
         self.__trigger_updater(host, collateral_updater, prices, messages)
 
         for channel, lines in messages.items():
@@ -91,22 +93,6 @@ class Siaautoprice:
                 await self.__api.post(session, 'host', prices)
             except ApiRequestFailedException:
                 self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
-
-    def __get_collateral_reserve(self, storage, wallet, locked_collateral):
-        used_factor = storage.used_space / storage.total_space
-        locked_factor = locked_collateral / (locked_collateral + wallet.balance + wallet.pending)
-        return round(100 * ((used_factor / locked_factor) - 1))
-
-    def __update_collateral(self, storage_price, collateral_reserve, messages):
-        collateral_reserve = max(self.__minimum_collateral_reserve, 
-            min(self.__target_collateral_reserve, collateral_reserve))
-        range_percent = (collateral_reserve - self.__minimum_collateral_reserve) / \
-            (self.__target_collateral_reserve - self.__minimum_collateral_reserve)
-        collateral_factor = round(((1 - range_percent) * self.__minimum_collateral_factor) + (range_percent * self.__maximum_collateral_factor), 2)
-        messages[Plugin.Channel.debug].append(
-            f'Collateral reserve: {collateral_reserve} % in range {self.__minimum_collateral_reserve} % .. {self.__target_collateral_reserve} %\n'
-            f'New collateral factor: {collateral_factor} in range {self.__minimum_collateral_factor} .. {self.__maximum_collateral_factor}')
-        return storage_price * collateral_factor
 
     def __trigger_updater(self, host, updater, prices, messages):
         new_price = updater.update(host, messages)

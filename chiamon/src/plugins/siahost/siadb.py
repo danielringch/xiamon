@@ -55,7 +55,7 @@ class Siadb():
             raise FileNotFoundError(f'Path contains not existing directory: {file}')
         self.__db = sqlite3.connect(self.__path)
         cursor = self.__db.cursor()
-        for cmd in Siadb.__tables:
+        for cmd in self.__tables:
             cursor.execute(cmd)
 
     def __del__(self):

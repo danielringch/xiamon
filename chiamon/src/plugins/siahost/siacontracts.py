@@ -70,6 +70,9 @@ class Siacontracts:
             messages.append(f'Non-settled earnings: {round(non_settled_earnings)} SC ({self.__coinprice.to_fiat_string(non_settled_earnings)})')
         else:
             messages.append(f'Non-settled earnings are not available.')
+            self.__plugin.send(Plugin.Channel.debug, 
+                f'Can not calculate non-settled earnings: no old non-settled balance available.\n'
+                f'Requested timestamp: {last_execution}')
         messages.append(f'Non-settled balance: {round(pendings_earnings)} SC ({self.__coinprice.to_fiat_string(pendings_earnings)})')
 
         self.__plugin.send(Plugin.Channel.info, '\n'.join(messages))

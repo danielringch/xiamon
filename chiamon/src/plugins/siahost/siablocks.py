@@ -67,6 +67,8 @@ class Siablocks:
             begin = current_height
         elif begin >= current_height:
             return
+        else:
+            begin += 1
         self.__plugin.send(Plugin.Channel.debug, f'Updating blocks cache, loading heights {begin} - {current_height}.')
         await self.__get_blocks_from_consensus(begin, current_height)
 

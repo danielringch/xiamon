@@ -47,11 +47,21 @@ class Siastorage:
         )
 
     def __get_traffic(self, traffic, reference_time):
-        self.__db.update_traffic(traffic.start, traffic.upload, traffic.download)
-        
+        current_epoch = str(traffic.start)
+        self.__db.update_traffic(current_epoch, traffic.upload, traffic.download)
         last_epoch, last_upload, last_download = self.__db.get_traffic(reference_time)
 
-        if None in (last_epoch, last_upload, last_download) or last_epoch != traffic.start:
+        if None in (last_epoch, last_upload, last_download):
+            self.__plugin.send(Plugin.Channel.debug, 
+                f'Can not calculate traffic: no old traffic data available.\n'
+                f'Requested timestamp: {reference_time}')
+            return None, None, None
+
+        if current_epoch != last_epoch:
+            self.__plugin.send(Plugin.Channel.debug, 
+                f'Can not calculate traffic: Sia was restarted since last traffic data.\n'
+                f'Last data: {reference_time}, epoch {last_epoch}\n'
+                f'Current epoch {current_epoch}')
             return None, None, None
 
         download = traffic.download - last_download

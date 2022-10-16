@@ -119,11 +119,7 @@ class Siahost(Plugin):
         if self.__autoprice is None:
             return
         try:
-            consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
             host = await self.__request('host', lambda x: Siahostdata(x))
-            storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
-            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
-            wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         except ApiRequestFailedException:
             self.send(Plugin.Channel.error, 'Autoprice failed: some host queries failed.')
             return
@@ -131,8 +127,7 @@ class Siahost(Plugin):
         if not await self.__update_coinprice(Plugin.Channel.error, 'Autoprice failed: coin price not available.'):
             return
 
-        locked_collateral, _ = self.__get_collaterals(consensus, contracts)
-        await self.__autoprice.update(host, storage, wallet, locked_collateral)
+        await self.__autoprice.update(host)
 
     @staticmethod
     def __get_collaterals(consensus, contracts):
@@ -151,10 +146,10 @@ class Siahost(Plugin):
     async def __update_coinprice(self, error_channel, error_message):
         if not await self.__coinprice.update():
             self.send(error_channel, error_message)
-            return True
+            return False
         else:
             self.__db.update_coinprice(self.__coinprice.price)
-            return False
+            return True
 
     async def __request(self, cmd, generator):
         async with self.__api.create_session() as session:

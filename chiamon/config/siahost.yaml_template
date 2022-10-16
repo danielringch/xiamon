@@ -14,10 +14,7 @@ autoprice:
     contract: <siacoin>
     storage: <currency>
     storage_max: <siacoin>
-    minimum_collateral_factor: <factor>
-    maximum_collateral_factor: <factor>
-    minimum_collateral_reserve: <percent>
-    target_collateral_reserve: <percent>
+    collateral_factor: <factor>
     upload: <currency>
     upload_max: <siacoin>
     download: <currency>
