@@ -65,15 +65,15 @@ class Siacontracts:
         messages.append(f'Ended contracts: {recent_ended}')
         messages.append(f'Failed proofs: {failed_proofs}')
         messages.append(f'Settled earnings: {round(settled_earnings)} SC ({self.__coinprice.to_fiat_string(settled_earnings)})')
-        if last_pending_earnings is not None:
-            non_settled_earnings = pendings_earnings - last_pending_earnings
-            messages.append(f'Non-settled earnings: {round(non_settled_earnings)} SC ({self.__coinprice.to_fiat_string(non_settled_earnings)})')
-        else:
-            messages.append(f'Non-settled earnings are not available.')
-            self.__plugin.send(Plugin.Channel.debug, 
-                f'Can not calculate non-settled earnings: no old non-settled balance available.\n'
-                f'Requested timestamp: {last_execution}')
         messages.append(f'Non-settled balance: {round(pendings_earnings)} SC ({self.__coinprice.to_fiat_string(pendings_earnings)})')
+        if last_pending_earnings is not None:
+            total_earnings = settled_earnings + pendings_earnings - last_pending_earnings
+            messages.append(f'Total earnings: {round(total_earnings)} SC ({self.__coinprice.to_fiat_string(total_earnings)})')
+        else:
+            messages.append(f'Total earnings are not available.')
+            self.__plugin.send(Plugin.Channel.debug, 
+                f'Can not calculate total earnings: no old non-settled balance available.\n'
+                f'Requested timestamp: {last_execution}')
 
         self.__plugin.send(Plugin.Channel.info, '\n'.join(messages))
 
