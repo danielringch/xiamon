@@ -172,12 +172,16 @@ class Siacontracts:
         table.data['Coinprice'].append('')
         self.__add_row(table, rewards)
 
+        storage_percent = (rewards.storage / rewards.total * 100) if rewards.total > 0 else 0
+        io_percent = (rewards.io / rewards.total * 100) if rewards.total > 0 else 0
+        ephemeral_percent = (rewards.ephemeral / rewards.total * 100) if rewards.total > 0 else 0
+
         table.data['Date'].append('Percent')
         table.data['Height'].append('')
         table.data['Contracts'].append('')
-        table.data['Storage'].append(f'{(rewards.storage / rewards.total * 100):.0f} %')
-        table.data['IO'].append(f'{(rewards.io / rewards.total * 100):.0f} %')
-        table.data['Ephemeral'].append(f'{(rewards.ephemeral / rewards.total * 100):.0f} %')
+        table.data['Storage'].append(f'{storage_percent:.0f} %')
+        table.data['IO'].append(f'{io_percent:.0f} %')
+        table.data['Ephemeral'].append(f'{ephemeral_percent:.0f} %')
         table.data['Sum'].append('')
         table.data['Coinprice'].append('')
         table.data['Fiat'].append('')
