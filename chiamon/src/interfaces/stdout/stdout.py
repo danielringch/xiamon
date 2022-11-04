@@ -15,9 +15,9 @@ class Stdout(Interface):
             if name in config_data.data:
                 self.__channels[channel] = Stdout.Channel(
                     name,
-                    config_data.get_value_or_default('reset', name, 'color')[0],
-                    config_data.get_value_or_default(None, name, 'whitelist')[0],
-                    config_data.get_value_or_default(None, name, 'blacklist')[0])
+                    config_data.get('reset', name, 'color'),
+                    config_data.get(None, name, 'whitelist'),
+                    config_data.get(None, name, 'blacklist'))
 
 
     async def start(self):

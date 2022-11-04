@@ -8,7 +8,7 @@ from .challengecache import ChallengeCache
 class Chiafarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('chiafarmer', 'name')
+        name = config_data.get('chiafarmer', 'name')
         super(Chiafarmer, self).__init__(name, outputs)
         self.print(f'Plugin chiafarmer; name: {name}')
 
@@ -17,10 +17,10 @@ class Chiafarmer(Plugin):
         self.__evaluate_job = f'{name}-evaluate'
         self.__summary_job = f'{name}-summary'
 
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
-        farmer_host, _ = config_data.get_value_or_default('127.0.0.1:8559','farmer_host')
-        harvester_host, _ = config_data.get_value_or_default('127.0.0.1:8560', 'harvester_host')
+        farmer_host = config_data.get('127.0.0.1:8559','farmer_host')
+        harvester_host = config_data.get('127.0.0.1:8560', 'harvester_host')
         self.__farmer_rpc = Chiarpc(farmer_host, config_data.data['farmer_cert'], config_data.data['farmer_key'],
             super(Chiafarmer, self)) if farmer_host is not None else None
         self.__harvester_rpc = Chiarpc(harvester_host, config_data.data['harvester_cert'], config_data.data['harvester_key'],
@@ -28,8 +28,8 @@ class Chiafarmer(Plugin):
 
         self.__plot_error_alert = Alert(super(Chiafarmer, self), None)
         self.__underharvested_alert = Alert(super(Chiafarmer, self), mute_interval)
-        self.__threshold_short = float(config_data.get_value_or_default(0.95, 'underharvested_threshold_short')[0])
-        self.__threshold_long = float(config_data.get_value_or_default(0.99, 'underharvested_threshold_long')[0])
+        self.__threshold_short = float(config_data.get(0.95, 'underharvested_threshold_short'))
+        self.__threshold_long = float(config_data.get(0.99, 'underharvested_threshold_long'))
 
         db_path = os.path.join(config_data.data['db'], f"{re.sub('[^a-zA-Z0-9]+', '', name)}.yaml")
         self.__history = ChallengeCache(super(Chiafarmer, self), db_path)
@@ -39,7 +39,7 @@ class Chiafarmer(Plugin):
 
         self.__scheduler.add_job(self.__check_job ,self.check, "*/5 * * * *")
         self.__scheduler.add_job(self.__evaluate_job, self.evaluate, "0 * * * *")
-        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get('0 0 * * *', 'summary_interval'))
         self.__interval = self.__scheduler.get_current_interval(self.__summary_job)
 
     async def check(self):

@@ -27,10 +27,11 @@ class Scheduler:
             await self.__try_run(startup_job)
             
     def add_job(self, name, func, interval):
-        if interval is None:
-            self.__startup_jobs.append(Startupjob(name, func))
-        else:
+        if interval is not None:
             self.__jobs[name] = Scheduler.__bundle(name, func, interval)
+
+    def add_startup_job(self, name, func):
+        self.__startup_jobs.append(Startupjob(name, func))
 
     async def manual(self, job):
         if job in self.__jobs:

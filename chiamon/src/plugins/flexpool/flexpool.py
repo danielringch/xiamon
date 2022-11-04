@@ -5,28 +5,28 @@ from ...core import Plugin, Alert, Config
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('flexpool', 'name')
+        name = config_data.get('flexpool', 'name')
         super(Flexpool, self).__init__(name, outputs)
         self.print(f'Plugin flexpool; name: {name}')
 
         self.__address = config_data.data['address']
-        self.__currency, _ = config_data.get_value_or_default('USD', 'currency')
-        self.__worker_whitelist, _ = config_data.get_value_or_default(None, 'worker_whitelist')
+        self.__currency = config_data.get('USD', 'currency')
+        self.__worker_whitelist = config_data.get(None, 'worker_whitelist')
 
         self.__last_summary = datetime.datetime.now()
 
         self.__timeout = aiohttp.ClientTimeout(total=30)
 
         self.__connection_alerts = {}
-        self.__connection_mute_interval, _ = config_data.get_value_or_default(24, 'connection_error_mute_interval')
-        self.__connection_tolerance, _ = config_data.get_value_or_default(0, 'connection_error_tolerance')
-        self.__connection_retry, _ = config_data.get_value_or_default(3, 'connection_retry')
+        self.__connection_mute_interval = config_data.get(24, 'connection_error_mute_interval')
+        self.__connection_tolerance = config_data.get(0, 'connection_error_tolerance')
+        self.__connection_retry = config_data.get(3, 'connection_retry')
         self.__offline_alerts = {}
-        self.__offline_mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
-        self.__offline_tolerance, _ = config_data.get_value_or_default(0, 'alert_tolerance')
+        self.__offline_mute_interval = config_data.get(24, 'alert_mute_interval')
+        self.__offline_tolerance = config_data.get(0, 'alert_tolerance')
 
-        scheduler.add_job(f'{name}-summary' ,self.summary, config_data.get_value_or_default('0 * * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-check', self.check, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
+        scheduler.add_job(f'{name}-summary' ,self.summary, config_data.get('0 * * * *', 'summary_interval'))
+        scheduler.add_job(f'{name}-check', self.check, config_data.get('0 0 * * *', 'check_interval'))
 
     async def summary(self):
         now = datetime.datetime.now()

@@ -11,7 +11,7 @@ from .siawallet import Siawallet
 class Siahost(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('siahost', 'name')
+        name = config_data.get('siahost', 'name')
         super(Siahost, self).__init__(name, outputs)
         self.print(f'Plugin siahost; name: {name}')
 
@@ -22,9 +22,9 @@ class Siahost(Plugin):
         self.__accounting_job = f'{name}-accounting'
         self.__autoprice_job = f'{name}-autoprice'
 
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
-        host, _ = config_data.get_value_or_default('127.0.0.1:9980','host')
+        host = config_data.get('127.0.0.1:9980','host')
         password = config_data.data['password']
         self.__api = Siaapi(host, password, super(Siahost, self))
 
@@ -39,12 +39,12 @@ class Siahost(Plugin):
         self.__reports = Siacontracts(self, self.__coinprice, self.__scheduler, self.__db, self.__blocks)
         if 'autoprice' in  config_data.data:
             self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, config_data)
-            self.__scheduler.add_job(self.__autoprice_job ,self.price, config_data.get_value_or_default('0 0 * * *', 'price_interval')[0])
+            self.__scheduler.add_job(self.__autoprice_job ,self.price, config_data.get('0 0 * * *', 'price_interval'))
 
-        self.__scheduler.add_job(self.__check_job ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
-        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        self.__scheduler.add_job(self.__list_job, self.list, config_data.get_value_or_default('59 23 * * *', 'list_interval')[0])
-        self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get_value_or_default('0 0 * * MON', 'accounting_interval')[0])
+        self.__scheduler.add_job(self.__check_job ,self.check, config_data.get('0 * * * *', 'check_interval'))
+        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get('0 0 * * *', 'summary_interval'))
+        self.__scheduler.add_job(self.__list_job, self.list, config_data.get('59 23 * * *', 'list_interval'))
+        self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get('0 0 * * MON', 'accounting_interval'))
 
     async def check(self):
         try:

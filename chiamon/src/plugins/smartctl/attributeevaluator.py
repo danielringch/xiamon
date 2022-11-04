@@ -1,3 +1,4 @@
+from ...core import Plugin, Alert
 
 class AttributeEvaluator:
     attribute_aliases = {
@@ -16,20 +17,30 @@ class AttributeEvaluator:
         'delta_min': lambda x: AttributeEvaluator.DeltaMaxCheck(x),
     }
 
-    def __init__(self, aggregation, global_config, drive_config):
+    def __init__(self, plugin, aggregation, config, drive):
+        self.__plugin = plugin
+        self.name = config.get(drive, 'drives', drive, 'alias')
+        self.config_type = 'default'
         self.__checkers = {}
         self.__aggregation = aggregation
+        self.__alerts = {}
 
-        for attribute, check in global_config.items():
-            self.__checkers[attribute] = AttributeEvaluator.checker_generators[check['evaluation']](check['value'])
+        global_config = config.get(None, 'limits')
+        if global_config is not None:
+            for attribute, check in global_config.items():
+                self.__checkers[attribute] = self.checker_generators[check['evaluation']](check['value'])
 
+        drive_config = config.get(None, 'drives', drive, 'limits')
         if drive_config is not None:
+            self.config_type = 'custom'
             for attribute, check in drive_config.items():
-                self.__checkers[attribute] = AttributeEvaluator.checker_generators[check['evaluation']](check['value'])
+                self.__checkers[attribute] = self.checker_generators[check['evaluation']](check['value'])
+
+        for attribute in self.__checkers.keys():
+            self.__alerts[attribute] = Alert(self.__plugin, self.__aggregation)
 
     def check(self, snapshot, history):
-        errors = {}
-        debugs = []
+        messages = []
         if history is not None:
             delta = snapshot.timestamp - history.timestamp
 
@@ -49,17 +60,13 @@ class AttributeEvaluator:
 
             passed, message = checker.check(value, history_value)
 
-            try:
-                readable_attribute = AttributeEvaluator.attribute_aliases[attribute]
-            except KeyError:
-                readable_attribute = f'attribute {attribute}'
-
-            if passed:
-                debugs.append(f'{readable_attribute} {message}.')
-            else:
-                errors[f'{attribute}-{checker.name}'] = f'{readable_attribute} {message}.'
-
-        return errors, debugs
+            readable_attribute = self.attribute_aliases.get(attribute, f'attribute {attribute}')
+            message = f'{self.name}: {readable_attribute} {message}.'
+            messages.append(message)
+            if not passed:
+                self.__alerts[attribute].send(message)
+        if len(messages) > 0:
+            self.__plugin.send(Plugin.Channel.debug, '\n'.join(messages))
 
     def __scale_value(self, value, old_value, time_delta, expected_time_delta):
         factor = expected_time_delta / time_delta
@@ -101,7 +108,7 @@ class AttributeEvaluator:
 
         def check(self, value, old_value):
             if old_value is None:
-                return True, 'test not executed.'
+                return True, 'test not executed'
             delta = value - old_value
             if delta > self.__limit:
                 return False, f'delta too high; {delta}, max: {self.__limit}'
@@ -118,7 +125,7 @@ class AttributeEvaluator:
 
         def check(self, value, old_value):
             if old_value is None:
-                return True, 'test not executed.'
+                return True, 'test not executed'
             delta = value - old_value
             if delta < self.__limit:
                 return False, f'delta too low: {delta}, min: {self.__limit}'

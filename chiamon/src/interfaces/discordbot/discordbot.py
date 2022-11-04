@@ -81,8 +81,8 @@ class Discordbot(Interface):
                     self.__channels[channel] = Discordbot.Channel(
                         self,
                         id,
-                        config.get_value_or_default(None, name, 'whitelist')[0],
-                        config.get_value_or_default(None, name, 'blacklist')[0])
+                        config.get(None, name, 'whitelist'),
+                        config.get(None, name, 'blacklist'))
 
             self.__ready = False
 

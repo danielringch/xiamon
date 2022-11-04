@@ -4,8 +4,8 @@ class Siahealth:
     def __init__(self, plugin, config):
 
         self.__plugin = plugin
-        mute_interval, _ = config.get_value_or_default(24, 'alert_mute_interval')
-        self.__minimum_available_balance, _ = config.get_value_or_default(10, 'minimum_available_balance')
+        mute_interval = config.get(24, 'alert_mute_interval')
+        self.__minimum_available_balance = config.get(10, 'minimum_available_balance')
 
         self.__unsync_alert = Alert(plugin, mute_interval)
         self.__wallet_locked_alert = Alert(plugin, mute_interval)

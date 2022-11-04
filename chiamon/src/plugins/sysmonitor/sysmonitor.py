@@ -6,11 +6,11 @@ from ...core import Plugin, Alert, Config
 class Sysmonitor(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('sysmonitor', 'name')
+        name = config_data.get('sysmonitor', 'name')
         super(Sysmonitor, self).__init__(name, outputs)
         self.print(f'Plugin sysmonitor; name: {name}')
 
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
         self.__evaluators = {}
         self.__alerts = {}
@@ -21,11 +21,11 @@ class Sysmonitor(Plugin):
         self.__add_resource(config_data.data, 'swap', mute_interval)
         self.__add_resource(config_data.data, 'temperature', mute_interval)
 
-        self.__temperature_source, _ = config_data.get_value_or_default(None, 'temperature', 'sensor')
+        self.__temperature_source = config_data.get(None, 'temperature', 'sensor')
 
         self.print(f'Monitored resources: {",".join(self.__evaluators.keys())}')
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('* * * * *', 'interval')[0])
+        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('* * * * *', 'interval'))
 
     async def check(self):
         load = self.__check_resource('load', self.__get_load)

@@ -1,4 +1,4 @@
-import datetime, os
+import datetime
 from ...core import otherdefaultdict
 from ...core.interface import Interface
 from ...core import Config
@@ -16,15 +16,15 @@ class Logfile(Interface):
 
         for channel, name in self.channel_names.items():
             if name in config_data.data:
-                file, file_given = config_data.get_value_or_default(None, name, 'file')
-                if not file_given:
+                file = config_data.get(None, name, 'file')
+                if file is None:
                     continue
-                sorter = self.__plugin_sorters[file] if config_data.get_value_or_default(False, name, 'sort_by_plugin')[0] else self.__date_sorters[file]
+                sorter = self.__plugin_sorters[file] if config_data.get(False, name, 'sort_by_plugin') else self.__date_sorters[file]
                 self.__channels[channel] = Logfile.Channel(
                     name,
                     sorter,
-                    config_data.get_value_or_default(None, name, 'whitelist')[0],
-                    config_data.get_value_or_default(None, name, 'blacklist')[0])
+                    config_data.get(None, name, 'whitelist'),
+                    config_data.get(None, name, 'blacklist'))
 
         scheduler.add_job('logfile-flush', self.__flush, "* * * * *")
         scheduler.add_job('logfile-daychange' ,self.__handle_day_change, '0 0 * * *')

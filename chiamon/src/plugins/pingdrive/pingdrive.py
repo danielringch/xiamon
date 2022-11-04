@@ -7,12 +7,12 @@ class Pingdrive(Plugin):
 
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('pingdrive', 'name')
+        name = config_data.get('pingdrive', 'name')
         super(Pingdrive, self).__init__(name, outputs)
         self.print(f'Plugin pingdrive; name: {name}')
 
         self.__alerts = {}
-        alert_mute_intervall = config_data.get_value_or_default(24, 'alert_mute_interval')[0]
+        alert_mute_intervall = config_data.get(24, 'alert_mute_interval')
         self.__drive_configs = {}
         self.__drives = {}
 
@@ -25,9 +25,9 @@ class Pingdrive(Plugin):
         self.__first_summary = True
 
         scheduler.add_job(f'{name}-check', self.check, '* * * * *')
-        scheduler.add_job(f'{name}-rescan' ,self.rescan, config_data.get_value_or_default('0 * * * *', 'rescan_intervall')[0])
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-startup', self.rescan, None)
+        scheduler.add_job(f'{name}-rescan' ,self.rescan, config_data.get('0 * * * *', 'rescan_intervall'))
+        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_startup_job(f'{name}-startup', self.rescan)
 
     async def check(self):
         messages = []

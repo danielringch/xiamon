@@ -89,6 +89,16 @@ class Smartctldb():
 
         return SmartSnapshot.from_history(drive, real_timestamp, dict(attribute_rows))
 
+    def delete_older_than(self, timestamp):
+        snapshot_command = """DELETE FROM snapshot
+                            WHERE timestamp < ?"""
+        drive_command = """DELETE FROM drive
+                        WHERE id not in (SELECT drive_id FROM snapshot)"""
+        cursor = self.__db.cursor()
+        cursor.execute(snapshot_command, (int(timestamp.timestamp()),))
+        cursor.execute(drive_command)
+        self.__db.commit()
+
     def __get_rows(self, command, data=tuple()):
         cursor = self.__db.cursor()
         cursor.execute(command, data)

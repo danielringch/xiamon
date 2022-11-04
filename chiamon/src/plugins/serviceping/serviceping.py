@@ -6,13 +6,13 @@ from ...core import Chiarpc, Siaapi, ApiRequestFailedException
 class Serviceping(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('serviceping', 'name')
+        name = config_data.get('serviceping', 'name')
         super(Serviceping, self).__init__(name, outputs)
         self.print(f'Plugin serviceping; name: {name}')
 
         self.__checkers = {}
         self.__alerts = {}
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
         if 'chia' in config_data.data:
             self.__checkers['chia'] = Serviceping.Chia(config_data, super(Serviceping, self))
@@ -32,8 +32,8 @@ class Serviceping(Plugin):
         self.__successful_pings = defaultdict(lambda: 0)
         self.__failed_pings = defaultdict(lambda: 0)
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
 
     async def check(self):
         for name, checker in self.__checkers.items():
@@ -56,7 +56,7 @@ class Serviceping(Plugin):
         
     class Chia:
         def __init__(self, config, plugin):
-            host, _ = config.get_value_or_default('127.0.0.1:8555','chia','host')
+            host = config.get('127.0.0.1:8555','chia','host')
             self.__rpc = Chiarpc(host, config.data['chia']['cert'], config.data['chia']['key'], plugin)
 
         async def check(self):
@@ -69,7 +69,7 @@ class Serviceping(Plugin):
 
     class Flexfarmer:
         def __init__(self, config):
-            self.__host, _ = config.get_value_or_default('127.0.0.1:29549','flexfarmer','host')
+            self.__host = config.get('127.0.0.1:29549','flexfarmer','host')
 
         async def check(self):
             async with aiohttp.ClientSession() as session:
@@ -82,7 +82,7 @@ class Serviceping(Plugin):
 
     class Sia:
         def __init__(self, config, plugin):
-            host, _ = config.get_value_or_default('127.0.0.1:9980', 'sia', 'host')
+            host = config.get('127.0.0.1:9980', 'sia', 'host')
             self.__api = Siaapi(host, None, plugin)
 
         async def check(self):
@@ -95,7 +95,7 @@ class Serviceping(Plugin):
 
     class Storj:
         def __init__(self, config):
-            self.__host, _ = config.get_value_or_default('127.0.0.1:14002', 'storj', 'host')
+            self.__host = config.get('127.0.0.1:14002', 'storj', 'host')
 
         async def check(self):
             async with aiohttp.ClientSession() as session:

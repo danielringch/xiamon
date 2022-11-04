@@ -3,13 +3,13 @@ from ...core import Plugin, Alert, Storjapi, Storjnodedata, Config, Conversions,
 class Storjnode(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('storjnode', 'name')
+        name = config_data.get('storjnode', 'name')
         super(Storjnode, self).__init__(name, outputs)
         self.print(f'Plugin storjnode; name: {name}')
 
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
-        host, _ = config_data.get_value_or_default('127.0.0.1:14002','host')
+        host = config_data.get('127.0.0.1:14002','host')
         self.__api = Storjapi(host, super(Storjnode, self))
 
         self.__outdated_alert = Alert(super(Storjnode, self), mute_interval)
@@ -19,8 +19,8 @@ class Storjnode(Plugin):
         self.__suspended_alert = Alert(super(Storjnode, self), mute_interval)
         self.__overused_alert = Alert(super(Storjnode, self), mute_interval)
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
+        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
 
     async def check(self):
         try:

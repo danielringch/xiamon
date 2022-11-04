@@ -1,18 +1,35 @@
 import yaml
 
 class Config:
-    def __init__(self, path):
-        with open(path, "r") as stream:
-            self.data = yaml.safe_load(stream)
+    def __init__(self, data):
+        if isinstance(data, str):
+            with open(data, "r") as stream:
+                self.data = yaml.safe_load(stream)
+        else:
+            assert(isinstance(data, dict))
+            self.data = data
 
-    def get_value_or_default(self, default, *keys):
+
+    def get(self, default, *keys):
         data = self.data
         for key in keys:
             try:
                 if key in data:
                     data = data[key]
                 else:
-                    return default, False
+                    return default
             except TypeError:
-                return default, False
-        return data, True
+                return default
+        return data
+
+    def subconfig(self, *keys):
+        data = self.data
+        for key in keys:
+            try:
+                if key in data:
+                    data = data[key]
+                else:
+                    return None
+            except TypeError:
+                return None
+        return Config(data)

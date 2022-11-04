@@ -1,114 +1,76 @@
 from datetime import datetime, timedelta
 import os, subprocess, re
-from collections import defaultdict
-from ...core import Plugin, Alert, Config, Tablerenderer
+from ...core import Plugin, Config, Tablerenderer
 from .smartctldb import Smartctldb
 from .smartsnapshot import SmartSnapshot
 from .attributeevaluator import AttributeEvaluator
 
 class Smartctl(Plugin):
-
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name, _ = config_data.get_value_or_default('smartctl', 'name')
+        self.__config = Config(config)
+        name = self.__config.get('smartctl', 'name')
         super(Smartctl, self).__init__(name, outputs)
         self.print(f'Plugin smartctl; name: {name}')
         
         self.__scheduler = scheduler
         self.__startup_job = f'{name}-startup'
+        self.__cleanup_job = f'{name}-cleanup'
         self.__check_job = f'{name}-check'
         self.__report_job = f'{name}-report'
 
-        self.__aggregation = timedelta(hours=config_data.get_value_or_default(24, 'aggregation')[0])
-        smartctl_directory = os.path.dirname(config_data.data['binary'])
-        smartctl_file = os.path.basename(config_data.data['binary'])
-        self.__smartctl_call = os.path.join(smartctl_directory, f'./{smartctl_file}')
-        self.__db = Smartctldb(super(Smartctl, self), config_data.data['database'])
+        self.__smartctl_call = os.path.join(
+            os.path.dirname(self.__config.data["binary"]),
+            f'./{os.path.basename(self.__config.data["binary"])}')
 
-        self.__attributes_of_interest = set(int(x) for x in config_data.data['global_limits'].keys())
+        self.__db = Smartctldb(super(Smartctl, self), self.__config.data['database'])
+        self.__aggregation = timedelta(hours=self.__config.get(24, 'aggregation'))
+        self.__expiration = timedelta(days=self.__config.get(180, 'expiration'))
 
-        self.__generic_evaluator = AttributeEvaluator(self.__aggregation, config_data.data['global_limits'], None)
-        self.__custom_evaluators = {}
-        if 'drives' in config_data.data:
-            for drive, drive_config in config_data.data['drives'].items():
-                self.__custom_evaluators[drive] = AttributeEvaluator(self.__aggregation, config_data.data['global_limits'], drive_config)
-                self.__attributes_of_interest.union(int(x) for x in drive_config.keys())
+        self.__attributes_of_interest = set()
+        self.__attributes_of_interest.update(int(x) for x in self.__config.get({}, 'limits').keys())
+        for drive in self.__config.get({}, 'drives').values():
+            self.__attributes_of_interest.update(drive.get('limits', {}).keys())
 
-        self.__aliases, _ = config_data.get_value_or_default({}, 'alias')
-        self.__blacklist = set()
-        for drive in config_data.get_value_or_default([], 'blacklist')[0]:
-            self.__blacklist.add(drive)
+        self.__drives = {}
 
-        self.__mute_interval = self.__aggregation.total_seconds() // 3600
-        self.__attribute_alerts = defaultdict(lambda: defaultdict(lambda: Alert(super(Smartctl, self), self.__mute_interval)))
+        self.__blacklist = set(self.__config.get([], 'blacklist'))
 
-        self.__scheduler.add_job(self.__startup_job ,self.startup, None)
-        self.__scheduler.add_job(self.__check_job ,self.run, config_data.get_value_or_default('0 0 * * *', 'check_interval')[0])
-        report_intervall, report_enabled = config_data.get_value_or_default(None, 'report_interval')
-        if report_enabled:
-            self.__scheduler.add_job(self.__report_job ,self.report, report_intervall)
+        self.__scheduler.add_startup_job(self.__startup_job, self.startup)
+        self.__scheduler.add_job(self.__cleanup_job, self.cleanup, '0 0 * * *')
+        self.__scheduler.add_job(self.__check_job, self.run, self.__config.get('0 * * * *', 'check_interval'))
+        self.__scheduler.add_job(self.__report_job, self.report, self.__config.get(None, 'report_interval'))
 
     async def startup(self):
-        message = []
-        message.append(f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}')
-        drives =  self.__get_drives()
+        self.send(Plugin.Channel.debug, (f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}'))
+        drives = self.__get_drives()
         for device in drives:
             snapshot = self.__get_smart_data(device)
-            if not snapshot.success or snapshot.identifier in self.__blacklist:
+            if not snapshot.success:
                 continue
-            identifier = snapshot.identifier
-            try:
-                alias = f'({self.__aliases[identifier]})'
-            except KeyError:
-                alias = ''
-            if identifier in self.__custom_evaluators:
-                config = 'custom'
-            else:
-                config = 'default'
-            message.append(f'Found drive {identifier} {alias} at {device} with {config} limits.')
-        self.send(Plugin.Channel.debug, '\n'.join(message) if len(message) > 0 else 'No drives found.')     
+            if snapshot.identifier in self.__blacklist:
+                self.send(Plugin.Channel.debug, f'Ignored blacklisted drive {snapshot.identifier}.')
+                continue
+            self.__add_drive(snapshot.identifier, device) 
+
+    async def cleanup(self):
+        limit = datetime.now() - self.__expiration
+        self.__db.delete_older_than(limit)
 
     async def run(self):
-        for device in self.__get_drives():
-            snapshot = self.__get_smart_data(device)
-            if not snapshot.success or snapshot.identifier in self.__blacklist:
-                continue
-
-            try:
-                evaluator = self.__custom_evaluators[snapshot.identifier]
-            except KeyError:
-                evaluator = self.__generic_evaluator
-
+        for snapshot, evaluator in self.__get_snapshots():
             history = self.__db.get(snapshot.identifier, datetime.now() - self.__aggregation)
             self.__db.update(snapshot)
-
-            evaluator_errors, evaluator_debugs = evaluator.check(snapshot, history)
-            for error_key, error_message in evaluator_errors.items():
-                try:
-                    alias = self.__aliases[snapshot.identifier]
-                except KeyError:
-                    alias = snapshot.identifier
-                alert = self.__attribute_alerts[snapshot.identifier][error_key]
-                alert.send(f'{alias}: {error_message}')
-            for debug_message in evaluator_debugs:
-                self.send(Plugin.Channel.debug, f'{snapshot.identifier}: {debug_message}')
+            evaluator.check(snapshot, history)
 
     async def report(self):
         last_execution = self.__scheduler.get_last_execution(self.__report_job)
-        table = Tablerenderer(['Device', 'Alias'] + [str(x) for x in self.__attributes_of_interest])
+        table = Tablerenderer(['Device', 'Alias'] + [str(x) for x in sorted(self.__attributes_of_interest)])
 
-        snapshots = [self.__get_smart_data(x) for x in self.__get_drives()]
-        snapshots = [x for x in snapshots if (x.success and x.identifier not in self.__blacklist)]
-
-        for snapshot in sorted(snapshots, key=lambda y: y.identifier):
+        for snapshot, evaluator in sorted(self.__get_snapshots(), key=lambda y: y[1].name):
             old_snapshot = self.__db.get(snapshot.identifier, last_execution)
 
             table.data['Device'].append(snapshot.identifier)
-            try:
-                alias = self.__aliases[snapshot.identifier]
-            except KeyError:
-                alias = ''
-            table.data['Alias'].append(alias)
+            table.data['Alias'].append(evaluator.name if evaluator.name != snapshot.identifier else '')
 
             for attribute, value in snapshot.attributes.items():
                 try:
@@ -131,6 +93,24 @@ class Smartctl(Plugin):
             device = f'/dev/{line}'
             drives.add(device)
         return drives
+
+    def __add_drive(self, identifier, device):
+        evaluator = self.__drives.get(identifier, None)
+        if evaluator is None:
+            evaluator = AttributeEvaluator(super(Smartctl, self), self.__aggregation, self.__config, identifier)
+            self.__drives[identifier] = evaluator
+            self.send(Plugin.Channel.debug, f'Found drive {evaluator.name} at {device} with {evaluator.config_type} limits.')
+        return evaluator
+
+    def __get_snapshots(self):
+        result = []
+        for device in self.__get_drives():
+            snapshot = self.__get_smart_data(device)
+            if not snapshot.success or snapshot.identifier in self.__blacklist:
+                continue
+
+            result.append((snapshot, self.__add_drive(snapshot.identifier, device)))
+        return result
 
     def __get_smart_data(self, device):
         output = subprocess.run([self.__smartctl_call,"-iA" , device], text=True, stdout=subprocess.PIPE)

@@ -5,24 +5,24 @@ from .chiawalletdb import Chiawalletdb
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        name, _ = config_data.get_value_or_default('chiawallet', 'name')
+        name = config_data.get('chiawallet', 'name')
         super(Chiawallet, self).__init__(name, outputs)
         self.print(f'Plugin chiawallet; name: {name}')
 
-        mute_interval, _ = config_data.get_value_or_default(24, 'alert_mute_interval')
+        mute_interval = config_data.get(24, 'alert_mute_interval')
 
-        host, _ = config_data.get_value_or_default('127.0.0.1:9256', 'host')
+        host = config_data.get('127.0.0.1:9256', 'host')
         self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'], super(Chiawallet, self))
-        self.__wallet_id, _ = config_data.get_value_or_default(1, 'wallet_id')
+        self.__wallet_id = config_data.get(1, 'wallet_id')
 
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
 
         self.__db = Chiawalletdb(config_data.data['database'])
-        self.__coinprice = Coinprice('chia', config_data.get_value_or_default('usd', 'currency')[0])
+        self.__coinprice = Coinprice('chia', config_data.get('usd', 'currency'))
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get_value_or_default('0 * * * *', 'check_interval')[0])
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get_value_or_default('0 0 * * *', 'summary_interval')[0])
-        scheduler.add_job(f'{name}-startup', self.startup, None)
+        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_startup_job(f'{name}-startup', self.startup)
         scheduler.add_job(f'{name}-dump', self.dump, '55 23 * * *')
 
     async def startup(self):

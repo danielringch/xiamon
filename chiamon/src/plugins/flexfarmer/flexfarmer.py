@@ -7,7 +7,7 @@ from .flexfarmerparsers import *
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
         config_data = Config(config)
-        self.__name, _ = config_data.get_value_or_default('flexfarmer', 'name')
+        self.__name = config_data.get('flexfarmer', 'name')
         super(Flexfarmer, self).__init__(self.__name, outputs)
         self.print(f'Plugin flexfarmer; name: {self.__name}')
 
@@ -29,9 +29,9 @@ class Flexfarmer(Plugin):
 
         self.__file = config_data.data['log_path']
         self.__output_path = config_data.data['output_path']
-        self.__cleanup, _ = config_data.get_value_or_default(False, 'reset_logs')
+        self.__cleanup = config_data.get(False, 'reset_logs')
 
-        self.__scheduler.add_job(self.__name ,self.run, config_data.get_value_or_default('0 0 * * *', 'interval')[0])
+        self.__scheduler.add_job(self.__name ,self.run, config_data.get('0 0 * * *', 'interval'))
 
     async def run(self):
         oldest_timestamp = self.__scheduler.get_last_execution(self.__name)

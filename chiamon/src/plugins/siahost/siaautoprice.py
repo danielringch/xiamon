@@ -35,13 +35,13 @@ class Siaautoprice:
         contract_price = config.data['autoprice']['contract']
 
         storage_price_fiat = config.data['autoprice']['storage']
-        storage_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'storage_max')
+        storage_price_sc = config.get(None, 'autoprice', 'storage_max')
 
         upload_price_fiat = config.data['autoprice']['upload']
-        upload_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'upload_max')
+        upload_price_sc = config.get(None, 'autoprice', 'upload_max')
 
         download_price_fiat = config.data['autoprice']['download']
-        download_price_sc, _ = config.get_value_or_default(None, 'autoprice', 'download_max')
+        download_price_sc = config.get(None, 'autoprice', 'download_max')
 
         sector_price = config.data['autoprice']['sector_access']
 
