@@ -54,9 +54,9 @@ class Chiafarmer(Plugin):
 
         if factor_short is not None:
             if factor_short < self.__threshold_short:
-                self.send(Plugin.Channel.alert, f"Short time harvest factor is below treshold, factor={factor_short}.")
+                self.msg.alert(f"Short time harvest factor is below treshold, factor={factor_short}.")
             else:
-                self.send(Plugin.Channel.debug, f"Current harvest factor: {factor_short}.")
+                self.msg.debug(f"Current harvest factor: {factor_short}.")
 
         if factor_long is not None:
             if factor_long < self.__threshold_long:
@@ -67,10 +67,10 @@ class Chiafarmer(Plugin):
     async def summary(self):
         factor = self.__history.get_factor(self.__interval)
         if factor is None:
-            self.send(Plugin.Channel.info, 'No harvest factor available.')
+            self.msg.info('No harvest factor available.')
         else:
             factor *= 100.0
-            self.send(Plugin.Channel.info, f'Average harvest factor: {factor:.2f}%.')
+            self.msg.info(f'Average harvest factor: {factor:.2f}%.')
         self.__history.cleanup()
         self.__interval = self.__scheduler.get_current_interval(self.__summary_job)
 

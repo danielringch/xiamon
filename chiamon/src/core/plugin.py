@@ -1,5 +1,6 @@
 from abc import ABC
 from .interface import Interface
+from .messagecontainer import MessageContainer, InstantMessage, MessageAggregator
 
 class Plugin(ABC):
     Channel = Interface.Channel
@@ -7,6 +8,8 @@ class Plugin(ABC):
     def __init__(self, name, outputs):
         self.name = name
         self.__outputs = outputs
+        self.__message_container = None
+        self.__instant_message = InstantMessage(self)
 
     def print(self, message):
         lines = message.splitlines()
@@ -20,3 +23,21 @@ class Plugin(ABC):
     def send(self, channel, message):
         for output in self.__outputs:
             output.send_message(channel, self.name, message)
+
+    @property
+    def msg(self):
+        if self.__message_container is None:
+            return self.__instant_message
+        else:
+            return self.__message_container
+
+    @property
+    def instant(self):
+        return self.__instant_message
+
+    def __flush_message_container(self):
+        self.__message_container = None
+
+    def message_aggregator(self):
+        self.__message_container = MessageContainer(self)
+        return MessageAggregator(self.__flush_message_container)

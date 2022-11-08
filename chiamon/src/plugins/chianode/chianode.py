@@ -36,19 +36,17 @@ class Chianode(Plugin):
             connections = await Nodeconnections.create(self.__rpc, session, state.peak)
         if state.available:
             if state.synced:
-                message = f'Full node synced; height {state.height}.'
+                self.msg.info(f'Full node synced; height {state.height}.')
             elif state.height is not None:
-                message = f'Full node syncing: {state.height}/{state.peak}.'
+                self.msg.info(f'Full node syncing: {state.height}/{state.peak}.')
             else:
-                message = f'Full node not synced.'
-            self.send(Plugin.Channel.info, message)
+                self.msg.info(f'Full node not synced.')
             if connections.available:
-                message = (
-                    f'Connected full nodes: {connections.synced + connections.syncing + connections.unknown}\n'
-                    f'Sync states (synced | not synced | unknown): {connections.synced} | {connections.syncing} | {connections.unknown}\n'
-                    f'Wallets: {connections.wallets}\n'
+                self.msg.info(
+                    f'Connected full nodes: {connections.synced + connections.syncing + connections.unknown}',
+                    f'Sync states (synced | not synced | unknown): {connections.synced} | {connections.syncing} | {connections.unknown}',
+                    f'Wallets: {connections.wallets}',
                     f'Other node types: {connections.other}'
                 )
-                self.send(Plugin.Channel.info, message)
         else:
-            self.send(Plugin.Channel.info, f'No summary created, since node is not available.')
+            self.msg.info(f'No summary created, since node is not available.')

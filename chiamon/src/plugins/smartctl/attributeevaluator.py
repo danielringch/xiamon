@@ -40,7 +40,6 @@ class AttributeEvaluator:
             self.__alerts[attribute] = Alert(self.__plugin, self.__aggregation)
 
     def check(self, snapshot, history):
-        messages = []
         if history is not None:
             delta = snapshot.timestamp - history.timestamp
 
@@ -62,11 +61,9 @@ class AttributeEvaluator:
 
             readable_attribute = self.attribute_aliases.get(attribute, f'attribute {attribute}')
             message = f'{self.name}: {readable_attribute} {message}.'
-            messages.append(message)
+            self.__plugin.msg.debug(message)
             if not passed:
                 self.__alerts[attribute].send(message)
-        if len(messages) > 0:
-            self.__plugin.send(Plugin.Channel.debug, '\n'.join(messages))
 
     def __scale_value(self, value, old_value, time_delta, expected_time_delta):
         factor = expected_time_delta / time_delta

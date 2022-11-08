@@ -17,9 +17,9 @@ class Storjapi:
                 json = await response.json()
                 status = response.status
         except Exception as e:
-            self.__plugin.send(Plugin.Channel.debug, f'Command {cmd} failed: {str(e)}')
+            self.__plugin.msg.debug(f'Command {cmd} failed: {str(e)}')
             raise ApiRequestFailedException()
         if not (status >= 200 and status <= 299):
-            self.__plugin.send(Plugin.Channel.debug, f'Command {cmd} returned status {status}.')
+            self.__plugin.msg.debug(f'Command {cmd} returned status {status}.')
             raise ApiRequestFailedException()
         return json

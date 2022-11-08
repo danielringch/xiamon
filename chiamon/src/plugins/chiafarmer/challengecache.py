@@ -47,7 +47,7 @@ class ChallengeCache:
         old_len = len(self.__challenges)
         self.__challenges = {k: v for k, v in self.__challenges.items() if v.time > self.__last_cleanup}
         cleared = old_len - len(self.__challenges)
-        self.__plugin.send(Plugin.Channel.debug, f"Cleared {cleared} item(s) from challenge cache.")
+        self.__plugin.msg.debug(f"Cleared {cleared} item(s) from challenge cache.")
         self.__last_cleanup = datetime.datetime.now()
 
     def save(self):
@@ -73,7 +73,7 @@ class ChallengeCache:
             data[hash] = challenge_as_dict
         with open(self.__file, "w") as stream:
             yaml.safe_dump(data, stream)
-        self.__plugin.send(Plugin.Channel.debug, f"Wrote {len(data)} challenge(s) to {self.__file}")
+        self.__plugin.msg.debug(f"Wrote {len(data)} challenge(s) to {self.__file}")
 
     class Challenge:
         def __init__(self, hash):

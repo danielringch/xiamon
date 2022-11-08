@@ -27,7 +27,7 @@ class Siablocks:
                     break
                 end = oldest_height - 1
                 begin = end - 35
-                self.__plugin.send(Plugin.Channel.debug, f'Blocks cache miss ({oldest_cache_time} vs. {timestamp}), loading heights {begin} - {end}.')
+                self.__plugin.msg.debug(f'Blocks cache miss ({oldest_cache_time} vs. {timestamp}), loading heights {begin} - {end}.')
                 if begin < 0:
                     raise Exception('Blocks with height < 0 are not possible.')
                 await self.__get_blocks_from_consensus(begin, end)
@@ -51,7 +51,7 @@ class Siablocks:
             oldest_height = self.__db.get_oldest_height()[0]
             for i in reversed(range(height, oldest_height, 36)):
                 end = i + 35
-                self.__plugin.send(Plugin.Channel.debug, f'Blocks cache miss ({oldest_height} vs. {height}), loading heights {i} - {end}.')
+                self.__plugin.msg.debug(f'Blocks cache miss ({oldest_height} vs. {height}), loading heights {i} - {end}.')
                 await self.__get_blocks_from_consensus(i, end)
             timestamp = self.__db.get_timestamp(height)
             if timestamp is None:
@@ -69,7 +69,7 @@ class Siablocks:
             return
         else:
             begin += 1
-        self.__plugin.send(Plugin.Channel.debug, f'Updating blocks cache, loading heights {begin} - {current_height}.')
+        self.__plugin.msg.debug(f'Updating blocks cache, loading heights {begin} - {current_height}.')
         await self.__get_blocks_from_consensus(begin, current_height)
 
     async def __get_blocks_from_consensus(self, begin, end):

@@ -15,7 +15,6 @@ class Siacontracts:
         self.__blocks = blocks
 
     async def summary(self, consensus, contracts, last_execution):
-        messages = []
         height = consensus.height
         last_height = await self.__blocks.at_time(last_execution, consensus)
 
@@ -60,22 +59,21 @@ class Siacontracts:
             if None not in (last_pending_storage_earnings, last_pending_io_earnings, last_pending_ephemeral_earnings) else None
         pendings_earnings = pending_storage_earnings + pending_io_earnings + pending_ephemeral_earnings
 
-        messages.append(f'{active_contracts} contracts')
-        messages.append(f'New contracts: {recent_started}')
-        messages.append(f'Ended contracts: {recent_ended}')
-        messages.append(f'Failed proofs: {failed_proofs}')
-        messages.append(f'Settled earnings: {round(settled_earnings)} SC ({self.__coinprice.to_fiat_string(settled_earnings)})')
-        messages.append(f'Non-settled balance: {round(pendings_earnings)} SC ({self.__coinprice.to_fiat_string(pendings_earnings)})')
+        self.__plugin.msg.info(
+            f'{active_contracts} contracts',
+            f'New contracts: {recent_started}',
+            f'Ended contracts: {recent_ended}',
+            f'Failed proofs: {failed_proofs}',
+            f'Settled earnings: {round(settled_earnings)} SC ({self.__coinprice.to_fiat_string(settled_earnings)})',
+            f'Non-settled balance: {round(pendings_earnings)} SC ({self.__coinprice.to_fiat_string(pendings_earnings)})')
         if last_pending_earnings is not None:
             total_earnings = settled_earnings + pendings_earnings - last_pending_earnings
-            messages.append(f'Total earnings: {round(total_earnings)} SC ({self.__coinprice.to_fiat_string(total_earnings)})')
+            self.__plugin.msg.info(f'Total earnings: {round(total_earnings)} SC ({self.__coinprice.to_fiat_string(total_earnings)})')
         else:
-            messages.append(f'Total earnings are not available.')
-            self.__plugin.send(Plugin.Channel.debug, 
-                f'Can not calculate total earnings: no old non-settled balance available.\n'
+            self.__plugin.msg.info(f'Total earnings are not available.')
+            self.__plugin.msg.debug(
+                f'Can not calculate total earnings: no old non-settled balance available.',
                 f'Requested timestamp: {last_execution}')
-
-        self.__plugin.send(Plugin.Channel.info, '\n'.join(messages))
 
     async def contract_list(self, consensus, contracts):
         height = consensus.height
@@ -95,14 +93,14 @@ class Siacontracts:
             data['IO'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.io_revenue)))
             data['Ephemeral'].append('{x[0]:.0f} {x[1]}'.format(x=Conversions.siacoin_to_auto(contract.ephemeral_revenue)))
             id += 1
-        self.__plugin.send(Plugin.Channel.debug, renderer.render())
+        self.__plugin.msg.debug(renderer.render())
 
     async def accounting(self, consensus, contracts):
         now = datetime.now()
         max_timestamp = now - timedelta(hours=1)
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-accounting')
         if last_execution > max_timestamp:
-            self.__plugin.send(Plugin.Channel.error, 'Accounting failed: unabled to calculate previous report time.')
+            self.__plugin.msg.error('Accounting failed: unabled to calculate previous report time.')
             return
 
         table = Tablerenderer(['Date', 'Height', 'Contracts', 'Storage', 'IO', 'Ephemeral', 'Sum', 'Coinprice', 'Fiat'])
@@ -138,7 +136,7 @@ class Siacontracts:
 
         self.__add_summary(table, total_rewards)
 
-        self.__plugin.send(Plugin.Channel.report, table.render())
+        self.__plugin.msg.report(table.render())
 
     def __get_rewards(self, contracts):
         storage = sum(x.storage_revenue for x in contracts)

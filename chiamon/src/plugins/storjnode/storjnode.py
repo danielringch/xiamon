@@ -63,7 +63,7 @@ class Storjnode(Plugin):
     
     def __print_traffic(self, data, channel):
         traffic = Conversions.byte_to_auto(data.traffic, binary=False)
-        self.send(channel, f'Traffic: {traffic[0]:.2f} {traffic[1]}')
+        self.msg.send(channel, f'Traffic: {traffic[0]:.2f} {traffic[1]}')
 
     def __print_usage(self, data, channel):
         total_space = data.total_space
@@ -76,8 +76,8 @@ class Storjnode(Plugin):
         used_space = Conversions.byte_to_auto(used_space, binary=False)
         trash_space = Conversions.byte_to_auto(trash_space, binary=False)
 
-        self.send(channel, f'Memory usage: {used_space[0]:.2f} {used_space[1]} ({used_percent:.1f} %)')
-        self.send(channel, f'Trash: {trash_space[0]:.2f} {trash_space[1]} ({trash_percent:.2f} %)')
+        self.msg.send(channel, f'Memory usage: {used_space[0]:.2f} {used_space[1]} ({used_percent:.1f} %)')
+        self.msg.send(channel, f'Trash: {trash_space[0]:.2f} {trash_space[1]} ({trash_percent:.2f} %)')
 
     async def __request(self, cmd):
         async with self.__api.create_session() as session:

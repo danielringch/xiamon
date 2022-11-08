@@ -38,34 +38,29 @@ class Flexpool(Plugin):
         open_xch = balance[0]
         open_money = balance[1]
         if open_xch is None or workers is None or payments is None:
-            self.send(Plugin.Channel.info, 'The following summary is incomplete, since one or more requests failed.')
+            self.msg.info('The following summary is incomplete, since one or more requests failed.')
         else:
             self.__last_summary = now
         if open_xch is not None:
-            message = (
-                f'Open balance: {open_xch} XCH ({open_money} {self.__currency})'
-            )
-            self.send(Plugin.Channel.info, message)
+            self.msg.info(f'Open balance: {open_xch} XCH ({open_money} {self.__currency})')
         if workers is not None:
             for worker in workers:
                 if self.__ignore_worker(worker.name):
                     continue
-                message = (
-                    f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):\n'
-                    f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB\n'
+                self.msg.info(
+                    f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):',
+                    f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB',
                     f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
                 )
-                self.send(Plugin.Channel.info, message)
         if payments is not None:
             if len(payments) == 0:
-                self.send(Plugin.Channel.info, 'No new payments available')
+                self.msg.info('No new payments available')
             else:
                 for payment in payments:
-                    message = (
-                        f'Payment: {payment.value} XCH\n'
+                    self.msg.info(
+                        f'Payment: {payment.value} XCH',
                         f'On {payment.timestamp} after {payment.duration:.1f} d'
                     )
-                    self.send(Plugin.Channel.info, message)    
 
     async def check(self):
         async with aiohttp.ClientSession() as session:
@@ -138,7 +133,7 @@ class Flexpool(Plugin):
                 data =  await response.json()
         except asyncio.TimeoutError as e_timeout:
             if retry < self.__connection_retry:
-                self.send(Plugin.Channel.debug, f'Retrying request {cmd} after timeout.')
+                self.msg.debug(f'Retrying request {cmd} after timeout.')
                 await asyncio.sleep(5)
                 return await self.__get(session, cmd, params, retry + 1)
             else:

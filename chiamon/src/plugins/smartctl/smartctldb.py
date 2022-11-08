@@ -76,7 +76,7 @@ class Smartctldb():
         snapshot_rows = self.__get_rows(snapshot_command, (drive, unix_timestamp))
 
         if snapshot_rows is None:
-            self.__plugin.send(Plugin.Channel.debug,
+            self.__plugin.msg.debug(
                 f'Failed to get snapshot from history: drive {drive} is not in database or no snapshot older than {unix_timestamp} in database.')
             return None
 
@@ -84,7 +84,7 @@ class Smartctldb():
         
         attribute_rows = self.__get_rows(attribute_command, (snapshot_rows[0][0],))
         if attribute_rows is None:
-            self.__plugin.send(Plugin.Channel.debug, f'Failed to get snapshot from history: snapshot is empty.')
+            self.__plugin.msg.debug(f'Failed to get snapshot from history: snapshot is empty.')
             return None
 
         return SmartSnapshot.from_history(drive, real_timestamp, dict(attribute_rows))

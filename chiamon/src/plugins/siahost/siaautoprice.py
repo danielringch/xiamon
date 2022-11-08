@@ -62,16 +62,15 @@ class Siaautoprice:
         used_factor = storage.used_space / storage.total_space
         locked_factor = locked_collateral / (locked_collateral + wallet.balance + wallet.pending)
         collateral_reserve = round(100 * ((used_factor / locked_factor) - 1))
-        self.__plugin.send(Plugin.Channel.info, f'Collateral reserve: {collateral_reserve:.0f} %')
+        self.__plugin.msg.info(f'Collateral reserve: {collateral_reserve:.0f} %')
 
     async def update(self, host):
-        messages = defaultdict(list)
         prices = {}
 
-        messages[Plugin.Channel.debug].append(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency} / SC')
+        self.__plugin.msg.debug(f'Coin price: {self.__coinprice.price} {self.__coinprice.currency} / SC')
 
         for updater in self.__updaters.values():
-            self.__trigger_updater(host, updater, prices, messages)
+            self.__trigger_updater(host, updater, prices)
 
         new_collateral = prices[self.Category.storage] * self.__collateral_factor if self.Category.storage in prices \
             else host.storageprice * self.__collateral_factor
@@ -80,10 +79,7 @@ class Siaautoprice:
             self.__coinprice, 
             None, 
             new_collateral)
-        self.__trigger_updater(host, collateral_updater, prices, messages)
-
-        for channel, lines in messages.items():
-            self.__plugin.send(channel, '\n'.join(lines))
+        self.__trigger_updater(host, collateral_updater, prices)
 
         if len(prices) == 0:
             return
@@ -92,14 +88,14 @@ class Siaautoprice:
             try:
                 await self.__api.post(session, 'host', prices)
             except ApiRequestFailedException:
-                self.__plugin.send(Plugin.Channel.alert, 'Price update failed.')
+                self.__plugin.msg.alert('Price update failed.')
 
-    def __trigger_updater(self, host, updater, prices, messages):
-        new_price = updater.update(host, messages)
+    def __trigger_updater(self, host, updater, prices):
+        new_price = updater.update(host, self.__plugin.msg)
         if new_price is not None:
             key = new_price[0]
             value = f'{new_price[1]:d}'
-            messages[Plugin.Channel.debug].append(f'Setting host parameter {key} to {value}')
+            self.__plugin.msg.debug(f'Setting host parameter {key} to {value}')
             prices[key] = value
 
     class Updater:
@@ -123,10 +119,10 @@ class Siaautoprice:
 
             if current_price != new_price:
                 message = f'new {self.__config.name} price: {current_price} -> {new_price} {self.__config.unit}'
-                messages[Plugin.Channel.report].append(message)
-                messages[Plugin.Channel.info].append(message)
+                messages.report(message)
+                messages.info(message)
                 return (self.__config.parameter, self.__config.apiconverter(new_price))
             else:
-                messages[Plugin.Channel.report].append(f'{self.__config.name} price: {current_price} {self.__config.unit}')
+                messages.report(f'{self.__config.name} price: {current_price} {self.__config.unit}')
                 return None
 

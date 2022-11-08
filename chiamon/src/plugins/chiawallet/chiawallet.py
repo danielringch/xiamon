@@ -27,9 +27,9 @@ class Chiawallet(Plugin):
 
     async def startup(self):
         if self.__db.balance is None:
-            self.send(Plugin.Channel.debug, 'No balance data available in database.')
+            self.msg.debug('No balance data available in database.')
         else:
-            self.send(Plugin.Channel.debug, f'Old balance from database: {self.__db.balance} XCH.')
+            self.msg.debug(f'Old balance from database: {self.__db.balance} XCH.')
         await self.check()
 
     async def check(self):
@@ -50,18 +50,17 @@ class Chiawallet(Plugin):
                 f'delta: {diff} XCH ({self.__coinprice.to_fiat_string(diff)})\n'
                 f'new: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})'
             )
-            self.send(Plugin.Channel.info, message)
-            self.send(Plugin.Channel.report, message)
+            self.msg.info(message)
+            self.msg.report(message)
 
     async def summary(self):
         async with aiohttp.ClientSession() as session:
             balance = await self.__get_balance(session)
             if balance is None:
-                self.send(Plugin.Channel.info, 'Balance unknown, wallet is unavailable.')
+                self.msg.info('Balance unknown, wallet is unavailable.')
                 return
             await self.__coinprice.update()
-            self.send(Plugin.Channel.info,
-                f'Balance: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})')
+            self.msg.info(f'Balance: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})')
 
     async def dump(self):
         async with aiohttp.ClientSession() as session:
@@ -72,13 +71,12 @@ class Chiawallet(Plugin):
         await self.__coinprice.update()
         price = self.__coinprice.price
 
-        message = (
+        self.msg.report(
             f'Wallet {self.__wallet_id}: '
             f'{balance:.12f} XCH; '
             f'{price:.4f} {self.__coinprice.currency}/XCH; '
             f'{self.__coinprice.to_fiat_string(balance)}\n'
         )
-        self.send(Plugin.Channel.report, message)
 
     async def __get_balance(self, session):
         if not await self.__get_synced(session):

@@ -41,14 +41,14 @@ class Smartctl(Plugin):
         self.__scheduler.add_job(self.__report_job, self.report, self.__config.get(None, 'report_interval'))
 
     async def startup(self):
-        self.send(Plugin.Channel.debug, (f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}'))
+        self.msg.debug(f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}')
         drives = self.__get_drives()
         for device in drives:
             snapshot = self.__get_smart_data(device)
             if not snapshot.success:
                 continue
             if snapshot.identifier in self.__blacklist:
-                self.send(Plugin.Channel.debug, f'Ignored blacklisted drive {snapshot.identifier}.')
+                self.msg.debug(f'Ignored blacklisted drive {snapshot.identifier}.')
                 continue
             self.__add_drive(snapshot.identifier, device) 
 
@@ -57,6 +57,7 @@ class Smartctl(Plugin):
         self.__db.delete_older_than(limit)
 
     async def run(self):
+        _ = self.message_aggregator()
         for snapshot, evaluator in self.__get_snapshots():
             history = self.__db.get(snapshot.identifier, datetime.now() - self.__aggregation)
             self.__db.update(snapshot)
@@ -80,7 +81,7 @@ class Smartctl(Plugin):
                     cell = str(value)
                 table.data[str(attribute)].append(cell)
 
-        self.send(Plugin.Channel.report, table.render())
+        self.msg.report(table.render())
         
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)
@@ -99,7 +100,7 @@ class Smartctl(Plugin):
         if evaluator is None:
             evaluator = AttributeEvaluator(super(Smartctl, self), self.__aggregation, self.__config, identifier)
             self.__drives[identifier] = evaluator
-            self.send(Plugin.Channel.debug, f'Found drive {evaluator.name} at {device} with {evaluator.config_type} limits.')
+            self.msg.debug(f'Found drive {evaluator.name} at {device} with {evaluator.config_type} limits.')
         return evaluator
 
     def __get_snapshots(self):

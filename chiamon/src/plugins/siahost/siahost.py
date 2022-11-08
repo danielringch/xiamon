@@ -47,18 +47,20 @@ class Siahost(Plugin):
         self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get('0 0 * * MON', 'accounting_interval'))
 
     async def check(self):
+        _ = self.message_aggregator()
         try:
             consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
             host = await self.__request('host', lambda x: Siahostdata(x))
             wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         except ApiRequestFailedException:
-            self.send(Plugin.Channel.debug, 'Report failed: some host queries failed.')
+            self.msg.debug('Report failed: some host queries failed.')
             return
         
         await self.__blocks.update(consensus)
         self.__health.check(consensus, host, wallet)
 
     async def summary(self):
+        _ = self.message_aggregator()
         try:
             consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
             host = await self.__request('host', lambda x: Siahostdata(x))
@@ -67,7 +69,7 @@ class Siahost(Plugin):
             contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
             wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         except ApiRequestFailedException:
-            self.send(Plugin.Channel.info, 'No summary created, host is not available.')
+            self.msg.info('No summary created, host is not available.')
             return
 
         await self.__update_coinprice(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
@@ -83,6 +85,7 @@ class Siahost(Plugin):
         await self.__reports.summary(consensus, contracts, self.__scheduler.get_last_execution(self.__summary_job))
 
     async def list(self):
+        _ = self.message_aggregator()
         try:
             consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
             storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
@@ -90,7 +93,7 @@ class Siahost(Plugin):
             contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
             wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
         except ApiRequestFailedException:
-            self.send(Plugin.Channel.error, 'Report failed: some host queries failed.')
+            self.msg.error('Report failed: some host queries failed.')
             return
 
         await self.__update_coinprice(Plugin.Channel.error, 'Report incomplete: coin price not available.')
@@ -104,11 +107,12 @@ class Siahost(Plugin):
         await self.__reports.contract_list(consensus, contracts)
 
     async def accounting(self):
+        _ = self.message_aggregator()
         try:
             consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
             contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         except ApiRequestFailedException:
-            self.send(Plugin.Channel.error, 'Accounting failed: some host queries failed.')
+            self.msg.error('Accounting failed: some host queries failed.')
             return
 
         await self.__update_coinprice(Plugin.Channel.error, 'Autoprice incomplete: coin price not available.')
@@ -116,12 +120,13 @@ class Siahost(Plugin):
         await self.__reports.accounting(consensus, contracts)
 
     async def price(self):
+        _ = self.message_aggregator()
         if self.__autoprice is None:
             return
         try:
             host = await self.__request('host', lambda x: Siahostdata(x))
         except ApiRequestFailedException:
-            self.send(Plugin.Channel.error, 'Autoprice failed: some host queries failed.')
+            self.msg.error('Autoprice failed: some host queries failed.')
             return
 
         if not await self.__update_coinprice(Plugin.Channel.error, 'Autoprice failed: coin price not available.'):
@@ -145,7 +150,7 @@ class Siahost(Plugin):
 
     async def __update_coinprice(self, error_channel, error_message):
         if not await self.__coinprice.update():
-            self.send(error_channel, error_message)
+            self.msg.send(error_channel, error_message)
             return False
         else:
             self.__db.update_coinprice(self.__coinprice.price)

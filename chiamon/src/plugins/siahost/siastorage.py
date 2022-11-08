@@ -8,28 +8,22 @@ class Siastorage:
         self.__db = database
 
     def summary(self, storage, traffic):
-        message = []
         used = Conversions.byte_to_auto(storage.used_space, binary=False)
         total = Conversions.byte_to_auto(storage.total_space, binary=False)
-        message.append(f'Total storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]}')
-        message.append(f'Total usage: {(100 * storage.used_space / storage.total_space):.1f} %')
+        self.__plugin.msg.info(f'Total storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]}')
+        self.__plugin.msg.info(f'Total usage: {(100 * storage.used_space / storage.total_space):.1f} %')
 
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-summary')
-        message.append(self.__get_traffic_message(traffic, last_execution))
-        
-        self.__plugin.send(Plugin.Channel.info, '\n'.join(message))
+        self.__plugin.msg.info(self.__get_traffic_message(traffic, last_execution))
 
     def report(self, storage, traffic):
-        message = []
         used = Conversions.byte_to_auto(storage.used_space, binary=False)
         total = Conversions.byte_to_auto(storage.total_space, binary=False)
         usage_percent = 100 * storage.used_space / storage.total_space
-        message.append(f'Storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]} ({usage_percent:.2f} %)')
+        self.__plugin.msg.report(f'Storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]} ({usage_percent:.2f} %)')
 
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-list')
-        message.append(self.__get_traffic_message(traffic, last_execution))
-
-        self.__plugin.send(Plugin.Channel.report, '\n'.join(message))
+        self.__plugin.msg.report(self.__get_traffic_message(traffic, last_execution))
 
     def __get_traffic_message(self, traffic, reference_time):
         download, upload, duration = self.__get_traffic(traffic, reference_time)
@@ -52,15 +46,15 @@ class Siastorage:
         last_epoch, last_upload, last_download = self.__db.get_traffic(reference_time)
 
         if None in (last_epoch, last_upload, last_download):
-            self.__plugin.send(Plugin.Channel.debug, 
-                f'Can not calculate traffic: no old traffic data available.\n'
+            self.__plugin.msg.debug(
+                f'Can not calculate traffic: no old traffic data available.',
                 f'Requested timestamp: {reference_time}')
             return None, None, None
 
         if current_epoch != last_epoch:
-            self.__plugin.send(Plugin.Channel.debug, 
-                f'Can not calculate traffic: Sia was restarted since last traffic data.\n'
-                f'Last data: {reference_time}, epoch {last_epoch}\n'
+            self.__plugin.msg.debug(
+                f'Can not calculate traffic: Sia was restarted since last traffic data.',
+                f'Last data: {reference_time}, epoch {last_epoch}',
                 f'Current epoch {current_epoch}')
             return None, None, None
 

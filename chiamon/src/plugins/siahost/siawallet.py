@@ -14,13 +14,12 @@ class Siawallet:
         risked = round(risked_collateral)
         balance = free + locked
 
-        message = (
-            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})\n'
-            f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
-            f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
-            f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
+        self.__plugin.msg.info(
+            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})',
+            f'Free balance: {free} SC ({(free / balance * 100):.0f} %)',
+            f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)',
+            f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)'
         )
-        self.__plugin.send(Plugin.Channel.info, message)
             
     async def dump(self, wallet, locked_collateral, risked_collateral):
         free = round(wallet.balance + wallet.pending)
@@ -30,11 +29,10 @@ class Siawallet:
 
         self.__db.update_balance(free, locked, risked)
 
-        message = (
-            f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC\n'
-            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})\n'
-            f'Free balance: {free} SC ({(free / balance * 100):.0f} %)\n'
-            f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)\n'
-            f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)\n'
+        self.__plugin.msg.report(
+            f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC',
+            f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})',
+            f'Free balance: {free} SC ({(free / balance * 100):.0f} %)',
+            f'Locked balance: {locked} SC ({(locked / balance * 100):.0f} %)',
+            f'Risked balance: {risked} SC ({(risked / locked * 100):.0f} %)'
         )
-        self.__plugin.send(Plugin.Channel.report, message)

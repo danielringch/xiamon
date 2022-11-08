@@ -34,19 +34,17 @@ class Flexfarmer(Plugin):
         self.__scheduler.add_job(self.__name ,self.run, config_data.get('0 0 * * *', 'interval'))
 
     async def run(self):
+        _ = self.message_aggregator()
         oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
 
         with open(self.__file, "r") as stream:
             error_lines, warning_lines = self.__parse_log(stream, oldest_timestamp)
             
-        message = []
-
-        message.append(f'Accepted partials: {self.__partial_accepted_parser.partials}')
-        message.append(f'Stale partials: {self.__partial_stale_parser.partials}')
-        message.append(f'Invalid partials: {self.__partial_invalid_parser.partials}')
-        message.extend(self.__evaluate_lookup_times(self.__signage_point_parser.times))
-
-        self.send(Plugin.Channel.info, '\n'.join(message))
+        self.msg.info(
+            f'Accepted partials: {self.__partial_accepted_parser.partials}',
+            f'Stale partials: {self.__partial_stale_parser.partials}',
+            f'Invalid partials: {self.__partial_invalid_parser.partials}')
+        self.__evaluate_lookup_times(self.__signage_point_parser.times)
 
         self.__write_errors(error_lines + warning_lines)
 
@@ -85,16 +83,14 @@ class Flexfarmer(Plugin):
         return error_lines, warning_lines
 
     def __evaluate_lookup_times(self, times):
-        lines = []
         total_lookups = sum(times.values())
         for i in range(0,11):
             if i in self.__signage_point_parser.times.keys():
                 count = self.__signage_point_parser.times[i]
-                lines.append(f'Lookup time < {i}s: {count} ({round((100*count/total_lookups), 1)}%)')
+                self.msg.info(f'Lookup time < {i}s: {count} ({round((100*count/total_lookups), 1)}%)')
         if 11 in self.__signage_point_parser.times.keys():
             count = self.__signage_point_parser.times[11]
-            lines.append(f'Lookup time > 10s: {count} ({round((100*count/total_lookups), 1)}%)')
-        return lines
+            self.msg.info(f'Lookup time > 10s: {count} ({round((100*count/total_lookups), 1)}%)')
 
     def __write_errors(self, lines, prefix=''):
         if len(lines) == 0:

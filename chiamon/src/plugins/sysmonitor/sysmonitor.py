@@ -45,9 +45,9 @@ class Sysmonitor(Plugin):
             resource_strings.append(f'{self.__prefixes["temperature"]}: {temperature:.1f} °C')
 
         if len(resource_strings) == 0:
-            self.send(Plugin.Channel.debug, 'No resources to monitor.')
+            self.msg.debug('No resources to monitor.')
         else:
-            self.send(Plugin.Channel.debug, ' | '.join(resource_strings))
+            self.msg.debug(' | '.join(resource_strings))
 
     def __add_resource(self, config, key, mute_interval):
         if key not in config:

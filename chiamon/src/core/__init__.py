@@ -6,6 +6,7 @@ from .config import Config
 from .conversions import Conversions, Byteunit
 from .exceptions import *
 from .interface import Interface
+from .messagecontainer import MessageContainer
 from .otherdefaultdict import otherdefaultdict
 from .plugin import Plugin
 from .scheduler import Scheduler

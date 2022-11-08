@@ -47,12 +47,11 @@ class Serviceping(Plugin):
                 alert.reset(f'Service {name} is online again.')
 
     async def summary(self):
-        lines = []
+        _ = self.message_aggregator()
         for checker in self.__checkers.keys():
-            lines.append(f'{checker}: {self.__successful_pings[checker]} ping successful, {self.__failed_pings[checker]} failed.')
+            self.msg.info(f'{checker}: {self.__successful_pings[checker]} ping successful, {self.__failed_pings[checker]} failed.')
             self.__successful_pings[checker] = 0
             self.__failed_pings[checker] = 0
-        self.send(Plugin.Channel.info, '\n'.join(lines))
         
     class Chia:
         def __init__(self, config, plugin):

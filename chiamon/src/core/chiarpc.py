@@ -16,9 +16,9 @@ class Chiarpc:
                 response.raise_for_status()
                 data = await response.json()
         except Exception as e:
-            self.__plugin.send(Plugin.Channel.debug, f'Command {cmd} failed: {str(e)}')
+            self.__plugin.msg.debug(f'Command {cmd} failed: {str(e)}')
             raise ApiRequestFailedException()
         if data['success'] != True and data['success'] != 'true':
-            self.__plugin.send(Plugin.Channel.debug, f'Command {cmd} returned no success.')
+            self.__plugin.msg.debug(f'Command {cmd} returned no success.')
             raise ApiRequestFailedException()
         return data

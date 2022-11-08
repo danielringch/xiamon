@@ -40,12 +40,11 @@ class Siahealth:
             block_diff = deadline - consensus.height
             break
         if block_diff is not None:
-            self.__plugin.send(Plugin.Channel.debug, f'Blocks until next proof: {block_diff} (~{Conversions.siablocks_to_duration(block_diff)} h)')
+            self.__plugin.msg.debug(f'Blocks until next proof: {block_diff} (~{Conversions.siablocks_to_duration(block_diff)} h)')
 
     def summary(self, consensus, host, wallet):
-        message = (
-            f'Synced: {consensus.synced} @{consensus.height}\n'
-            f'Accepting contracts: {host.accepting}\n'
+        self.__plugin.msg.info(
+            f'Synced: {consensus.synced} @{consensus.height}',
+            f'Accepting contracts: {host.accepting}',
             f'Wallet unlocked: {wallet.unlocked}'
         )
-        self.__plugin.send(Plugin.Channel.info, message)
