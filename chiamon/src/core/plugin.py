@@ -1,6 +1,6 @@
 from abc import ABC
 from .interface import Interface
-from .messagecontainer import MessageContainer, InstantMessage, MessageAggregator
+from .messagecontainer import AggregatedMessage, InstantMessage, MessageAggregator
 
 class Plugin(ABC):
     Channel = Interface.Channel
@@ -36,8 +36,9 @@ class Plugin(ABC):
         return self.__instant_message
 
     def __flush_message_container(self):
+        self.__message_container.flush()
         self.__message_container = None
 
     def message_aggregator(self):
-        self.__message_container = MessageContainer(self)
+        self.__message_container = AggregatedMessage(self)
         return MessageAggregator(self.__flush_message_container)

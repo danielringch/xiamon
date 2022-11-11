@@ -150,7 +150,7 @@ class Siahost(Plugin):
 
     async def __update_coinprice(self, error_channel, error_message):
         if not await self.__coinprice.update():
-            self.msg.send(error_channel, error_message)
+            self.msg[error_channel](error_message)
             return False
         else:
             self.__db.update_coinprice(self.__coinprice.price)
