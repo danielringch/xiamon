@@ -57,11 +57,11 @@ class Smartctl(Plugin):
         self.__db.delete_older_than(limit)
 
     async def run(self):
-        _ = self.message_aggregator()
-        for snapshot, evaluator in self.__get_snapshots():
-            history = self.__db.get(snapshot.identifier, datetime.now() - self.__aggregation)
-            self.__db.update(snapshot)
-            evaluator.check(snapshot, history)
+        with self.message_aggregator():
+            for snapshot, evaluator in self.__get_snapshots():
+                history = self.__db.get(snapshot.identifier, datetime.now() - self.__aggregation)
+                self.__db.update(snapshot)
+                evaluator.check(snapshot, history)
 
     async def report(self):
         last_execution = self.__scheduler.get_last_execution(self.__report_job)

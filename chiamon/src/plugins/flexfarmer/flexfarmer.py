@@ -34,25 +34,25 @@ class Flexfarmer(Plugin):
         self.__scheduler.add_job(self.__name ,self.run, config_data.get('0 0 * * *', 'interval'))
 
     async def run(self):
-        _ = self.message_aggregator()
-        oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
+        with self.message_aggregator():
+            oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
 
-        with open(self.__file, "r") as stream:
-            error_lines, warning_lines = self.__parse_log(stream, oldest_timestamp)
+            with open(self.__file, "r") as stream:
+                error_lines, warning_lines = self.__parse_log(stream, oldest_timestamp)
             
-        self.msg.info(
-            f'Accepted partials: {self.__partial_accepted_parser.partials}',
-            f'Stale partials: {self.__partial_stale_parser.partials}',
-            f'Invalid partials: {self.__partial_invalid_parser.partials}')
-        self.__evaluate_lookup_times(self.__signage_point_parser.times)
+            self.msg.info(
+                f'Accepted partials: {self.__partial_accepted_parser.partials}',
+                f'Stale partials: {self.__partial_stale_parser.partials}',
+                f'Invalid partials: {self.__partial_invalid_parser.partials}')
+            self.__evaluate_lookup_times(self.__signage_point_parser.times)
 
-        self.__write_errors(error_lines + warning_lines)
+            self.__write_errors(error_lines + warning_lines)
 
-        if self.__cleanup:
-            open(self.__file, 'w').close()
+            if self.__cleanup:
+                open(self.__file, 'w').close()
 
-        for parser in self.__parsers:
-            parser.reset()
+            for parser in self.__parsers:
+                parser.reset()
 
     def __parse_log(self, stream, timestamp_limit):
         error_lines = []

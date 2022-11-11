@@ -62,5 +62,8 @@ class MessageAggregator:
     def __init__(self, func):
         self.__func = func
 
-    def __del__(self):
-        self.__func()    
+    def __enter__(self):
+        pass
+
+    def __exit__(self, exc_type, exc_value, tb):
+        self.__func()
