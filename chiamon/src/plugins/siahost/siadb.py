@@ -77,7 +77,7 @@ class Siadb():
         self.__add_rows('blocks', list((x, int(y.timestamp())) for x, y in data))
 
     def get_coinprice(self, timestamp):
-        command = """SELECT price FROM balance {0};"""
+        command = """SELECT price FROM coinprice {0};"""
         rows = self.__get_rows(command.format(self.__create_time_filter(timestamp)))
         if rows is None:
             return None

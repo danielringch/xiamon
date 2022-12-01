@@ -116,10 +116,13 @@ class Siacontracts:
             begin_height = await self.__blocks.at_time(datetime.combine(yesterday, datetime.min.time()), consensus) + 1
             end_height = await self.__blocks.at_time(datetime.combine(now, datetime.min.time()), consensus)
 
+            coinprice = self.__db.get_coinprice(datetime.combine(now, datetime.min.time()))
+
             day_rewards = self.__add_to_table(
                 yesterday,
                 begin_height,
                 list(filter(lambda x: x.end >= begin_height and x.end < end_height, contracts.contracts)),
+                coinprice if coinprice is not None else 0,
                 table
             )
             total_rewards = self.RewardTypes(
@@ -154,12 +157,12 @@ class Siacontracts:
         table.data['Sum'].append(f'{round(rewards.total)} SC')
         table.data['Fiat'].append(f'{rewards.fiat:.2f} {self.__coinprice.currency}')
 
-    def __add_to_table(self, date, height, contracts, table):
+    def __add_to_table(self, date, height, contracts, coinprice, table):
         rewards = self.__get_rewards(contracts)
         table.data['Date'].append(date.strftime("%d.%m.%Y"))
         table.data['Height'].append(height)
         table.data['Contracts'].append(len(contracts))
-        table.data['Coinprice'].append(f'{self.__coinprice.price} {self.__coinprice.currency}/SC')
+        table.data['Coinprice'].append(f'{coinprice:.8f} {self.__coinprice.currency}/SC')
         self.__add_row(table, rewards)
         return rewards
 
@@ -167,7 +170,7 @@ class Siacontracts:
         table.data['Date'].append('Total')
         table.data['Height'].append('')
         table.data['Contracts'].append('')
-        table.data['Coinprice'].append('')
+        table.data['Coinprice'].append(f'{(rewards.fiat / rewards.total):.8f} {self.__coinprice.currency}/SC')
         self.__add_row(table, rewards)
 
         storage_percent = (rewards.storage / rewards.total * 100) if rewards.total > 0 else 0

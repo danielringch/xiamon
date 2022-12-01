@@ -21,6 +21,7 @@ class Siahost(Plugin):
         self.__list_job = f'{name}-list'
         self.__accounting_job = f'{name}-accounting'
         self.__autoprice_job = f'{name}-autoprice'
+        self.__daychange_job = f'{name}-daychange'
 
         mute_interval = config_data.get(24, 'alert_mute_interval')
 
@@ -45,6 +46,7 @@ class Siahost(Plugin):
         self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get('0 0 * * *', 'summary_interval'))
         self.__scheduler.add_job(self.__list_job, self.list, config_data.get('59 23 * * *', 'list_interval'))
         self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get('0 0 * * MON', 'accounting_interval'))
+        self.__scheduler.add_job(self.__daychange_job, self.daychange, '59 23 * * *')
 
     async def check(self):
         with self.message_aggregator():
@@ -133,6 +135,9 @@ class Siahost(Plugin):
                 return
 
             await self.__autoprice.update(host)
+
+    async def daychange(self):
+        await self.__update_coinprice(Plugin.Channel.error, 'Coin price update failed: coin price not available.')
 
     @staticmethod
     def __get_collaterals(consensus, contracts):
