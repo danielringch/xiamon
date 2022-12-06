@@ -12,28 +12,28 @@ class Siadb():
         """CREATE TABLE IF NOT EXISTS balance (
             id integer PRIMARY KEY,
             timestamp integer NOT NULL,
-            free int NOT NULL,
-            locked int NOT NULL,
-            risked int NOT NULL
+            free integer NOT NULL,
+            locked integer NOT NULL,
+            risked integer NOT NULL
         );""",
         """CREATE TABLE IF NOT EXISTS traffic (
             id integer PRIMARY KEY,
-            timestamp int NOT NULL,
+            timestamp integer NOT NULL,
             epoch text NOT NULL,
             upload integer NOT NULL,
             download integer NOT_NULL
         );""",
         """CREATE TABLE IF NOT EXISTS contracts (
             id integer PRIMARY KEY,
-            timestamp int NOT NULL,
-            count int NOT NULL,
+            timestamp integer NOT NULL,
+            count integer NOT NULL,
             storage integer NOT NULL,
             io integer NOT_NULL,
             ephemeral integer NOT_NULL
         );""",
         """CREATE TABLE IF NOT EXISTS blocks (
             height integer PRIMARY KEY,
-            timestamp int NOT NULL
+            timestamp integer NOT NULL
         );"""
     ]
     __inserters = {
@@ -134,12 +134,12 @@ class Siadb():
         return rows[0][0], datetime.fromtimestamp(rows[0][1])
 
     def __add_row(self, table, data):
-        self.__db.cursor().execute(Siadb.__inserters[table], data)
+        self.__db.cursor().execute(self.__inserters[table], data)
         self.__db.commit()
 
     def __add_rows(self, table, data):
         for row in data:
-            self.__db.cursor().execute(Siadb.__inserters[table], row)
+            self.__db.cursor().execute(self.__inserters[table], row)
         self.__db.commit()
 
     def __get_rows(self, command):

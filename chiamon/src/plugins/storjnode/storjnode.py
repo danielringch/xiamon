@@ -1,4 +1,7 @@
-from ...core import Plugin, Alert, Storjapi, Storjnodedata, Config, Conversions, ApiRequestFailedException
+from ...core import Plugin, Alert, Storjapi, Storjnodedata, Storjpayoutdata, Config, ApiRequestFailedException
+from .storjdb import Storjdb
+from .storjstorage import Storjstorage
+from .storjearning import Storjearning
 
 class Storjnode(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -12,7 +15,13 @@ class Storjnode(Plugin):
         host = config_data.get('127.0.0.1:14002','host')
         self.__api = Storjapi(host, super(Storjnode, self))
 
+        self.__db = Storjdb(config_data.data['database'])
+
+        self.__storage = Storjstorage(self, scheduler, self.__db)
+        self.__earning = Storjearning(self, scheduler, self.__db)
+
         self.__outdated_alert = Alert(super(Storjnode, self), mute_interval)
+        self.__quic_alert = Alert(super(Storjnode, self), mute_interval)
         self.__offline_alert = Alert(super(Storjnode, self), mute_interval)
         self.__offline_alert = Alert(super(Storjnode, self), mute_interval)
         self.__disqualified_alert = Alert(super(Storjnode, self), mute_interval)
@@ -21,18 +30,23 @@ class Storjnode(Plugin):
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_job(f'{name}-report', self.report, config_data.get('0 0 2 0 0', 'report_interval'))
 
     async def check(self):
         try:
-            json = await self.__request('sno')
+            data = await self.__request('sno/', lambda x: Storjnodedata(x))
         except ApiRequestFailedException:
             return
         
-        data = Storjnodedata(json)
         if not data.uptodate:
-            self.__outdated_alert.send('Node version is outdated')
+            self.__outdated_alert.send('Node version is outdated.')
 
-        if not data.connected or data.satellites == 0:
+        if not data.quic:
+            self.__quic_alert.send('QUIC is disabled.')
+        else:
+            self.__quic_alert.reset('QUIC is enabled again.')
+
+        if data.satellites == 0:
             self.__offline_alert.send('Node is offline.')
         else:
             self.__offline_alert.reset(f'Node is online again, {data.satellites} satellites.')
@@ -53,36 +67,32 @@ class Storjnode(Plugin):
             self.__overused_alert.reset('Node does no longer overuse storage.')
 
     async def summary(self):
-        try:
-            json = await self.__request('sno')
-        except ApiRequestFailedException:
-            return
-        data = Storjnodedata(json)
-        self.__print_traffic(data, Plugin.Channel.info)
-        self.__print_usage(data, Plugin.Channel.info)
-    
-    def __print_traffic(self, data, channel):
-        traffic = Conversions.byte_to_auto(data.traffic, binary=False)
-        self.msg[channel](f'Traffic: {traffic[0]:.2f} {traffic[1]}')
+        with self.message_aggregator():
+            try:
+                node = await self.__request('sno/', lambda x: Storjnodedata(x))
+                payout = await self.__request('sno/estimated-payout', lambda x: Storjpayoutdata(x))
+            except ApiRequestFailedException:
+                self.msg.info('No summary created, node is not available.')
+                return
 
-    def __print_usage(self, data, channel):
-        total_space = data.total_space
-        used_space = data.used_space
-        trash_space = data.trash_space
+        self.__storage.summary(node, payout)
+        self.__earning.summary(payout)
 
-        used_percent = used_space / total_space * 100.0
-        trash_percent = trash_space / (used_space + trash_space) * 100.0
+    async def report(self):
+        with self.message_aggregator():
+            try:
+                payout = await self.__request('sno/estimated-payout', lambda x: Storjpayoutdata(x))
+            except ApiRequestFailedException:
+                self.msg.info('No report created, node is not available.')
+                return
 
-        used_space = Conversions.byte_to_auto(used_space, binary=False)
-        trash_space = Conversions.byte_to_auto(trash_space, binary=False)
+        self.__earning.report(payout)
 
-        self.msg[channel](f'Memory usage: {used_space[0]:.2f} {used_space[1]} ({used_percent:.1f} %)')
-        self.msg[channel](f'Trash: {trash_space[0]:.2f} {trash_space[1]} ({trash_percent:.2f} %)')
-
-    async def __request(self, cmd):
+    async def __request(self, cmd, generator):
         async with self.__api.create_session() as session:
             try:
                 json = await self.__api.get(session, cmd)
-                return json
+                result = generator(json)
+                return result
             except ApiRequestFailedException:
                 raise

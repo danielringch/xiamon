@@ -1,5 +1,7 @@
 name: <unique name>
-summary_interval: <cron, e.g. "0 * * * *">
 check_interval: <cron, e.g. "0 * * * *">
+summary_interval: <cron, e.g. "0 * * * *">
+report_interval: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 host: <ip:port, usually 127.0.0.1:14002>
+database: <file>
