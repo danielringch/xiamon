@@ -40,21 +40,15 @@ class AttributeEvaluator:
             self.__alerts[attribute] = Alert(self.__plugin, self.__aggregation)
 
     def check(self, snapshot, history):
-        if history is not None:
-            delta = snapshot.timestamp - history.timestamp
-
         for attribute, checker in self.__checkers.items():
             try:
                 value = snapshot.attributes[attribute]
             except KeyError:
                 continue
 
-            if history is not None:
-                try:
-                    history_value = self.__scale_value(value, history.attributes[attribute], delta, self.__aggregation) 
-                except KeyError:
-                    history_value = None
-            else:
+            try:
+                history_value = history.attributes[attribute]
+            except (KeyError, TypeError, ValueError):
                 history_value = None
 
             passed, message = checker.check(value, history_value)
@@ -64,12 +58,6 @@ class AttributeEvaluator:
             self.__plugin.msg.debug(message)
             if not passed:
                 self.__alerts[attribute].send(message)
-
-    def __scale_value(self, value, old_value, time_delta, expected_time_delta):
-        factor = expected_time_delta / time_delta
-        delta = value - old_value
-        scaled_delta = delta * factor
-        return round(value - scaled_delta)
 
     class MaxCheck:
         def __init__(self, limit):

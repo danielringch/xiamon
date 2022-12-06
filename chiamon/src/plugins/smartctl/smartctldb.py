@@ -68,8 +68,8 @@ class Smartctldb():
     def get(self, drive, timestamp, tolerance=timedelta(minutes=5)):
         snapshot_command = """SELECT snapshot.id, timestamp FROM snapshot
                             INNER JOIN drive ON drive.id = snapshot.drive_id
-                            WHERE drive.name == ? AND snapshot.timestamp <= ?
-                            ORDER BY timestamp DESC LIMIT 1;"""
+                            WHERE drive.name == ? AND snapshot.timestamp >= ?
+                            ORDER BY timestamp ASC LIMIT 1;"""
         attribute_command = "SELECT attribute, value FROM attribute WHERE snapshot_id == ?"
 
         unix_timestamp = int((timestamp - tolerance).timestamp())
@@ -77,7 +77,7 @@ class Smartctldb():
 
         if snapshot_rows is None:
             self.__plugin.msg.debug(
-                f'Failed to get snapshot from history: drive {drive} is not in database or no snapshot older than {unix_timestamp} in database.')
+                f'Failed to get snapshot from history: drive {drive} is not in database or no snapshot younger than {unix_timestamp} in database.')
             return None
 
         real_timestamp = datetime.fromtimestamp(snapshot_rows[0][1])
