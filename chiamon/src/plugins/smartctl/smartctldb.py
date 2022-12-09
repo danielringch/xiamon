@@ -1,7 +1,6 @@
 import sqlite3
 from pathlib import Path
 from datetime import datetime, timedelta
-from ...core import Plugin
 from .smartsnapshot import SmartSnapshot
 
 class Smartctldb():
@@ -37,6 +36,7 @@ class Smartctldb():
             raise FileNotFoundError(f'Path contains not existing directory: {file}')
         self.__db = sqlite3.connect(self.__path)
         cursor = self.__db.cursor()
+        cursor.execute("PRAGMA foreign_keys = ON;")
         for cmd in self.__tables:
             cursor.execute(cmd)
 
