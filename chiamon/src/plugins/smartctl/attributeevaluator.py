@@ -48,7 +48,7 @@ class AttributeEvaluator:
 
             try:
                 history_value = history.attributes[attribute]
-            except (KeyError, TypeError, ValueError):
+            except (AttributeError, KeyError):
                 history_value = None
 
             passed, message = checker.check(value, history_value)
