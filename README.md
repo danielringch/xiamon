@@ -13,7 +13,7 @@ pyaml
 How to enable smart support:
 
 - as root, copy the smartctl binary (usually in /usr/sbin) to a directory of your choise
-- as root, make it executable for the user running chiamon using the command 'chmod u+s smartctl'
+- as root, make it executable for the user running xiamon using the command 'chmod u+s smartctl'
 - add the path to the smartctl binary to your config
 
 Common smart attributes:

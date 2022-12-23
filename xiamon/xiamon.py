@@ -13,7 +13,7 @@ warnings.filterwarnings(
     category=PytzUsageWarning
 )
 
-prefix = '[chiamon] {0}'
+prefix = '[xiamon] {0}'
 
 available_interfaces = {'discordbot': Discordbot,
                         'logfile': Logfile,
@@ -31,7 +31,7 @@ available_plugins = {'chiafarmer': Chiafarmer,
                      'sysmonitor': Sysmonitor}
 
 async def main():
-    print(f'Chiamon {__version__}')
+    print(f'Xiamon {__version__}')
 
     parser = argparse.ArgumentParser(description='Monitor for chia nodes.')
     parser.add_argument('-c', '--config', type=str, required=True, help="Path to config file.")
