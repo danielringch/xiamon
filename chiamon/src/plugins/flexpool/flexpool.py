@@ -42,7 +42,7 @@ class Flexpool(Plugin):
         else:
             self.__last_summary = now
         if open_xch is not None:
-            self.msg.info(f'Open balance: {open_xch} XCH ({open_money} {self.__currency})')
+            self.msg.info(f'Open balance: {open_xch} XCH ({open_money:.2f} {self.__currency})')
         if workers is not None:
             for worker in workers:
                 if self.__ignore_worker(worker.name):
