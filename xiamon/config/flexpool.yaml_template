@@ -8,4 +8,4 @@ alert_mute_interval: <hours>
 alert_tolerance: <number>
 address: <XCH wallet address>
 currency: <string, e.g. "USD">
-worker_whitelist: <list of worker names or null>
+worker_blacklist: <list of worker names or null>

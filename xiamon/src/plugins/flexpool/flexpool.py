@@ -11,7 +11,7 @@ class Flexpool(Plugin):
 
         self.__address = config_data.data['address']
         self.__currency = config_data.get('USD', 'currency')
-        self.__worker_whitelist = config_data.get(None, 'worker_whitelist')
+        self.__worker_blacklist = set(config_data.get([], 'worker_blacklist'))
 
         self.__last_summary = datetime.datetime.now()
 
@@ -45,8 +45,6 @@ class Flexpool(Plugin):
             self.msg.info(f'Open balance: {open_xch} XCH ({open_money:.2f} {self.__currency})')
         if workers is not None:
             for worker in workers:
-                if self.__ignore_worker(worker.name):
-                    continue
                 self.msg.info(
                     f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):',
                     f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB',
@@ -68,7 +66,7 @@ class Flexpool(Plugin):
             if workers is None:
                 return
             for worker in workers:
-                if self.__ignore_worker(worker.name):
+                if worker.name in self.__worker_blacklist:
                     continue
                 if worker.name not in self.__offline_alerts:
                     self.__offline_alerts[worker.name] = Alert(super(Flexpool, self),
@@ -78,12 +76,6 @@ class Flexpool(Plugin):
                     alert.send(f'Worker {worker.name} is offline.')
                     continue
                 alert.reset(f'Worker {worker.name} is online again.')
-
-    def __ignore_worker(self, name):
-        if self.__worker_whitelist is not None and name not in self.__worker_whitelist:
-            return True
-        else:
-            return False
 
     async def __get_balance(self, session):
         params = {'coin': 'XCH', 'address': self.__address, 'countervalue': self.__currency }
