@@ -27,9 +27,8 @@ class Flexfarmer(Plugin):
             WarningParser()
         ]
 
-        self.__file = config_data.data['log_path']
+        self.__file = config_data.data['log_file']
         self.__output_path = config_data.data['output_path']
-        self.__cleanup = config_data.get(False, 'reset_logs')
 
         self.__scheduler.add_job(self.__name ,self.run, config_data.get('0 0 * * *', 'interval'))
 
@@ -47,9 +46,6 @@ class Flexfarmer(Plugin):
             self.__evaluate_lookup_times(self.__signage_point_parser.times)
 
             self.__write_errors(error_lines + warning_lines)
-
-            if self.__cleanup:
-                open(self.__file, 'w').close()
 
             for parser in self.__parsers:
                 parser.reset()

@@ -1,5 +1,4 @@
 name: <unique name>
 interval: <cron, e.g. "0 * * * *">
-log_path: <file>
-reset_logs: <boolean>
+log_file: <file>
 output_path: <path>
