@@ -32,7 +32,6 @@ class Coinprice:
 
     def to_fiat(self, balance, digits=None):
         if self.__price is None:
-            print(f'{balance}, {self.__price}')
             return None
         fiat = balance * self.__price
         return fiat if digits is None else round(fiat, digits)

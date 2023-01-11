@@ -23,7 +23,6 @@ class Chiawallet(Plugin):
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
         scheduler.add_startup_job(f'{name}-startup', self.startup)
-        scheduler.add_job(f'{name}-dump', self.dump, '55 23 * * *')
 
     async def startup(self):
         if self.__db.balance is None:
@@ -54,29 +53,20 @@ class Chiawallet(Plugin):
             self.msg.report(message)
 
     async def summary(self):
+        if not await self.__coinprice.update():
+            price_message = 'Coin price not available.'
+        else:
+            price_message = f'Coin price: {self.__coinprice.to_fiat_string(1)}/XCH'
+
         async with aiohttp.ClientSession() as session:
             balance = await self.__get_balance(session)
             if balance is None:
-                self.msg.info('Balance unknown, wallet is unavailable.')
-                return
-            await self.__coinprice.update()
-            self.msg.info(f'Balance: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})')
+                message = f'Balance unknown, wallet is unavailable.\n{price_message}'
+            else:
+                message = f'Balance: {balance:.12f} XCH ({self.__coinprice.to_fiat_string(balance)})\n{price_message}'
 
-    async def dump(self):
-        async with aiohttp.ClientSession() as session:
-            balance = await self.__get_balance(session)
-            if balance is None:
-                return
-
-        await self.__coinprice.update()
-        price = self.__coinprice.price
-
-        self.msg.report(
-            f'Wallet {self.__wallet_id}: '
-            f'{balance:.12f} XCH; '
-            f'{price:.4f} {self.__coinprice.currency}/XCH; '
-            f'{self.__coinprice.to_fiat_string(balance)}\n'
-        )
+            self.msg.info(message)
+            self.msg.report(message)
 
     async def __get_balance(self, session):
         if not await self.__get_synced(session):
