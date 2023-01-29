@@ -1,6 +1,5 @@
 name: <unique name>
 summary_interval: <cron, e.g. "0 * * * *">
-rescan_intervall: <cron, e.g. "0 * * * *">
 alert_mute_interval: <hours>
 drives:
     - <alias>:

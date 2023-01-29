@@ -25,7 +25,6 @@ class Pingdrive(Plugin):
         self.__first_summary = True
 
         scheduler.add_job(f'{name}-check', self.check, '* * * * *')
-        scheduler.add_job(f'{name}-rescan' ,self.rescan, config_data.get('0 * * * *', 'rescan_intervall'))
         scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
         scheduler.add_startup_job(f'{name}-startup', self.rescan)
 
@@ -66,14 +65,7 @@ class Pingdrive(Plugin):
         self.__first_summary = False
 
     async def rescan(self):
-        drives = self.__get_drives();
-        # remove old devices
-        for device in list(self.__drives.keys()):
-            if device not in drives:
-                self.msg.debug(f'Removed drive {device} ({self.__drives[device].alias}).')
-                del self.__drives[device]
-        # add new devices
-        for device, mounts in drives.items():
+        for device, mounts in self.__get_drives().items():
             if device not in self.__drives:
                 matching_mount = self.__drive_configs.keys() & mounts
                 if len(matching_mount) == 0:
