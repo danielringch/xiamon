@@ -8,23 +8,17 @@ class SmartSnapshot:
         self.__success = False
 
     @classmethod
-    def from_smartctl(cls, smartctl_out, attributes_of_interest):
+    def from_smartctl(cls, identifier, smartctl_out, attributes_of_interest):
         instance = cls()
 
         header_found = False
-        model = None
-        serial = None
         header_regex = re.compile('^ID#.*RAW_VALUE$')
         no_whitespace_regex = re.compile('\\S+')
         id_index = 0
         value_index = None
         for line in smartctl_out.splitlines():
             if not header_found:
-                if line.startswith('Device Model:     '):
-                    model = line[18:]
-                elif line.startswith('Serial Number:    '):
-                    serial = line[18:]
-                elif header_regex.search(line):
+                if header_regex.search(line):
                     columns = no_whitespace_regex.findall(line)
                     value_index = len(columns) - 1
                     header_found = True
@@ -40,8 +34,8 @@ class SmartSnapshot:
                     pass
             else:
                 break
-        instance.__success = model is not None and serial is not None
-        instance.__identifier = f'{model}-{serial}'.replace(' ', '-') if instance.__success else None
+        instance.__success = identifier is not None and len(instance.attributes) > 0
+        instance.__identifier = identifier
 
         return instance
 

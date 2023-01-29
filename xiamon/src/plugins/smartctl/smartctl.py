@@ -44,11 +44,14 @@ class Smartctl(Plugin):
         self.msg.debug(f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}')
         drives = self.__get_drives()
         for device in drives:
-            snapshot = self.__get_smart_data(device)
-            if not snapshot.success:
+            identifier = self.__get_identifier(device)
+            if identifier in self.__blacklist:
+                self.msg.debug(f'Ignored blacklisted drive {identifier}.')
                 continue
-            if snapshot.identifier in self.__blacklist:
-                self.msg.debug(f'Ignored blacklisted drive {snapshot.identifier}.')
+            snapshot = self.__get_smart_data(device, identifier)
+            if not snapshot.success:
+                self.msg.debug(f'Drive {identifier} has no SMART support.')
+                self.__blacklist.add(identifier)
                 continue
             self.__add_drive(snapshot.identifier, device) 
 
@@ -106,13 +109,27 @@ class Smartctl(Plugin):
     def __get_snapshots(self):
         result = []
         for device in self.__get_drives():
-            snapshot = self.__get_smart_data(device)
-            if not snapshot.success or snapshot.identifier in self.__blacklist:
+            identifier = self.__get_identifier(device)
+            if identifier in self.__blacklist:
+                continue
+            snapshot = self.__get_smart_data(device, identifier)
+            if not snapshot.success:
                 continue
 
             result.append((snapshot, self.__add_drive(snapshot.identifier, device)))
         return result
 
-    def __get_smart_data(self, device):
-        output = subprocess.run([self.__smartctl_call,"-iA" , device], text=True, stdout=subprocess.PIPE)
-        return SmartSnapshot.from_smartctl(output.stdout, self.__attributes_of_interest)
+    def __get_identifier(self, device):
+        output = subprocess.run(["lsblk", device,"-o", "MODEL,SERIAL"], text=True, stdout=subprocess.PIPE)
+        lines = output.stdout.splitlines()
+        if len(lines) < 2:
+            return None
+        return lines[1].replace(" ", "_")
+
+
+    def __get_smart_data(self, device, identifier):
+        output = subprocess.run([self.__smartctl_call,"-A" , device], text=True, stdout=subprocess.PIPE)
+        return SmartSnapshot.from_smartctl(
+            identifier, 
+            output.stdout, 
+            self.__attributes_of_interest)
