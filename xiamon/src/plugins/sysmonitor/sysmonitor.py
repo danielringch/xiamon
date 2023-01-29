@@ -1,4 +1,4 @@
-import psutil
+import psutil, glob
 from typing import DefaultDict, OrderedDict
 from .resourceevaluator import Resourceevaluator
 from ...core import Plugin, Alert, Config
@@ -80,5 +80,9 @@ class Sysmonitor(Plugin):
         return psutil.getloadavg()[0]
 
     def __get_temperature(self):
-        with open(self.__temperature_source, "r") as temp:
+        paths = glob.glob(self.__temperature_source)
+        if len(paths) == 0:
+            self.msg.error(f'Temperature file not found: {self.__temperature_source}')
+            return 0
+        with open(paths[0], "r") as temp:
             return round(float(temp.read())/1000, 1)
