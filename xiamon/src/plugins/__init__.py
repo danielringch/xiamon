@@ -1,4 +1,5 @@
 from .chiafarmer import *
+from .chiaharvester import *
 from .chianode import *
 from .chiawallet import *
 from .flexfarmer import *
