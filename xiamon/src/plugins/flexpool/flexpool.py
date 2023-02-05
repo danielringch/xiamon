@@ -18,11 +18,8 @@ class Flexpool(Plugin):
         self.__timeout = aiohttp.ClientTimeout(total=30)
 
         self.__connection_alerts = {}
-        self.__connection_mute_interval = config_data.get(24, 'connection_error_mute_interval')
-        self.__connection_tolerance = config_data.get(0, 'connection_error_tolerance')
-        self.__connection_retry = config_data.get(3, 'connection_retry')
         self.__offline_alerts = {}
-        self.__offline_mute_interval = config_data.get(24, 'alert_mute_interval')
+        self.__mute_interval = config_data.get(24, 'alert_mute_interval')
         self.__offline_tolerance = config_data.get(0, 'alert_tolerance')
 
         scheduler.add_job(f'{name}-summary' ,self.summary, config_data.get('0 * * * *', 'summary_interval'))
@@ -70,7 +67,7 @@ class Flexpool(Plugin):
                     continue
                 if worker.name not in self.__offline_alerts:
                     self.__offline_alerts[worker.name] = Alert(super(Flexpool, self),
-                        self.__offline_mute_interval, self.__offline_tolerance)
+                        self.__mute_interval, self.__offline_tolerance)
                 alert = self.__offline_alerts[worker.name]
                 if not worker.online:
                     alert.send(f'Worker {worker.name} is offline.')
@@ -124,13 +121,8 @@ class Flexpool(Plugin):
                 response.raise_for_status()
                 data =  await response.json()
         except asyncio.TimeoutError as e_timeout:
-            if retry < self.__connection_retry:
-                self.msg.debug(f'Retrying request {cmd} after timeout.')
-                await asyncio.sleep(5)
-                return await self.__get(session, cmd, params, retry + 1)
-            else:
-                self.__handle_connection_error(False, cmd, f'Request {cmd}: timeout')
-                return None
+            self.__handle_connection_error(False, cmd, f'Request {cmd}: timeout')
+            return None
         except Exception as e:
             self.__handle_connection_error(False, cmd, f'Request {cmd}: {repr(e)}')
             return None
@@ -143,7 +135,7 @@ class Flexpool(Plugin):
     def __handle_connection_error(self, success, cmd, message):
         if cmd not in self.__connection_alerts:
             self.__connection_alerts[cmd] = Alert(super(Flexpool, self),
-                self.__connection_mute_interval, self.__connection_tolerance)
+                self.__mute_interval)
         alert = self.__connection_alerts[cmd]
         if success:
             alert.reset(message)
