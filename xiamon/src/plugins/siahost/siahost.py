@@ -55,7 +55,7 @@ class Siahost(Plugin):
                 host = await self.__request('host', lambda x: Siahostdata(x))
                 wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
             except ApiRequestFailedException:
-                self.msg.debug('Report failed: some host queries failed.')
+                self.msg.debug('Check failed: some host queries failed.')
                 return
         
             await self.__blocks.update(consensus)
