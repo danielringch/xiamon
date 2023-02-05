@@ -18,7 +18,8 @@ prefix = '[xiamon] {0}'
 available_interfaces = {'discordbot': Discordbot,
                         'logfile': Logfile,
                         'stdout': Stdout}
-available_plugins = {'chiafarmer': Chiafarmer,
+available_plugins = {'chiaharvester': Chiaharvester,
+                     'chiafarmer': Chiafarmer,
                      'chianode': Chianode,
                      'chiawallet': Chiawallet,
                      'flexfarmer': Flexfarmer,
