@@ -1,8 +1,0 @@
-name: <unique name>
-summary_interval: <cron, e.g. "0 * * * *">
-check_interval: <cron, e.g. "0 * * * *">
-alert_mute_interval: <hours>
-alert_tolerance: <number>
-address: <XCH wallet address>
-currency: <string, e.g. "USD">
-worker_blacklist: <list of worker names or null>

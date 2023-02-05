@@ -1,7 +1,0 @@
-interfaces:
-  discordbot: <file>
-plugins:
-  flexfarmer: <file>
-  pingdrive: <file>
-  chianode: <file>
-  chiawallet: <file>

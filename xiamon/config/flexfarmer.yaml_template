@@ -1,4 +1,0 @@
-name: <unique name>
-interval: <cron, e.g. "0 * * * *">
-log_file: <file>
-output_path: <path>
