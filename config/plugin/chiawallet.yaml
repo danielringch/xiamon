@@ -1,0 +1,10 @@
+name: "my_chiawallet"  #unique name
+check_interval: "*/5 * * * *"  #cron schedule expression
+summary_interval: "0 0 * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+cert: "~/.chia/mainnet/config/ssl/full_node/private_wallet.crt"
+key: "~/.chia/mainnet/config/ssl/full_node/private_wallet.key"
+host: "127.0.0.1:9256"
+wallet_id: 1
+database: "~/myDb.sqlite"
+currency: "usd"  #supported: eur,usd

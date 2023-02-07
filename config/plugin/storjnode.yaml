@@ -1,0 +1,7 @@
+name: "my_storagenode"  #unique name
+check_interval: "*/15 * * * *"  #cron schedule expression
+summary_interval: "0 0 * * *"  #cron schedule expression
+report_interval: "0 0 3 * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+host: "127.0.0.1:14002"
+database: "~/myDb.sqlite"

@@ -1,0 +1,14 @@
+alert:  #optional
+  color: "red"  #optional
+info:  #optional
+report:  #optional
+  color: "yellow"  #optional
+  whitelist:  #optional
+    - "my_storagenode"
+error:  #optional
+  color: magenta  #optional
+debug:  #optional
+  color: cyan  #optional
+  blacklist:  #optional
+    - "my_systemmonitor"
+    - "my_pingdrive"

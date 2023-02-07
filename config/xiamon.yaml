@@ -1,0 +1,19 @@
+interfaces:
+  discordbot: "interface/discordbot.yaml"  #optional
+  logfile: "interface/logfile.yaml"  #optional
+  stdout: "interface/stdout.yaml"  #optional
+plugins:
+  chiafarmer: "plugin/.yaml"  #optional
+  chiaharvester:  #optional
+    - "plugin/chiaharvester_1.yaml"
+    - "plugin/chiaharvester_2.yaml"
+  chianode: "plugin/chianode.yaml"  #optional
+  chiawallet: "plugin/chiawallet.yaml"  #optional
+  flexfarmer: "plugin/flexfarmer.yaml"  #optional
+  flexpool: "plugin/flexpool.yaml"  #optional
+  pingdrive: "plugin/pingdrive.yaml"  #optional
+  serviceping: "plugin/serviceping.yaml"  #optional
+  siahost: "plugin/siahost.yaml"  #optional
+  smartctl: "plugin/smartctl.yaml"  #optional
+  storjnode: "plugin/storjnode.yaml"  #optional
+  sysmonitor: "plugin/sysmonitor.yaml"  #optional
