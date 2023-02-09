@@ -16,6 +16,7 @@ key: "~/.chia/mainnet/config/ssl/full_node/private_wallet.key"
 host: "127.0.0.1:9256"
 wallet_id: 1
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
 currency: "usd"  #supported: eur,usd
 ```
 
@@ -43,7 +44,7 @@ The plugin checks the wallet balance periodically.
 
 If the wallet is not synced, an alert is sent.
 
-If the wallet balance has changed, a message is sent to the channels **info** and **report**.
+If the wallet balance has changed, a message is sent to the channels **info** and **report**. If the key **csv_export** is set, the balance change is also added to a CSV export file.
 
 The [execution interval](../config_basics.md) is set by the key **check_interval**.
 

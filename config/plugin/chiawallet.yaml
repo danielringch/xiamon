@@ -7,4 +7,5 @@ key: "~/.chia/mainnet/config/ssl/full_node/private_wallet.key"
 host: "127.0.0.1:9256"
 wallet_id: 1
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
 currency: "usd"  #supported: eur,usd

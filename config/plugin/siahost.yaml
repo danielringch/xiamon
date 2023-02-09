@@ -8,6 +8,7 @@ alert_mute_interval: 24  #hours
 host: "127.0.0.1:9980"
 password: "abc123"
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
 currency: "usd"  #supported: eur,usd
 minimum_available_balance: 1000
 autoprice:  #optional

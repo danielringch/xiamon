@@ -1,5 +1,5 @@
 import aiohttp
-from ...core import Plugin, Alert, Chiarpc, Config, Coinprice, ApiRequestFailedException, Conversions
+from ...core import Plugin, Alert, Chiarpc, Config, Coinprice, ApiRequestFailedException, Conversions, CsvExporter
 from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
@@ -18,6 +18,7 @@ class Chiawallet(Plugin):
         self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
 
         self.__db = Chiawalletdb(config_data.data['database'])
+        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
         self.__coinprice = Coinprice('chia', config_data.get('usd', 'currency'))
 
         scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
@@ -44,6 +45,13 @@ class Chiawallet(Plugin):
                 return
             await self.__coinprice.update()
             self.__db.update_balance(balance, self.__coinprice.price)
+            self.__csv.add_line({
+                'Delta (XCH)': diff,
+                f'Delta ({self.__coinprice.currency})': self.__coinprice.to_fiat(diff),
+                'New balance (XCH)': balance,
+                f'New balance ({self.__coinprice.currency})': self.__coinprice.to_fiat(balance),
+                f'Coinprice ({self.__coinprice.currency}/XCH)': self.__coinprice.price
+            })
             message = (
                 f'Balance changed of wallet {self.__wallet_id}:\n'
                 f'delta: {diff} XCH ({self.__coinprice.to_fiat_string(diff)})\n'

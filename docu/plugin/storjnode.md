@@ -14,6 +14,7 @@ report_interval: "0 0 3 * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 host: "127.0.0.1:14002"
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
 ```
 
 ## **Basic setup**
@@ -59,6 +60,8 @@ A summary is sent to the **report** channel, containing the following informatio
 - Earnings for all three categories
 - Held earnings
 - Total earnings
+
+If the key **csv_export** is set, the rewards are also added to a CSV export file.
 
 The necessary information may not be available from storj directly after the new month has started. Triggering the report on the third day of the next month or later has shown to work fine.
 

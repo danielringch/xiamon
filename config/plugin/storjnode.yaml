@@ -5,3 +5,4 @@ report_interval: "0 0 3 * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 host: "127.0.0.1:14002"
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional

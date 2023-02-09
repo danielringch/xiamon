@@ -1,4 +1,4 @@
-from ...core import Plugin, Alert, Storjapi, Storjnodedata, Storjpayoutdata, Config, ApiRequestFailedException
+from ...core import Plugin, Alert, Storjapi, Storjnodedata, Storjpayoutdata, Config, ApiRequestFailedException, CsvExporter
 from .storjdb import Storjdb
 from .storjstorage import Storjstorage
 from .storjearning import Storjearning
@@ -15,10 +15,11 @@ class Storjnode(Plugin):
         host = config_data.get('127.0.0.1:14002','host')
         self.__api = Storjapi(host, super(Storjnode, self))
 
+        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
         self.__db = Storjdb(config_data.data['database'])
 
         self.__storage = Storjstorage(self, scheduler, self.__db)
-        self.__earning = Storjearning(self, scheduler, self.__db)
+        self.__earning = Storjearning(self, scheduler, self.__db, self.__csv)
 
         self.__outdated_alert = Alert(super(Storjnode, self), mute_interval)
         self.__quic_alert = Alert(super(Storjnode, self), mute_interval)

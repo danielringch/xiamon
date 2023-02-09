@@ -1,4 +1,4 @@
-from ...core import Plugin, Siaapi, Config, Conversions, Tablerenderer, Coinprice, ApiRequestFailedException
+from ...core import Plugin, Siaapi, Config, CsvExporter, Coinprice, ApiRequestFailedException
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
 from .siablocks import Siablocks
@@ -30,12 +30,13 @@ class Siahost(Plugin):
         self.__api = Siaapi(host, password, super(Siahost, self))
 
         self.__db = Siadb(config_data.data['database'])
+        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
         self.__blocks = Siablocks(super(Siahost, self), self.__api, self.__db)
         self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
 
         self.__health = Siahealth(self, config_data)
         self.__storage = Siastorage(self, self.__scheduler, self.__db)
-        self.__wallet = Siawallet(self, self.__db, self.__coinprice)
+        self.__wallet = Siawallet(self, self.__db, self.__csv, self.__coinprice)
         self.__autoprice = None
         self.__reports = Siacontracts(self, self.__coinprice, self.__scheduler, self.__db, self.__blocks)
         if 'autoprice' in  config_data.data:

@@ -1,10 +1,11 @@
 from ...core import Conversions, Tablerenderer
 
 class Storjearning:
-    def __init__(self, plugin, scheduler, database):
+    def __init__(self, plugin, scheduler, database, csv):
         self.__plugin = plugin
         self.__scheduler = scheduler
         self.__db = database
+        self.__csv = csv
 
     def summary(self, payout):
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-summary')
@@ -43,6 +44,14 @@ class Storjearning:
         storage_percent = storage_reward * 100.0 / (total_reward + held_reward)
         egress_percent = egress_reward * 100.0 / (total_reward + held_reward)
         repair_percent = repair_reward * 100.0 / (total_reward + held_reward)
+
+        self.__csv.add_line({
+            'Storage reward (USD)': storage_reward,
+            'Egress reward (USD)': egress_reward,
+            'Repair/ audit reward (USD)': repair_reward,
+            'Held reward (USD)': held_reward * -1,
+            'Total reward (USD)': total_reward
+        })
 
         table = Tablerenderer([' ', 'Amount', 'Earnings', 'Percent'])
 

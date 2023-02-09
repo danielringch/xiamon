@@ -21,6 +21,7 @@ alert_mute_interval: 24  #hours
 host: "127.0.0.1::9980"
 password: "abc123"
 database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
 currency: "usd"  #supported: eur,usd
 minimum_available_balance: 1000
 autoprice:  #optional
@@ -105,6 +106,8 @@ A summary is sent to the **report** channel and contains the following informati
   - Download from renter since last list
   - Upload to renter since last list
   - not available if the siad instance was started after the last list
+
+If the key **csv_export** is set, the balances are also added to a CSV export file.
 
 Furthermore, a list of all active contracts is written to the **debug** channel.
 
