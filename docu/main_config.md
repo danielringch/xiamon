@@ -1,28 +1,34 @@
 # The Xiamon main config file
 
-The Xiamon main confile is a yaml file with the following sections.
+The Xiamon main configuration file defines the used plugins, interfaces and their corresponding configuration files.
 
-A template can be found [here](../xiamon/config/config.yaml_template).
+It must be named `xiamon.yaml`.
 
-## Interfaces
+## **Configuration template**
 
-The key
+```yaml
+interfaces:
+  discordbot: "interface/discordbot.yaml"  #optional
+  logfile: "interface/logfile.yaml"  #optional
+  stdout: "interface/stdout.yaml"  #optional
+plugins:
+  chiafarmer: "plugin/.yaml"  #optional
+  chiaharvester:  #optional
+    - "plugin/chiaharvester_1.yaml"
+    - "plugin/chiaharvester_2.yaml"
+  chianode: "plugin/chianode.yaml"  #optional
+  chiawallet: "plugin/chiawallet.yaml"  #optional
+  flexfarmer: "plugin/flexfarmer.yaml"  #optional
+  flexpool: "plugin/flexpool.yaml"  #optional
+  pingdrive: "plugin/pingdrive.yaml"  #optional
+  serviceping: "plugin/serviceping.yaml"  #optional
+  siahost: "plugin/siahost.yaml"  #optional
+  smartctl: "plugin/smartctl.yaml"  #optional
+  storjnode: "plugin/storjnode.yaml"  #optional
+  sysmonitor: "plugin/sysmonitor.yaml"  #optional
+```
 
-    interfaces:
-
-is used, followed by the infaces and their individual configuration files. All links are relative to the location of this configuration file.
-
-    interfaces:
-      interface1: <myFile1.yaml>    
-      interface2: <myFile2.yaml>
-
-If more than one instance of an interface is used, a list of configuration files is given:    
-
-    interfaces:
-      interface1: <myFile1.yaml>    
-      interface2:
-        - <myFile2.yaml>
-        - <myFile3.yaml>
+The key **interfaces** starts the section defining the interfaces Xiamon uses as outputs. The subsequent key defines the interface, for each given configuration file, an own instance of the interface is created.
 
 The following interfaces are available:
 
@@ -30,23 +36,18 @@ The following interfaces are available:
 - logfile
 - stdout
 
-## Plugins
-
-The key
-
-    plugins
-
-is used, everything else is basically the same as for interfaces.
+The key **plugins** starts the section defining the plugins. The subsequent key defines the plugin, for each given configuration file, an own instance of the plugin is created.
 
 The following plugins are available:
 
 - chiafarmer
+- chiaharvester
 - chianode
 - chiawallet
 - flexfarmer
 - flexpool
 - pingdrive
-- servicepin>
+- serviceping
 - siahost
 - smartctl
 - storjnode

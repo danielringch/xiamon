@@ -88,7 +88,7 @@ A summary is sent to the **info** channel and contains the following information
   - Failed proofs since last summary
 - Settled earnings since last summary
 - Non-settled balance in actice contracts
-- Total earnings in active contracts since last summary
+- Total potential reward in active contracts since last summary
 
 The _collateral reserve_ is a simple forecast how many percent of the available balance will not be locked if storage usage hits 100%. The calculation is really simple, so the results are not too accurate (especially if the configured collateral changes often). But it gives a quite good overview whether there is a risk of running out of available balance. A positive _collateral reserve_ means that there will be still some balance available when the whole storage is filled; a negative value means that the host will be running out of available balance to be locked as collateral before its storage gets full.
 
@@ -112,7 +112,7 @@ The [execution interval](../config_basics.md) is set by the key **list_interval*
 
 ## **Accounting**
 
-The accounting feature gives an overview over the daily income. When triggered, it writes a table to the **report** channel with a row for each day since the last accounting report contain the following information:
+The accounting feature gives an overview over the daily income. When triggered, it writes a table to the **report** channel with a row for each day since the last accounting report, containing the following information:
 
 - First height of the day
 - Number of ended contracts
@@ -123,7 +123,7 @@ The accounting feature gives an overview over the daily income. When triggered, 
 - Coinprice
 - Revenue in fiat
 
-The data is taken from the contract list, so some other revenues (e.g. registry) is missing. But these revenues should represent only a small minority of total revenues.
+The data is taken from the contract list, so some other revenues (e.g. registry) are missing. But these revenues should represent only a small minority of total revenues.
 
 The [execution interval](../config_basics.md) is set by the key **accounting_interval**.
 
@@ -131,9 +131,9 @@ The [execution interval](../config_basics.md) is set by the key **accounting_int
 
 The fiat price of siacoin is set by supply and demand, so it is quite volatile. Host operators, however, usually do their cost calculations in fiat. So they need to update their prices from time to time.
 
-The siahost plugin can automate this process with its autoprice feature. If the key **autoprice** is set in the configuration, this feature is active. Do not triffer price updates too often, since it interrupts traffic with the renters until they have the new price list. Once a week or less is fine.
+The siahost plugin can automate this process with its autoprice feature. If the key **autoprice** is set in the configuration, this feature is active. Do not trigger price updates too often, since it interrupts traffic with the renters until they have the new price list. Once a week or less is fine.
 
-When triggered (configured by key **price_interval**), its get the siacoin fiat price from the internet, calulates a new price table and updates the price tabele in siad. An upper limit in siacoin can be set, since some renters have hard limits for some prices. The collateral is also updated, since it is usually a multiple of the storage price.
+When triggered (configured by key **price_interval**), its gets the siacoin fiat price from the internet, calulates a new price table and sends it to siad. An upper limit in siacoin can be set, since some renters have hard limits for some prices. The collateral is also updated, since it is usually a multiple of the storage price.
 
 The storage price is configured by the key **storage**, but the calculated price in siacoin will never exceed the value of the key **storage_max**.
 
@@ -143,4 +143,4 @@ The upload (to renter) price is configured by the key **upload**, but the calcul
 
 The download (from renter) price is configured by the key **download**, but the calculated price in siacoin will never exceed the value of the key **download_max**.
 
-The prices for contract formation, sector access and rpc are configured by the keys **contract**, **sector_access** and **base_rpc**. The are not calculated from fiat prices, since they only make a very small part of the income and the risk to get ignored by renters because of too high prices here is quite high.
+The prices for contract formation, sector access and rpc are configured by the keys **contract**, **sector_access** and **base_rpc**. They are not calculated from fiat prices, since they only make a very small part of the income and the risk to get ignored by renters because of too high prices here is quite high.

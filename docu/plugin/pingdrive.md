@@ -10,11 +10,11 @@ Farming chia produces very little disk activity. Depending on the number of plot
 
 Drives might go offline due to a failure or just an unmount event. This plugin sends an alert if it fails to access a disk.
 
-Furthermore, the minutes with disk activity are tracked. If the plots of the drives are not farmed due to misconfguration or other errors, it can be detected by too low disk activity.
+Furthermore, the minutes with disk activity are tracked. If the plots of the drives are not farmed due to misconfguration or other errors, it results in too little disk activity.
 
 ## **How it works**
 
-For the list of drives given in the configuration, this plugins checks the bytes read and written on the corresponding block device. If no access happened for a given time period, a random small part of a chia plot file is read (a ping is performed), which leads to a read access (it is _very_ unlikely that this part is in the cache). If the ping failed, the drive is detected offline and an alert is sent.
+For the list of drives given in the configuration, this plugins checks the bytes read and written on the corresponding block device. If no access happened for a given time period, a random small part of a chia plot file is read (a ping is performed), which leads to a read access (it is _very_ unlikely that this part of the file is in the cache). If the ping failed, the drive is detected offline and an alert is sent.
 
 ## **Configuration template**
 
@@ -41,7 +41,7 @@ drives:
 
 For each drive which should be monitored, a list entry is added to the key **drives**.
 
-The first key of a list item is the **drive alias**. It is used in the messages sent by the plugin.
+The key of a list item is the **drive alias**. It is used in the messages sent by the plugin.
 
 The key **mount_point** sets the mount of the drive. In case the drive has multiple mount points, an arbitrary mount point can be given (as long as it contains plot files).
 

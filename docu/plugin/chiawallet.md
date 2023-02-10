@@ -1,6 +1,6 @@
 # The Xiamon chia wallet plugin
 
-This plugin monitors the chia full wallet. Both lite wallet and wallet as part of a full node are supported.
+This plugin monitors the chia full wallet. Both lite wallet and wallet as part of a full node setup are supported.
 
 ## **Configuration template**
 
@@ -22,7 +22,7 @@ currency: "usd"  #supported: eur,usd
 
 ## **Basic setup**
 
-To track the wallet balance, this plugin uses a internal database. The path of the file is set by the key **database**.
+To track the wallet balance, this plugin uses an internal database. The path of the file is set by the key **database**.
 
 Currently, only XCH is supported (support for other CATs will follow). The corresponding wallet id is set by the key **wallet_id**.
 
@@ -30,13 +30,13 @@ Finally, the desired fiat currency has to be set by the key **currency**. The cu
 
 ## **Connect the wallet**
 
-Communication with the chia wallet is done via the chia API. Since the connection uses SSL, the key and the cert file are also necessary.
+Communication with the chia wallet is done via the chia API. Since the connection uses SSL, the key and the cert file are required.
 
 The **host** of the chia wallet is usually **127.0.0.1:9256**. If the chia api shall be accessed from another machine in the network, the key **self_hostname** in the chia configuration needs to be set to **0.0.0.0**.
 
 The cert file can be usually found here: `~/.chia/mainnet/config/ssl/full_node/private_wallet.crt`.
 
-The key file can usually found here: `~/.chia/mainnet/config/ssl/full_node/private_wallet.key`
+The key file can be usually found here: `~/.chia/mainnet/config/ssl/full_node/private_wallet.key`.
 
 ## **Checks**
 

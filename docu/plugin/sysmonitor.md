@@ -35,7 +35,7 @@ The [execution interval](../config_basics.md) is set by the key **interval**.
 
 If any parameter exceeds the configured **treshold**, an alert is sent.
 
-To avoid toggleing alerts, smoothing of the monitored parameters is available. The key **hysteresis** configures how much the monitored parameters value must decrease to reset an alert. The key **samples** controls how many consecutive measurements are taken to calculate the average parameter value.
+To avoid toggling alerts, smoothing of the monitored parameters is available. The key **hysteresis** configures how much the monitored parameters value must decrease to reset an alert. The key **samples** controls how many consecutive measurements are taken to calculate the average parameter value.
 
 ## **Finding the temperature source**
 

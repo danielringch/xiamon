@@ -1,4 +1,4 @@
-# The Xiamon sysmonitor plugin
+# The Xiamon storjnode plugin
 
 This plugin monitors a storj SNO instance.
 
@@ -25,7 +25,7 @@ The plugin uses an internal database, its path is configured by the key **databa
 
 ## **Checks**
 
-The plugin checks the health of the storj instance and sends an alert if one of the following conditions are true:
+The plugin checks the health of the storj instance and sends an alert if one of the following conditions is true:
 
 - Software version is outdated
 - QUIC is not enabled

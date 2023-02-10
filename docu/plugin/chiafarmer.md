@@ -19,13 +19,13 @@ key: "~/.chia/mainnet/config/ssl/full_node/private_farmer.key"
 
 ## **Connect the full node**
 
-Communication with the chia farmer is done via the chia API. Since the connection uses SSL, the key and the cert file are also necessary.
+Communication with the chia farmer is done via the chia API. Since the connection uses SSL, the key and the cert file are required.
 
 The **host** of the chia farmer is usually **127.0.0.1:8559**. If the chia api shall be accessed from another machine in the network, the key **self_hostname** in the chia configuration needs to be set to **0.0.0.0**.
 
 The cert file can be usually found here: `~/.chia/mainnet/config/ssl/full_node/private_farmer.crt`.
 
-The key file can usually found here: `~/.chia/mainnet/config/ssl/full_node/private_farmer.key`
+The key file can be usually found here: `~/.chia/mainnet/config/ssl/full_node/private_farmer.key`.
 
 ## **Checks**
 

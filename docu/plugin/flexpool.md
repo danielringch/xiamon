@@ -19,7 +19,7 @@ worker_blacklist:  #optional
 
 ## **Basic setup**
 
-The farm is configured by its payoutaddress with the key **address**.
+The farm is configured by its payout address with the key **address**.
 
 The desired fiat currency is set by the key **currency**. The currencies `EUR` and `USD` are supported.
 

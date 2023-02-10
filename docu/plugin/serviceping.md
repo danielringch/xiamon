@@ -47,7 +47,7 @@ The configuration for sia is set by the key **sia**. The configuration is the sa
 
 ### ***Storj***
 
-The configuration for storj is set by the key **storj**. The configuration is the same as for the storj plugin and can be found [here](storj.md).
+The configuration for storj is set by the key **storj**. The configuration is the same as for the storj plugin and can be found [here](storjnode.md).
 
 ## **Check**
 

@@ -12,7 +12,7 @@ Interfaces do not need instance names.
 
 ## Alert muting
 
-To prevent message spam, every alert is muted for a certain time interval even. After this time, the alert will be sent again if the reason is still present. The time interval is set by the key **alert_mute_interval** (in hours).
+To prevent message spam, every alert is muted for a certain time interval after being sent, as long as the cause of the alert does not disappear. The time interval is set by the key **alert_mute_interval** (in hours).
 
     alert_mute_interval: 24
 

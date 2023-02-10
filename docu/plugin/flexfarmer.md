@@ -15,7 +15,7 @@ output_path: "~/myArchive"
 
 ## **Basic setup**
 
-The path to the fleyfarmer log file is set by the key **database**.
+The path of the flexfarmer log file is set by the key **database**.
 
 All entries looking like an error message are archived by the plugin. This makes it possible to spot things like corrupt plot files etc. easily. The directory to the archive is set by the key **output_path**.
 
