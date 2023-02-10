@@ -1,4 +1,4 @@
-import argparse, os, yaml, asyncio, time
+import argparse, os, shutil, yaml, asyncio, time
 import warnings
 from pytz_deprecation_shim import PytzUsageWarning
 
@@ -40,7 +40,12 @@ async def main():
     parser.add_argument('-i', '--interface', type=str, required=False, nargs='+', help="Override selected interfaces.")
     args = parser.parse_args()
 
-    with open(args.config, "r") as stream:
+    config_file = os.path.join(args.config, 'xiamon.yaml')
+
+    if copy_configuration_templates(config_file, args.config):
+        return
+
+    with open(config_file, "r") as stream:
         config = yaml.safe_load(stream)
     
     interfaces = {}
@@ -90,11 +95,31 @@ def get_config_path(item, available_items, config, config_root_dir):
     if item not in available_items:
         print(prefix.format(f'WARNING: {item} given in config, but not available.'))
         return None
-    subconfig_path = os.path.join(os.path.dirname(config_root_dir), config)
+    subconfig_path = os.path.join(config_root_dir, config)
     if not os.path.exists(subconfig_path):
         print(prefix.format(f'WARNING: config file for plugin {item} not found: {subconfig_path}.'))
         return None
     return subconfig_path
+
+def copy_configuration_templates(config_file, config_path):
+    if os.path.exists(config_file):
+        return False
+    if not os.path.exists(config_path):
+        print(f'Error: the configuration path {config_path} does not exist.')
+        return True
+    if not os.path.exists(os.path.join('config', 'xiamon.yaml')) \
+            or not os.path.exists('xiamon/xiamon.py'):
+        print('Error: can not copy configuration file templates, can not find templates.')
+        return True
+    print('Configuration file not found. Will copy the template configuration files.')
+    for item in os.listdir('config'):
+        item_path = os.path.join('config', item)
+        if os.path.isfile(item_path):
+            shutil.copy2(item_path, config_path)
+        else:
+            shutil.copytree(item_path, os.path.join(config_path, item))
+    print('Configuration files copied.')
+    return True
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()
