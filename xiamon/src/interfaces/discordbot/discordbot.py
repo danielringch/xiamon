@@ -9,6 +9,7 @@ from ...core import Config
 class Discordbot(Interface):
     def __init__(self, config, _):
         super(Discordbot, self).__init__()
+        print('[discordbot] Discord bot loading')
 
         config_data = Config(config)
 

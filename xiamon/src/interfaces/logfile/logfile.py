@@ -9,6 +9,7 @@ class Logfile(Interface):
     def __init__(self, config, scheduler):
         super(Logfile, self).__init__()
         config_data = Config(config)
+        print('[logfile] Logfile loading')
 
         self.__date_sorters = otherdefaultdict(lambda x: Datesorter(x))
         self.__plugin_sorters = otherdefaultdict(lambda x: Pluginsorter(x))

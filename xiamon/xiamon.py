@@ -1,4 +1,4 @@
-import argparse, os, shutil, yaml, asyncio, time
+import argparse, sys, os, shutil, yaml, asyncio, time
 import warnings
 from pytz_deprecation_shim import PytzUsageWarning
 
@@ -41,10 +41,7 @@ async def main():
     args = parser.parse_args()
 
     config_file = os.path.join(args.config, 'xiamon.yaml')
-
-    if copy_configuration_templates(config_file, args.config):
-        return
-
+    copy_configuration_templates(config_file, args.config)
     with open(config_file, "r") as stream:
         config = yaml.safe_load(stream)
     
@@ -57,22 +54,16 @@ async def main():
         if args.interface and key not in args.interface:
             print(f'Interface {key} ignored.')
             continue
-        print(f'Loading interface {key}...')
-        interface_config = get_config_path(key, available_interfaces, value, args.config)
-        if interface_config is None:
-            continue
-        interface = available_interfaces[key](interface_config, scheduler)
+        check_item(key, available_interfaces)
+        interface = available_interfaces[key](get_config_path(value, args.config), scheduler)
         await interface.start()
         interfaces[key] = interface
 
     for key, value in config['plugins'].items():
         paths = [value] if isinstance(value, str) else value
         for path in paths:
-            print(f'Loading plugin {key}...')
-            plugin_config = get_config_path(key, available_plugins, path, args.config)
-            if plugin_config is None:
-                continue
-            plugin = available_plugins[key](plugin_config, scheduler, interfaces.values())
+            check_item(key, available_plugins)
+            plugin = available_plugins[key](get_config_path(path, args.config), scheduler, interfaces.values())
             plugins[plugin.name] = plugin
 
     await scheduler.start(interfaces.values())
@@ -91,26 +82,24 @@ async def schedule_plugins(scheduler):
         sleep_time = await scheduler.run()
         time.sleep(sleep_time)
 
-def get_config_path(item, available_items, config, config_root_dir):
+def check_item(item, available_items):
     if item not in available_items:
-        print(prefix.format(f'WARNING: {item} given in config, but not available.'))
-        return None
+        sys.exit(prefix.format(f'Error: Plugin or interface "{item}" is unknown.'))
+
+def get_config_path(config, config_root_dir):
     subconfig_path = os.path.join(config_root_dir, config)
     if not os.path.exists(subconfig_path):
-        print(prefix.format(f'WARNING: config file for plugin {item} not found: {subconfig_path}.'))
-        return None
+        sys.exit(prefix.format(f'Error: config file not found: {subconfig_path} .'))
     return subconfig_path
 
 def copy_configuration_templates(config_file, config_path):
     if os.path.exists(config_file):
-        return False
+        return
     if not os.path.exists(config_path):
-        print(f'Error: the configuration path {config_path} does not exist.')
-        return True
+        sys.exit(f'Error: the configuration path {config_path} does not exist.')
     if not os.path.exists(os.path.join('config', 'xiamon.yaml')) \
             or not os.path.exists('xiamon/xiamon.py'):
-        print('Error: can not copy configuration file templates, can not find templates.')
-        return True
+        sys.exit('Error: can not copy configuration file templates, can not find templates.')
     print('Configuration file not found. Will copy the template configuration files.')
     for item in os.listdir('config'):
         item_path = os.path.join('config', item)
@@ -119,7 +108,7 @@ def copy_configuration_templates(config_file, config_path):
         else:
             shutil.copytree(item_path, os.path.join(config_path, item))
     print('Configuration files copied.')
-    return True
+    sys.exit()
 
 if __name__ == "__main__":
     loop = asyncio.new_event_loop()

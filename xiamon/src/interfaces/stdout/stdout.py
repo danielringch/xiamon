@@ -6,6 +6,7 @@ class Stdout(Interface):
     def __init__(self, config, _):
         super(Stdout, self).__init__()
         config_data = Config(config)
+        print(f'[stdout] Stdout loading')
 
         colorama.init()
 
