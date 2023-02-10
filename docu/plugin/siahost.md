@@ -60,6 +60,8 @@ The plugin checks the health of the siad instance, including:
 - minimum balance (set by key **minimum_available_balance** in the configuration)
   - siad always needs some siacoins available to fulfill contracts, so ensure that not all of your balance gets locked
   - an alert is sent if the available balance gets below the treshold
+- connection status
+  - an alert is sent if siads connectabilty check failed or the host is not used by renters
 
 The [execution interval](../config_basics.md) is set by the key **check_interval**.
 
@@ -90,32 +92,27 @@ A summary is sent to the **info** channel and contains the following information
 
 The _collateral reserve_ is a simple forecast how many percent of the available balance will not be locked if storage usage hits 100%. The calculation is really simple, so the results are not too accurate (especially if the configured collateral changes often). But it gives a quite good overview whether there is a risk of running out of available balance. A positive _collateral reserve_ means that there will be still some balance available when the whole storage is filled; a negative value means that the host will be running out of available balance to be locked as collateral before its storage gets full.
 
+Furthermore, a list of all active contracts is written to the **debug** channel.
+
 The [execution interval](../config_basics.md) is set by the key **summary_interval**.
 
 ## **List**
 
-A summary is sent to the **report** channel and contains the following information:
+A summary is sent to the **report** channel, containing the following information:
 - Coin price
 - Balance
   - Total balance
   - Free balance
   - Locked collateral
   - Risked callateral
-- Total storage usage
-- Traffic
-  - Download from renter since last list
-  - Upload to renter since last list
-  - not available if the siad instance was started after the last list
 
 If the key **csv_export** is set, the balances are also added to a CSV export file.
-
-Furthermore, a list of all active contracts is written to the **debug** channel.
 
 The [execution interval](../config_basics.md) is set by the key **list_interval**.
 
 ## **Accounting**
 
-The accounting feature gives an overview over the daily income. When triggered, it writes a table with a row for each day since the last accounting report contain the following information:
+The accounting feature gives an overview over the daily income. When triggered, it writes a table to the **report** channel with a row for each day since the last accounting report contain the following information:
 
 - First height of the day
 - Number of ended contracts

@@ -22,8 +22,7 @@ class Siahost(Plugin):
         self.__accounting_job = f'{name}-accounting'
         self.__autoprice_job = f'{name}-autoprice'
         self.__daychange_job = f'{name}-daychange'
-
-        mute_interval = config_data.get(24, 'alert_mute_interval')
+        self.__startup_job = f'{name}-startup'
 
         host = config_data.get('127.0.0.1:9980','host')
         password = config_data.data['password']
@@ -48,6 +47,16 @@ class Siahost(Plugin):
         self.__scheduler.add_job(self.__list_job, self.list, config_data.get('59 23 * * *', 'list_interval'))
         self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get('0 0 * * MON', 'accounting_interval'))
         self.__scheduler.add_job(self.__daychange_job, self.daychange, '59 23 * * *')
+        self.__scheduler.add_startup_job(self.__startup_job, self.startup)
+
+    async def startup(self):
+        try:
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+            self.__health.update_proof_deadlines(contracts)
+            self.msg.debug(f'Host has {len(contracts.contracts)} contracts in total.')
+        except ApiRequestFailedException:
+            self.msg.error('Startup failed: some host queries failed.')
+            return
 
     async def check(self):
         with self.message_aggregator():
@@ -76,23 +85,20 @@ class Siahost(Plugin):
                 return
 
             await self.__update_coinprice(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
-            await self.__blocks.update(consensus)
 
             locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
 
-            self.__health.update_proof_deadlines(contracts)
             self.__health.summary(consensus, host, wallet)
             await self.__wallet.summary(wallet, locked_collateral, risked_collateral)
             self.__autoprice.summary(storage, wallet, locked_collateral)
             self.__storage.summary(storage, traffic)
             await self.__reports.summary(consensus, contracts, self.__scheduler.get_last_execution(self.__summary_job))
+            await self.__reports.contract_list(consensus, contracts)
 
     async def list(self):
         with self.message_aggregator():
             try:
                 consensus = await self.__request('consensus', lambda x: Siaconsensusdata(x))
-                storage = await self.__request('host/storage', lambda x: Siastoragedata(x))
-                traffic = await self.__request('host/bandwidth', lambda x: Siatrafficdata(x))
                 contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
                 wallet = await self.__request('wallet', lambda x: Siawalletdata(x))
             except ApiRequestFailedException:
@@ -100,14 +106,9 @@ class Siahost(Plugin):
                 return
 
             await self.__update_coinprice(Plugin.Channel.error, 'Report incomplete: coin price not available.')
-            await self.__blocks.update(consensus)
-
-            self.__health.update_proof_deadlines(contracts)
 
             locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
             await self.__wallet.dump(wallet, locked_collateral, risked_collateral)
-            self.__storage.report(storage, traffic)
-            await self.__reports.contract_list(consensus, contracts)
 
     async def accounting(self):
         with self.message_aggregator():
@@ -139,6 +140,12 @@ class Siahost(Plugin):
 
     async def daychange(self):
         await self.__update_coinprice(Plugin.Channel.error, 'Coin price update failed: coin price not available.')
+        try:
+            contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
+        except ApiRequestFailedException:
+            self.msg.error('Contract deadline update failed: some host queries failed.')
+            return
+        self.__health.update_proof_deadlines(contracts)
 
     @staticmethod
     def __get_collaterals(consensus, contracts):

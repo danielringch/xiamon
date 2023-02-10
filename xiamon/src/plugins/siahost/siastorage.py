@@ -16,15 +16,6 @@ class Siastorage:
         last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-summary')
         self.__plugin.msg.info(self.__get_traffic_message(traffic, last_execution))
 
-    def report(self, storage, traffic):
-        used = Conversions.byte_to_auto(storage.used_space, binary=False)
-        total = Conversions.byte_to_auto(storage.total_space, binary=False)
-        usage_percent = 100 * storage.used_space / storage.total_space
-        self.__plugin.msg.report(f'Storage: {used[0]:.2f} {used[1]} of {total[0]:.2f} {total[1]} ({usage_percent:.2f} %)')
-
-        last_execution = self.__scheduler.get_last_execution(f'{self.__plugin.name}-list')
-        self.__plugin.msg.report(self.__get_traffic_message(traffic, last_execution))
-
     def __get_traffic_message(self, traffic, reference_time):
         download, upload, duration = self.__get_traffic(traffic, reference_time)
 

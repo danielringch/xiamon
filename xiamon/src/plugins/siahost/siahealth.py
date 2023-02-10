@@ -10,6 +10,7 @@ class Siahealth:
         self.__unsync_alert = Alert(plugin, mute_interval)
         self.__wallet_locked_alert = Alert(plugin, mute_interval)
         self.__low_unlocked_balance_alert = Alert(plugin, mute_interval)
+        self.__status_alert = Alert(plugin, mute_interval)
 
         self.__proof_deadlines = []
 
@@ -27,11 +28,15 @@ class Siahealth:
         else:
             self.__wallet_locked_alert.send('Wallet is locked.')
 
-        available_balance = wallet.balance + wallet.pending
-        if available_balance < self.__minimum_available_balance:
-            self.__low_unlocked_balance_alert.send(f'Available balance is low: {available_balance:.0f} SC')
+        if wallet.balance < self.__minimum_available_balance:
+            self.__low_unlocked_balance_alert.send(f'Available balance is low: {wallet.balance:.0f} SC')
         else:
             self.__low_unlocked_balance_alert.reset('Available balance is above treshold again.')
+
+        if not host.statusok:
+            self.__status_alert.send('Host seems to have connection issues.')
+        else:
+            self.__status_alert.reset('Host connection issues resolved.')
 
         block_diff = None
         for deadline in self.__proof_deadlines:
@@ -43,8 +48,8 @@ class Siahealth:
             self.__plugin.msg.debug(f'Blocks until next proof: {block_diff} (~{Conversions.siablocks_to_duration(block_diff)} h)')
 
     def summary(self, consensus, host, wallet):
-        self.__plugin.msg.info(
-            f'Synced: {consensus.synced} @{consensus.height}',
-            f'Accepting contracts: {host.accepting}',
-            f'Wallet unlocked: {wallet.unlocked}'
-        )
+        self.__plugin.msg.info(f'{"S" if consensus.synced else "Not s"}ynced@{consensus.height}')
+        if not host.accepting:
+            self.__plugin.msg.info('Host does not accept contracts.')
+        if not wallet.unlocked:
+            self.__plugin.msg.info('Wallet is locked.')
