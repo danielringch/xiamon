@@ -1,0 +1,20 @@
+name: "my_sysmonitor"  #unique name
+interval: "* * * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+load:  #optional
+    treshold: 4.0
+    hysteresis: 1.0
+    samples: 5
+ram:  #optional
+    treshold: 80  #percent
+    hysteresis: 5  #percent
+    samples: 5
+swap:  #optional
+    treshold: 50  #percent
+    hysteresis: 5  #percent
+    samples: 5
+temperature:  #optional
+    sensor: "/sys/class/hwmon/hwmon*/temp1_input"
+    treshold: 75  #degrees celsius
+    hysteresis: 5  #degrees celsius
+    samples: 5

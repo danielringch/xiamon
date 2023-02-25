@@ -1,0 +1,24 @@
+name: "my_siahost"  #unique name
+check_interval: "*/15 * * * *"  #cron schedule expression
+summary_interval: "0 0 * * *"  #cron schedule expression
+list_interval: "0 0 * * *"  #cron schedule expression
+accounting_interval: "0 0 * * MON"  #optional, cron schedule expression
+price_interval: "0 0 1 * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+host: "127.0.0.1:9980"
+password: "abc123"
+database: "~/myDb.sqlite"
+csv_export: "~/myCsv.csv"  #optional
+currency: "usd"  #supported: eur,usd
+minimum_available_balance: 1000
+autoprice:  #optional
+    contract: 0.5  #siacoin
+    storage: 1.0  #fiat/ month/ terabyte
+    storage_max: 150  #siacoin/ month/ terabyte
+    collateral_factor: 2.0
+    upload: 1.0  #fiat/ terabyte
+    upload_max: 150  #siacoin/ terabyte
+    download: 2.0  #fiat/ terabyte
+    download_max: 300  #siacoin/ terabyte
+    sector_access: 0.0000018  #siacoin
+    base_rpc: 0.00000012  #siacoin

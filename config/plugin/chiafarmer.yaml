@@ -1,0 +1,8 @@
+name: "my_chiafarmer"  #unique name
+summary_interval: "0 0 * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+underharvested_threshold_short: 0.92  #factor
+underharvested_threshold_long: 0.99  #factor
+host: "127.0.0.1:8559"
+cert: "~/.chia/mainnet/config/ssl/full_node/private_farmer.crt"
+key: "~/.chia/mainnet/config/ssl/full_node/private_farmer.key"

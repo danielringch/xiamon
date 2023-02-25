@@ -1,0 +1,14 @@
+name: "my_serviceping"  #unique name
+summary_interval: "0 0 * * *"  #cron schedule expression
+check_interval: "0 * * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+chia:  #optional
+    cert: "~/.chia/mainnet/config/ssl/full_node/private_full_node.crt"
+    key: "~/.chia/mainnet/config/ssl/full_node/private_full_node.key"
+    host: "127.0.0.1:8555"
+flexfarmer: #optional
+    host: "127.0.0.1:8080"
+sia: #optional
+    host: "127.0.0.1:9980"
+storj: #optional
+    host: "127.0.0.1:14002"

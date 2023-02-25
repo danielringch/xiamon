@@ -1,6 +1,0 @@
-name: <unique name>
-interval: <cron, e.g. "0 * * * *">
-log_path: <file>
-reset_logs: <boolean>
-aggregation: <hours>
-output_path: <path>

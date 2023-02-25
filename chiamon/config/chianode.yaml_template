@@ -1,7 +1,0 @@
-name: <unique name>
-summary_interval: <cron, e.g. "0 * * * *">
-check_interval: <cron, e.g. "0 * * * *">
-alert_mute_interval: <hours>
-cert: <file>
-key: <file>
-host: <ip:port, usually 127.0.0.1:8555>

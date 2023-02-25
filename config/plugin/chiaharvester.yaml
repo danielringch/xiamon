@@ -1,0 +1,6 @@
+name: "my_chiaharvester"  #unique name
+interval: "0 * * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+host: "127.0.0.1:8560"
+cert: "~/.chia/mainnet/config/ssl/full_node/private_harvester.crt"
+key: "~/.chia/mainnet/config/ssl/full_node/private_harvester.key"

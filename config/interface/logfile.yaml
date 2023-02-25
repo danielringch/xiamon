@@ -1,0 +1,16 @@
+alert:  #optional
+  file: "~/logs/alert.log"
+info:  #optional
+  file: "~/logs/info.log"
+report:  #optional
+  file: "~/logs/report.log"
+  sort_by_plugin: true  #optional
+  whitelist:  #optional
+    - "my_storagenode"
+error:  #optional
+  file: "~/logs/other.log"
+debug:  #optional
+  file: "~/logs/other.log"
+  blacklist:  #optional
+    - "my_systemmonitor"
+    - "my_pingdrive"

@@ -1,0 +1,7 @@
+name: "my_chianode"  #unique name
+summary_interval: "0 0 * * *"  #cron schedule expression
+check_interval: "0 * * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+host: "127.0.0.1:8555"
+cert: "~/.chia/mainnet/config/ssl/full_node/private_full_node.crt"
+key: "~/.chia/mainnet/config/ssl/full_node/private_full_node.key"

@@ -1,0 +1,14 @@
+name: "my_pingdrive"  #unique name
+summary_interval: "0 0 * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+drives:
+    - my_drive_1:
+        mount_point: "/mnt/foo"
+        path_to_plots: "/mnt/foo/plots"
+        max_idle_time: 5  #minutes
+        expected_active: 250  #minutes
+    - my_drive_2:
+        mount_point: "/mnt/bar"
+        path_to_plots: "/mnt/bar/plots"
+        max_idle_time: 3  #minutes
+        expected_active: 200  #minutes

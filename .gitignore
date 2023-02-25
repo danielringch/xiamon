@@ -1,5 +1,4 @@
 # custom ignores
-*.yaml
 *.token
 ._.DS_Store
 .DS_Store

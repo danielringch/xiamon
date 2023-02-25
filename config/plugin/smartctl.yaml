@@ -1,0 +1,35 @@
+name: "my_smartctldrive"  #unique name
+check_interval: "0 * * * *"  #cron schedule expression
+report_interval: "0 0 * * MON"  #cron schedule expression
+binary: "~/smartctl"
+database: database: "~/myDb.sqlite"
+aggregation: 24  #hours
+expiration: 31  #days
+limits:  #optional
+    4:
+        evaluation: delta_max
+        value: 1
+    5:
+        evaluation: delta_max
+        value: 0
+    193:
+        evaluation: delta_max
+        value: 50
+    197:
+        evaluation: delta_max
+        value: 0
+drives:  #optional
+    "ST14000NM001G-2K_ABCDEFGH":
+        alias: my_drive_1  #optional
+        limits:  #optional
+            194:
+              evaluation: max
+              value: 40
+    "TOSHIBA_MG09ACA1_ABCDEFGH":
+        alias: my_drive_2  #optional
+        limits:  #optional
+            194:
+              evaluation: max
+              value: 45
+blacklist:
+    - "Generic_0123456789ABCDEF"
