@@ -1,0 +1,10 @@
+name: "my_diskfree"  #unique name
+check_interval: "0 0 * * *"  #cron schedule expression
+alert_mute_interval: 24  #hours
+drives:
+    - "/mnt/foo":  #optional
+        minimum_space: "10G"  #bytes or percent
+        delete: "/mnt/foo/*.txt"  #optional
+    - "/mnt/bar":  #optional
+        minimum_space: "5%"  #bytes or percent
+        delete: "/mnt/bar/*.zip"  #optional

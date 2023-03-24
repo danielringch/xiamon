@@ -1,3 +1,4 @@
+import re
 from datetime import datetime, timedelta
 from enum import Enum
 
@@ -25,6 +26,16 @@ prefixes_downwards = {
 }
 
 class Conversions:
+
+    @staticmethod
+    def to_seconds(time):
+        value, unit = re.match('([\\d\\.]+)(\\D+)', time).groups()
+        if unit == 's':
+            return float(value)
+        elif unit == 'ms':
+            return float(value) / 1000.0
+        else:
+            raise ValueError()
 
     @staticmethod
     def byte_to_megabyte(bytes):
@@ -56,6 +67,13 @@ class Conversions:
     def bit_to_auto(bits):
         value, prefix = Conversions.autorange(bits, 1024)
         return value, f'{prefix}bit'
+    
+    @staticmethod
+    def to_byte(bytes, unit, binary=True):
+        if unit not in prefixes_upwards:
+            return None
+        factor = ((1024 if binary else 1000) ** prefixes_upwards[unit])
+        return bytes * factor
 
     @staticmethod
     def mojo_to_xch(mojo):
