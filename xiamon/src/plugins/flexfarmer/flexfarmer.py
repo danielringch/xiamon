@@ -1,7 +1,7 @@
-import datetime, ciso8601, os
+import datetime, os
 from typing import DefaultDict
 from pathlib import Path
-from ...core import Plugin, Config
+from ...core import Plugin, Config, Tablerenderer
 from .flexfarmerparsers import *
 
 class Flexfarmer(Plugin):
@@ -13,20 +13,6 @@ class Flexfarmer(Plugin):
 
         self.__scheduler = scheduler
 
-        self.__signage_point_parser = SignagePointParser()
-        self.__partial_accepted_parser = PartialAcceptedParser()
-        self.__partial_stale_parser = PartialStaleParser()
-        self.__partial_invalid_parser = PartialInvalidParser()
-
-        self.__parsers = [
-            self.__signage_point_parser,
-            self.__partial_accepted_parser,
-            self.__partial_stale_parser,
-            self.__partial_invalid_parser,
-            ErrorParser(),
-            WarningParser()
-        ]
-
         self.__file = config_data.data['log_file']
         self.__output_path = config_data.data['output_path']
 
@@ -36,63 +22,50 @@ class Flexfarmer(Plugin):
         with self.message_aggregator():
             oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
 
-            with open(self.__file, "r") as stream:
-                error_lines, warning_lines = self.__parse_log(stream, oldest_timestamp)
+            parser = FlexfarmerLogParser()
+
+            with open(self.__file, "r", encoding='latin-1') as stream:
+                parser.parse(stream, oldest_timestamp)
             
             self.msg.info(
-                f'Accepted partials: {self.__partial_accepted_parser.partials}',
-                f'Stale partials: {self.__partial_stale_parser.partials}',
-                f'Invalid partials: {self.__partial_invalid_parser.partials}')
-            self.__evaluate_lookup_times(self.__signage_point_parser.times)
+                f'Accepted partials: {parser.partials_accepted}',
+                f'Stale partials: {parser.partials_stale}',
+                f'Invalid partials: {parser.partials_invalid}')
+            if parser.slow_proofs > 0:
+                self.msg.info(f'Slow compressed proofs: {parser.slow_proofs}')
 
-            self.__write_errors(error_lines + warning_lines)
+            self.__write_time_table(parser.signage_times, parser.partials_times, parser.slow_proof_times)
 
-            for parser in self.__parsers:
-                parser.reset()
+        self.__write_errors(parser.warning_lines + parser.failed_lines)
 
-    def __parse_log(self, stream, timestamp_limit):
-        error_lines = []
-        warning_lines = []
+    def __write_time_table(self, signage, partials, slow_compressed):
+        max_time = max(max(signage.keys(), default=0), max(partials.keys(), default=0), max(slow_compressed.keys(), default=0))
 
-        while True:
-            full_line = stream.readline();
-            if not full_line:
-                break
+        total_signage = sum(signage.values())
+        total_partials = sum(partials.values())
+        total_slow_compressed = sum(slow_compressed.values())
 
-            if full_line[0] != '[': # not all lines contain timestamps, e.g. when block found
-                continue
-            timestamp = ciso8601.parse_datetime(full_line[1:11] + 'T' + full_line[12:20])
-            if timestamp < timestamp_limit:
-                continue
-            payload = full_line[21:]
-            for parser in self.__parsers:
-                type = parser.parse(payload)
-                if type == FlexfarmerLogType.unknown:
-                    continue
-                elif type == FlexfarmerLogType.info:
-                    continue
-                elif type == FlexfarmerLogType.warning:
-                    warning_lines.append(full_line)
-                else:
-                    error_lines.append(full_line)
+        table = Tablerenderer(['Time', 'SignagePoint', 'Partial', 'SlowCompressedPlot'])
 
-        return error_lines, warning_lines
+        def print_cell(index, dict, total):
+            if index not in dict:
+                return ''
+            value = dict[i]
+            return f'{value} {round((100*value/total), 1):5.1f}%'
 
-    def __evaluate_lookup_times(self, times):
-        total_lookups = sum(times.values())
-        for i in range(0,11):
-            if i in self.__signage_point_parser.times.keys():
-                count = self.__signage_point_parser.times[i]
-                self.msg.info(f'Lookup time < {i}s: {count} ({round((100*count/total_lookups), 1)}%)')
-        if 11 in self.__signage_point_parser.times.keys():
-            count = self.__signage_point_parser.times[11]
-            self.msg.info(f'Lookup time > 10s: {count} ({round((100*count/total_lookups), 1)}%)')
+        for i in range(0, max_time + 1):
+            table.data['Time'].append(f'{i}s')
+            table.data['SignagePoint'].append(print_cell(i, signage, total_signage))
+            table.data['Partial'].append(print_cell(i, partials, total_partials))
+            table.data['SlowCompressedPlot'].append(print_cell(i, slow_compressed, total_slow_compressed))
+
+        self.msg.debug(table.render())
 
     def __write_errors(self, lines, prefix=''):
         if len(lines) == 0:
             return
         Path(self.__output_path).mkdir(parents=True, exist_ok=True)
-        file_name = f'{prefix}flexfarmer_errors_{datetime.datetime.now().strftime("%m%d%Y%H%M%S")}.txt'
+        file_name = f'{prefix}flexfarmer_errors_{datetime.datetime.now().strftime("%Y%m%d%H%M%S")}.txt'
         file = os.path.join(self.__output_path, file_name)
         with open(file, "w") as stream:
             stream.writelines(lines)
