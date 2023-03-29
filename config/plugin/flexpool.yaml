@@ -4,5 +4,8 @@ check_interval: "0 * * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 address: "xch1fh6f088cxcvqscy4xtxfq7762vhsh9mjcql6m3svfhmlxsc3jd4sd37xdl"
 currency: "USD"
-worker_blacklist:  #optional
-  - "my_unimportant_worker"
+workers:
+  my_worker_1:
+    maximum_offline_time: 0.5 #hours
+  my_worker_2:
+    maximum_offline_time: 1.0 #hours

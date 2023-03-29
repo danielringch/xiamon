@@ -13,8 +13,11 @@ check_interval: "0 * * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 address: "xch1fh6f088cxcvqscy4xtxfq7762vhsh9mjcql6m3svfhmlxsc3jd4sd37xdl"
 currency: "USD"
-worker_blacklist:  #optional
-  - "my_unimportant_worker"
+workers:
+  my_worker_1:
+    maximum_offline_time: 0.5 #hours
+  my_worker_2:
+    maximum_offline_time: 1.0 #hours
 ```
 
 ## **Basic setup**
@@ -23,11 +26,13 @@ The farm is configured by its payout address with the key **address**.
 
 The desired fiat currency is set by the key **currency**. The currencies `EUR` and `USD` are supported.
 
-If the netspace of a worker is too small, it might get detected offline by flexpool from time to time. In this case, it can be added to the **worker_blacklist**.
+Workers which are added to the key **workers** get monitored for their online status.
+
+High difficulty settings can make flexpools offline worker detection unreliable. For that reason, this plugin calculates its own online status based on the timestamp of the last submitted partial. The maximum time period a worker can not send a partial before being detected as offline is set per worker by the key **maximum_offline_time**.
 
 ## **Check**
 
-The plugin checks the status of all workers and sends an alert if a worker is detected as offline by flexpool.
+The plugin checks the status of all configured workers and sends an alert if a worker is detected as offline.
 
 The [execution interval](../config_basics.md) is set by the key **check_interval**.
 

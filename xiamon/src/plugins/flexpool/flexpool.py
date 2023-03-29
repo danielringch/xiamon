@@ -1,6 +1,7 @@
 import asyncio, aiohttp, datetime
 from typing import DefaultDict
 from ...core import Plugin, Alert, Config
+from .flexpoolworker import FlexpoolWorker
 
 class Flexpool(Plugin):
     def __init__(self, config, scheduler, outputs):
@@ -11,16 +12,18 @@ class Flexpool(Plugin):
 
         self.__address = config_data.data['address']
         self.__currency = config_data.get('USD', 'currency')
-        self.__worker_blacklist = set(config_data.get([], 'worker_blacklist'))
+
+        self.__workers = {}
+        for worker_name, worker_settings in config_data.data['workers'].items():
+            self.__workers[worker_name] = FlexpoolWorker(worker_name, float(worker_settings['maximum_offline_time']))
 
         self.__last_summary = datetime.datetime.now()
 
         self.__timeout = aiohttp.ClientTimeout(total=30)
 
-        self.__connection_alerts = {}
-        self.__offline_alerts = {}
         self.__mute_interval = config_data.get(24, 'alert_mute_interval')
-        self.__offline_tolerance = config_data.get(0, 'alert_tolerance')
+        self.__connection_alerts = {}
+        self.__offline_alerts = {x: Alert(self, self.__mute_interval) for x in self.__workers.keys()}
 
         scheduler.add_job(f'{name}-summary' ,self.summary, config_data.get('0 * * * *', 'summary_interval'))
         scheduler.add_job(f'{name}-check', self.check, config_data.get('0 0 * * *', 'check_interval'))
@@ -29,24 +32,23 @@ class Flexpool(Plugin):
         now = datetime.datetime.now()
         async with aiohttp.ClientSession() as session:
             balance_task = self.__get_balance(session)
-            workers_task = self.__get_worker_status(session)
+            workers_task = self.__update_workers(session)
             payments_task = self.__get_payments(session, self.__last_summary)
-            balance, workers, payments = await asyncio.gather(balance_task, workers_task, payments_task)
+            balance, _, payments = await asyncio.gather(balance_task, workers_task, payments_task)
         open_xch = balance[0]
         open_money = balance[1]
-        if open_xch is None or workers is None or payments is None:
+        if open_xch is None or payments is None:
             self.msg.info('The following summary is incomplete, since one or more requests failed.')
         else:
             self.__last_summary = now
         if open_xch is not None:
             self.msg.info(f'Open balance: {open_xch} XCH ({open_money:.2f} {self.__currency})')
-        if workers is not None:
-            for worker in workers:
-                self.msg.info(
-                    f'Worker {worker.name} ({"online" if worker.online else "offline"}, last seen: {worker.last_seen}):',
-                    f'Hashrate (reported | average): {worker.reported_hashrate:.2f} TB | {worker.average_hashrate:.2f} TB',
-                    f'Shares (valid | stale | invalid): {worker.valid_shares} | {worker.stale_shares} | {worker.invalid_shares}'
-                )
+        for worker in self.__workers.values():
+            self.msg.info(
+                f'Worker {worker.name} ({"online" if worker.online else "offline"}):',
+                f'Hashrate (reported | average): {worker.hashrate_reported:.2f} TB | {worker.hashrate_average:.2f} TB',
+                f'Shares (valid | stale | invalid): {worker.shares_valid} | {worker.shares_stale_shares} | {worker.shares_invalid_shares}'
+            )
         if payments is not None:
             if len(payments) == 0:
                 self.msg.info('No new payments available')
@@ -59,15 +61,8 @@ class Flexpool(Plugin):
 
     async def check(self):
         async with aiohttp.ClientSession() as session:
-            workers = await self.__get_worker_status(session)
-            if workers is None:
-                return
-            for worker in workers:
-                if worker.name in self.__worker_blacklist:
-                    continue
-                if worker.name not in self.__offline_alerts:
-                    self.__offline_alerts[worker.name] = Alert(super(Flexpool, self),
-                        self.__mute_interval, self.__offline_tolerance)
+            await self.__update_workers(session)
+            for worker in self.__workers.values():
                 alert = self.__offline_alerts[worker.name]
                 if not worker.online:
                     alert.send(f'Worker {worker.name} is offline.')
@@ -81,12 +76,13 @@ class Flexpool(Plugin):
             return None, None
         return (data['balance'] / 1000000000000.0), data['balanceCountervalue']
 
-    async def __get_worker_status(self, session):
+    async def __update_workers(self, session):
         params = {'coin': 'XCH', 'address': self.__address}
         data = await self.__get(session, 'miner/workers', params)
         if data is None:
-            return None
-        return [Flexpool.WorkerStatus(worker) for worker in data]
+            return
+        for worker in self.__workers.values():
+            worker.update(data)
 
     async def __get_payments(self, session, since):
         params = {'coin': 'XCH', 'address': self.__address, 'page': 0}
@@ -141,17 +137,6 @@ class Flexpool(Plugin):
             alert.reset(message)
         else:
             alert.send(message)
-
-    class WorkerStatus:
-        def __init__(self, json):
-            self.name = json['name']
-            self.online = json['isOnline']
-            self.reported_hashrate = json['reportedHashrate'] / 1000000000000.0
-            self.average_hashrate = json['averageEffectiveHashrate'] / 1000000000000.0
-            self.valid_shares = json['validShares']
-            self.stale_shares = json['staleShares']
-            self.invalid_shares = json['invalidShares']
-            self.last_seen = datetime.datetime.fromtimestamp(json['lastSeen'])
 
     class Payment:
         def __init__(self, json):
