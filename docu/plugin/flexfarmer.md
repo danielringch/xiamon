@@ -17,7 +17,7 @@ output_path: "~/myArchive"
 
 The path of the flexfarmer log file is set by the key **database**.
 
-All entries looking like an error message are archived by the plugin. This makes it possible to spot things like corrupt plot files etc. easily. The directory to the archive is set by the key **output_path**.
+All entries looking like a relevant error message are archived by the plugin. This makes it possible to spot things like corrupt plot files etc. easily. The directory to the archive is set by the key **output_path**.
 
 ## **Summary**
 
@@ -26,6 +26,9 @@ A summary is sent to the **info** channel and contains the following information
 - Accepted partials
 - Stale partials
 - Invalid partials
-- Lookup times
+
+The k-size of the plots is taken into account for partials calculation, while the difficulty is not. This means that a partial from a k33 plot with difficulty of 10 is recognized as 2 partials by this plugin, but as 20 partials by flexpool. 
+
+The lookup times for signage points and partials are sent to the **debug** channel.
 
 The [execution interval](../config_basics.md) is set by the key **interval**.

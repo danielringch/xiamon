@@ -5,11 +5,19 @@ from ...core import Config
 from .datesorter import Datesorter
 from .pluginsorter import Pluginsorter
 
+LOGFILE_INSTANCE_COUNT = 0
+
 class Logfile(Interface):
     def __init__(self, config, scheduler):
         super(Logfile, self).__init__()
         config_data = Config(config)
         print('[logfile] Logfile loading')
+
+        global LOGFILE_INSTANCE_COUNT
+        unique_name = f'logfile_{LOGFILE_INSTANCE_COUNT}'
+        LOGFILE_INSTANCE_COUNT += 1
+        flush_job = f'{unique_name}-flush'
+        daychange_job = f'{unique_name}-daychange'
 
         self.__date_sorters = otherdefaultdict(lambda x: Datesorter(x))
         self.__plugin_sorters = otherdefaultdict(lambda x: Pluginsorter(x))
@@ -27,8 +35,8 @@ class Logfile(Interface):
                     config_data.get(None, name, 'whitelist'),
                     config_data.get(None, name, 'blacklist'))
 
-        scheduler.add_job('logfile-flush', self.__flush, "* * * * *")
-        scheduler.add_job('logfile-daychange' ,self.__handle_day_change, '0 0 * * *')
+        scheduler.add_job(flush_job, self.__flush, "* * * * *")
+        scheduler.add_job(daychange_job ,self.__handle_day_change, '0 0 * * *')
 
     async def start(self):
         channels = ','.join(self.channel_names[x] for x in self.__channels.keys())

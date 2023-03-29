@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -22,6 +22,7 @@ available_plugins = {'chiaharvester': Chiaharvester,
                      'chiafarmer': Chiafarmer,
                      'chianode': Chianode,
                      'chiawallet': Chiawallet,
+                     'diskfree': Diskfree,
                      'flexfarmer': Flexfarmer,
                      'flexpool': Flexpool,
                      'pingdrive': Pingdrive,
@@ -45,7 +46,7 @@ async def main():
     with open(config_file, "r") as stream:
         config = yaml.safe_load(stream)
     
-    interfaces = {}
+    interfaces = []
     plugins = {}
 
     scheduler = Scheduler()
@@ -54,19 +55,21 @@ async def main():
         if args.interface and key not in args.interface:
             print(f'Interface {key} ignored.')
             continue
-        check_item(key, available_interfaces)
-        interface = available_interfaces[key](get_config_path(value, args.config), scheduler)
-        await interface.start()
-        interfaces[key] = interface
+        paths = [value] if isinstance(value, str) else value
+        for path in paths:
+            check_item(key, available_interfaces)
+            interface = available_interfaces[key](get_config_path(path, args.config), scheduler)
+            await interface.start()
+            interfaces.append(interface)
 
     for key, value in config['plugins'].items():
         paths = [value] if isinstance(value, str) else value
         for path in paths:
             check_item(key, available_plugins)
-            plugin = available_plugins[key](get_config_path(path, args.config), scheduler, interfaces.values())
+            plugin = available_plugins[key](get_config_path(path, args.config), scheduler, interfaces)
             plugins[plugin.name] = plugin
 
-    await scheduler.start(interfaces.values())
+    await scheduler.start(interfaces)
 
     if args.manual:
         for manual_job in args.manual:

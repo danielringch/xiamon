@@ -29,6 +29,7 @@ The hardware related plugins will only work on linux. All other should run on an
 - Storj
   - [storjnode](docu/plugin/storjnode.md): Storj node monitoring using the storj API. Includes storage and traffic statistics and financial reporting.
 - Drive management
+  - [diskfree](docu/plugin/diskfree.md): Disk free space monitoring.
   - [pingdrive](docu/plugin/pingdrive.md): Supervises disk activity and pings drives if too inactive. Prevents head parking and sends alerts in case of drives going offline.
   - [smartctl](docu/plugin/smartctl.md): Checks drive health using S.M.A.R.T. and provides some logging.
 - General
