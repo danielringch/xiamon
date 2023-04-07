@@ -1,7 +1,6 @@
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from enum import Enum
-from unicodedata import category
-from ...core import Plugin, Conversions, ApiRequestFailedException
+from ...core import Conversions, ApiRequestFailedException
 
 class Siaautoprice:
 

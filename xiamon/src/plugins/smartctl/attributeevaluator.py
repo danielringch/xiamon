@@ -1,4 +1,4 @@
-from ...core import Plugin, Alert
+from ...core import Alert
 
 class AttributeEvaluator:
     attribute_aliases = {

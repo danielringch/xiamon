@@ -1,26 +1,22 @@
 import datetime, os
-from typing import DefaultDict
 from pathlib import Path
-from ...core import Plugin, Config, Tablerenderer
+from ...core import Plugin, Tablerenderer
 from .flexfarmerparsers import *
 
 class Flexfarmer(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        self.__name = config_data.get('flexfarmer', 'name')
-        super(Flexfarmer, self).__init__(self.__name, outputs)
-        self.print(f'Plugin flexfarmer; name: {self.__name}')
+        super(Flexfarmer, self).__init__(config, outputs)
 
         self.__scheduler = scheduler
 
-        self.__file = config_data.data['log_file']
-        self.__output_path = config_data.data['output_path']
+        self.__file = self.config.data['log_file']
+        self.__output_path = self.config.data['output_path']
 
-        self.__scheduler.add_job(self.__name ,self.run, config_data.get('0 0 * * *', 'interval'))
+        self.__scheduler.add_job(self.name ,self.run, self.config.get('0 0 * * *', 'interval'))
 
     async def run(self):
         with self.message_aggregator():
-            oldest_timestamp = self.__scheduler.get_last_execution(self.__name)
+            oldest_timestamp = self.__scheduler.get_last_execution(self.name)
 
             parser = FlexfarmerLogParser()
 

@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from collections import namedtuple
 
-from ...core import Plugin, Conversions, Tablerenderer
+from ...core import Conversions, Tablerenderer
 
 class Siacontracts:
 

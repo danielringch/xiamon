@@ -1,4 +1,3 @@
-from ...core import Plugin
 
 class Siawallet:
     def __init__(self, plugin, database, csv, coinprice):

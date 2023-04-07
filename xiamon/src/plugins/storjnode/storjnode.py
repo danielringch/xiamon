@@ -5,33 +5,20 @@ from .storjearning import Storjearning
 
 class Storjnode(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('storjnode', 'name')
-        super(Storjnode, self).__init__(name, outputs)
-        self.print(f'Plugin storjnode; name: {name}')
+        super(Storjnode, self).__init__(config, outputs)
 
-        mute_interval = config_data.get(24, 'alert_mute_interval')
-
-        host = config_data.get('127.0.0.1:14002','host')
+        host = self.config.get('127.0.0.1:14002','host')
         self.__api = Storjapi(host, super(Storjnode, self))
 
-        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
-        self.__db = Storjdb(config_data.data['database'])
+        self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
+        self.__db = Storjdb(self.config.data['database'])
 
         self.__storage = Storjstorage(self, scheduler, self.__db)
         self.__earning = Storjearning(self, scheduler, self.__db, self.__csv)
 
-        self.__outdated_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__quic_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__offline_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__offline_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__disqualified_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__suspended_alert = Alert(super(Storjnode, self), mute_interval)
-        self.__overused_alert = Alert(super(Storjnode, self), mute_interval)
-
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
-        scheduler.add_job(f'{name}-report', self.report, config_data.get('0 0 2 0 0', 'report_interval'))
+        scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_job(f'{self.name}-report', self.report, self.config.get('0 0 2 0 0', 'report_interval'))
 
     async def check(self):
         try:
@@ -40,32 +27,34 @@ class Storjnode(Plugin):
             return
         
         if not data.uptodate:
-            self.__outdated_alert.send('Node version is outdated.')
+            self.alert('version', 'Node version is outdated.')
+        else:
+            self.reset_alert('version', 'Node version is up to date.')
 
         if not data.quic:
-            self.__quic_alert.send('QUIC is disabled.')
+            self.alert('quic', 'QUIC is disabled.')
         else:
-            self.__quic_alert.reset('QUIC is enabled again.')
+            self.reset_alert('quic', 'QUIC is enabled again.')
 
         if data.satellites == 0:
-            self.__offline_alert.send('Node is offline.')
+            self.alert('sat', 'Node is offline.')
         else:
-            self.__offline_alert.reset(f'Node is online again, {data.satellites} satellites.')
+            self.reset_alert('sat', f'Node is online again, {data.satellites} satellites.')
 
         if data.disqualified > 0:
-            self.__disqualified_alert.send(f'Node is disqualified for {data.disqualified} satellites.')
+            self.alert('disq', f'Node is disqualified for {data.disqualified} satellites.')
         else:
-            self.__disqualified_alert.reset('Node is no longer disqualified for any satellite.')
+            self.reset_alert('disq', 'Node is no longer disqualified for any satellite.')
 
         if data.suspended > 0:
-            self.__suspended_alert.send(f'Node is suspended for {data.disqualified} satellites.')
+            self.alert('susp', f'Node is suspended for {data.disqualified} satellites.')
         else:
-            self.__suspended_alert.reset('Node is no longer suspended for any satellite.')
+            self.reset_alert('susp', 'Node is no longer suspended for any satellite.')
 
         if data.overused_space > 0:
-            self.__overused_alert.send(f'Node overuses {data.overused_space} bytes storage.')
+            self.alert('overu', f'Node overuses {data.overused_space} bytes storage.')
         else:
-            self.__overused_alert.reset('Node does no longer overuse storage.')
+            self.reset_alert('overu', 'Node does no longer overuse storage.')
 
     async def summary(self):
         with self.message_aggregator():

@@ -1,14 +1,11 @@
 import os, shutil, glob
 from ...core.conversions import Conversions
-from ...core.alert import Alert
 
 class FilledDisk:
 
-    def __init__(self, plugin, path, config, mute_interval):
-
+    def __init__(self, plugin, path, config):
         self.__plugin = plugin
         self.__path = path
-        self.__full_alert = Alert(plugin, mute_interval)
         raw_minimum_space = config['minimum_space']
         if raw_minimum_space.endswith('%'):
             abs_space, _, _ = shutil.disk_usage(self.__path)
@@ -29,7 +26,7 @@ class FilledDisk:
 
             if free_space >= self.__min_space:
                 self.__plugin.msg.debug('Free space at {0}: {1[0]:.2f} {1[1]}'.format(self.__path, Conversions.byte_to_auto(free_space)))
-                self.__full_alert.reset(f'Free space at {self.__path} meets its minimum value again.')
+                self.__plugin.reset_alert(self.__path, f'Free space at {self.__path} meets its minimum value again.')
                 break;
 
             normalized_free_space = Conversions.byte_to_auto(free_space)
@@ -42,7 +39,7 @@ class FilledDisk:
             self.__plugin.msg.debug(low_space_message)
 
             if not self.__try_delete():
-                self.__full_alert.send(low_space_message)
+                self.__plugin.alert(self.__path, low_space_message)
                 break
 
     def __try_delete(self):

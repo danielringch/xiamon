@@ -1,29 +1,22 @@
 import aiohttp
-from ...core import Plugin, Alert, Chiarpc, Config, Coinprice, ApiRequestFailedException, Conversions, CsvExporter
+from ...core import Plugin, Chiarpc, Coinprice, ApiRequestFailedException, Conversions, CsvExporter
 from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('chiawallet', 'name')
-        super(Chiawallet, self).__init__(name, outputs)
-        self.print(f'Plugin chiawallet; name: {name}')
+        super(Chiawallet, self).__init__(config, outputs)
 
-        mute_interval = config_data.get(24, 'alert_mute_interval')
+        host = self.config.get('127.0.0.1:9256', 'host')
+        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chiawallet, self))
+        self.__wallet_id = self.config.get(1, 'wallet_id')
 
-        host = config_data.get('127.0.0.1:9256', 'host')
-        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'], super(Chiawallet, self))
-        self.__wallet_id = config_data.get(1, 'wallet_id')
+        self.__db = Chiawalletdb(self.config.data['database'])
+        self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
+        self.__coinprice = Coinprice('chia', self.config.get('usd', 'currency'))
 
-        self.__wallet_unsynced_alert = Alert(super(Chiawallet, self), mute_interval)
-
-        self.__db = Chiawalletdb(config_data.data['database'])
-        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
-        self.__coinprice = Coinprice('chia', config_data.get('usd', 'currency'))
-
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
-        scheduler.add_startup_job(f'{name}-startup', self.startup)
+        scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_startup_job(f'{self.name}-startup', self.startup)
 
     async def startup(self):
         if self.__db.balance is None:
@@ -93,9 +86,9 @@ class Chiawallet(Plugin):
         synced = json['synced']
         if not synced:
             if json['syncing']:
-                self.__wallet_unsynced_alert.send(f'Wallet is syncing.', 'syncing')
+                self.alert('unsynced', f'Wallet is syncing.', 'syncing')
             else:
-                self.__wallet_unsynced_alert.send(f'Wallet is not synced.', 'unsynced')
+                self.alert('unsynced', f'Wallet is not synced.', 'unsynced')
         else:
-            self.__wallet_unsynced_alert.reset(f'Wallet is synced again.')
+            self.reset_alert('unsynced', f'Wallet is synced again.')
         return synced

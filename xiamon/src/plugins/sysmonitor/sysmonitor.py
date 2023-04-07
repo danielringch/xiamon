@@ -1,31 +1,24 @@
 import psutil, glob
-from typing import DefaultDict, OrderedDict
 from .resourceevaluator import Resourceevaluator
 from ...core import Plugin, Alert, Config
 
 class Sysmonitor(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('sysmonitor', 'name')
-        super(Sysmonitor, self).__init__(name, outputs)
-        self.print(f'Plugin sysmonitor; name: {name}')
-
-        mute_interval = config_data.get(24, 'alert_mute_interval')
+        super(Sysmonitor, self).__init__(config, outputs)
 
         self.__evaluators = {}
-        self.__alerts = {}
         self.__prefixes = {'load' : 'Load', 'ram' : 'RAM usage', 'swap' : 'Swap usage', 'temperature' : 'Temperature'}
 
-        self.__add_resource(config_data.data, 'load', mute_interval)
-        self.__add_resource(config_data.data, 'ram', mute_interval)
-        self.__add_resource(config_data.data, 'swap', mute_interval)
-        self.__add_resource(config_data.data, 'temperature', mute_interval)
+        self.__add_resource(self.config.data, 'load')
+        self.__add_resource(self.config.data, 'ram')
+        self.__add_resource(self.config.data, 'swap')
+        self.__add_resource(self.config.data, 'temperature')
 
-        self.__temperature_source = config_data.get(None, 'temperature', 'sensor')
+        self.__temperature_source = self.config.get(None, 'temperature', 'sensor')
 
         self.print(f'Monitored resources: {",".join(self.__evaluators.keys())}')
 
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('* * * * *', 'interval'))
+        scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('* * * * *', 'interval'))
 
     async def check(self):
         load = self.__check_resource('load', self.__get_load)
@@ -49,11 +42,10 @@ class Sysmonitor(Plugin):
         else:
             self.msg.debug(' | '.join(resource_strings))
 
-    def __add_resource(self, config, key, mute_interval):
+    def __add_resource(self, config, key):
         if key not in config:
             return
         self.__evaluators[key] = Resourceevaluator(config[key])
-        self.__alerts[key] = Alert(super(Sysmonitor, self), mute_interval)
 
     def __check_resource(self, key, getter):
         if key not in self.__evaluators:
@@ -63,11 +55,10 @@ class Sysmonitor(Plugin):
         prefix = self.__prefixes[key]
         evaluator.update(value)
         if evaluator.treshold_exceeded:
-            self.__alerts[key].send(f'{prefix} is high: {value:.2f} avg.')
+            self.alert(key, f'{prefix} is high: {value:.2f} avg.')
         else:
-            self.__alerts[key].reset(f'{prefix} is under treshold again.')
+            self.reset_alert(key, f'{prefix} is under treshold again.')
         return value
-
 
     def __get_ram_usage(self):
         ram = psutil.virtual_memory()

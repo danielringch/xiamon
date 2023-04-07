@@ -1,29 +1,22 @@
 import aiohttp
-from ...core import Plugin, Alert, Chiarpc, Config, ApiRequestFailedException
+from ...core import Plugin, Chiarpc, ApiRequestFailedException
 
 class Chiaharvester(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('chiaharvester', 'name')
-        super(Chiaharvester, self).__init__(name, outputs)
-        self.print(f'Plugin chiaharvester; name: {name}')
+        super(Chiaharvester, self).__init__(config, outputs)
 
-        self.__check_job = f'{name}-check'
-
-        mute_interval = config_data.get(24, 'alert_mute_interval')
+        self.__check_job = f'{self.name}-check'
 
         self.__rpc = Chiarpc(
-            config_data.get('127.0.0.1:8560', 'host'),
-            config_data.data['cert'],
-            config_data.data['key'],
+            self.config.get('127.0.0.1:8560', 'host'),
+            self.config.data['cert'],
+            self.config.data['key'],
             super(Chiaharvester, self))
-
-        self.__plot_error_alert = Alert(super(Chiaharvester, self), mute_interval)
 
         self.__failed_plots = set()
         self.__not_found_plots = set()
 
-        scheduler.add_job(self.__check_job ,self.check, config_data.get('*/5 * * * *', 'interval'))
+        scheduler.add_job(self.__check_job ,self.check, self.config.get('*/5 * * * *', 'interval'))
 
     async def check(self):
         async with aiohttp.ClientSession() as session:
@@ -32,12 +25,12 @@ class Chiaharvester(Plugin):
             return
         failed_diff = failed - self.__failed_plots
         for failed_plot in failed_diff:
-            self.__plot_error_alert.send(f'Failed to open plot: {failed_plot}')
+            self.msg.alert(f'Failed to open plot: {failed_plot}')
         self.__failed_plots = failed
 
         not_found_diff = not_found - self.__not_found_plots
         for not_found_plot in not_found_diff:
-            self.__plot_error_alert.send(f'Plot not found: {not_found_plot}')
+            self.msg.alert(f'Plot not found: {not_found_plot}')
         self.__not_found_plots = not_found
 
     async def __get_plots(self, session):
