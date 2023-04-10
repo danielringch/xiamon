@@ -31,9 +31,9 @@ class Plugin(ABC):
         for line in message.splitlines():
             print(f'    {line}')
 
-    def send(self, channel, message):
+    def send(self, channel, message, sender=None):
         for output in self.__outputs:
-            output.send_message(channel, self.name, message)
+            output.send_message(channel, self.name if sender is None else sender, message)
 
     def alert(self, key, message, sub_key=None):
         self.__alerts[key].send(message, sub_key)

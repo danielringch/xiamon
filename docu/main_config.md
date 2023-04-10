@@ -20,6 +20,7 @@ plugins:
   chiawallet: "plugin/chiawallet.yaml"  #optional
   flexfarmer: "plugin/flexfarmer.yaml"  #optional
   flexpool: "plugin/flexpool.yaml"  #optional
+  messagerelay: "plugin/messagerelay.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
@@ -46,6 +47,7 @@ The following plugins are available:
 - chiawallet
 - flexfarmer
 - flexpool
+- messagerelay
 - pingdrive
 - serviceping
 - siahost

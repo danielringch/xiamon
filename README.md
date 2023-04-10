@@ -33,7 +33,8 @@ The hardware related plugins will only work on linux. All other should run on an
   - [pingdrive](docu/plugin/pingdrive.md): Supervises disk activity and pings drives if too inactive. Prevents head parking and sends alerts in case of drives going offline.
   - [smartctl](docu/plugin/smartctl.md): Checks drive health using S.M.A.R.T. and provides some logging.
 - General
-  - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures
+  - [messagerelay](docu/plugin/messagerelay.md): Relays messages received via http post request to the interfaces.
+  - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures.
   - [serviceping](docu/plugin/serviceping.md): Pings chia, sia, storj and flexfarmer using their APIs. Usefull to check from another machine that your service is online.
 
 ## **Outputs**
