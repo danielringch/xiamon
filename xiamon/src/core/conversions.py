@@ -28,16 +28,6 @@ prefixes_downwards = {
 class Conversions:
 
     @staticmethod
-    def to_seconds(time):
-        value, unit = re.match('([\\d\\.]+)(\\D+)', time).groups()
-        if unit == 's':
-            return float(value)
-        elif unit == 'ms':
-            return float(value) / 1000.0
-        else:
-            raise ValueError()
-
-    @staticmethod
     def byte_to_megabyte(bytes):
         return bytes / 1048576
 

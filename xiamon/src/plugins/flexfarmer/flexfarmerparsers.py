@@ -85,7 +85,7 @@ class FlexfarmerLogParser:
                 if plots == 0:
                     return True
 
-                time = Conversions.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
+                time = FlexfarmerLogParser.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
                 self.times[round(time + 0.5)] += 1
             except:
                 self.failed_lines.append(line)
@@ -121,7 +121,7 @@ class FlexfarmerLogParser:
                 size = int(self.__size_regex.search(line).group(0)[5:])
                 partials = 2 ** (size - 32)
 
-                time = Conversions.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
+                time = FlexfarmerLogParser.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
                 self.times[round(time + 0.5)] += 1
 
                 if not accepted:
@@ -145,7 +145,7 @@ class FlexfarmerLogParser:
             
             try:
                 self.count += 1
-                time = Conversions.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
+                time = FlexfarmerLogParser.to_seconds(self.__elapsed_regex.search(line).group(0)[8:])
                 self.times[round(time + 0.5)] += 1
                 self.slow_lines.append(line)
             except:
@@ -188,3 +188,21 @@ class FlexfarmerLogParser:
             ]
         def parse(self, line):
             return line[:28] in self.__lines
+        
+    # flexfarmer has a non-standard duration notation for values greater 1 minute,
+    # so we need an extra parser here
+    @staticmethod
+    def to_seconds(time):
+        match = re.match(r'([\d\.]+m)?([\d\.]+)([ms]+)', time)
+        if not match:
+            raise ValueError()
+        minutes, value, unit = match.group(1,2,3)
+
+        seconds = float(minutes[:-1]) * 60.0 if minutes is not None else 0.0
+        if unit == 's':
+            seconds += float(value)
+        elif unit == 'ms':
+            seconds += float(value) / 1000.0
+        else:
+            raise ValueError()
+        return seconds
