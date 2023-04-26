@@ -2,6 +2,8 @@ alert:  #optional
   file: "~/logs/alert.log"
 info:  #optional
   file: "~/logs/info.log"
+verbose:  #optional
+  file: "~/logs/verbose.log"
 report:  #optional
   file: "~/logs/report.log"
   sort_by_plugin: true  #optional

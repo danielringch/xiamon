@@ -44,7 +44,9 @@ Xiamon communicates via outputs. Messages are routed through different message c
 
 - **Alert**: Something unusal happened. It is a good idea to configure Xiamon to send messages from this channel to an output giving you instant messages.
 
-- **Info**: Some nice summaries and statistics. Nothing urgent.
+- **Info**: Some short summaries and statistics. Nothing urgent.
+
+- **Verbose**: Similar to the info channel, but more verbose. Works best with log files.
 
 - **Report**: Summaries and statistics worth to archive. Often used for financial reporting.
 

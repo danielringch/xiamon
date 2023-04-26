@@ -8,6 +8,7 @@ This interface writes messages to std output.
 alert:  #optional
   color: "red"  #optional
 info:  #optional
+verbose:  #optional
 report:  #optional
   color: "yellow"  #optional
   whitelist:  #optional

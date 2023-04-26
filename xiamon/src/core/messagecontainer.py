@@ -2,18 +2,20 @@ from collections import defaultdict
 from .interface import Interface
 
 class MessageContainer():
-    def __init__(self, alert, info, report, error, debug):
+    def __init__(self, alert, debug, error, info, report, verbose):
         self.__alert = alert
+        self.__debug = debug
+        self.__error = error
         self.__info = info
         self.__report = report
-        self.__error = error
-        self.__debug = debug
+        self.__verbose = verbose
         self.__channels = {
             Interface.Channel.alert: self.__alert,
+            Interface.Channel.debug: self.__debug,
+            Interface.Channel.error: self.__error,
             Interface.Channel.info: self.__info,
             Interface.Channel.report: self.__report,
-            Interface.Channel.error: self.__error,
-            Interface.Channel.debug: self.__debug
+            Interface.Channel.verbose: self.__verbose
         }
 
     def __getitem__(self, channel):
@@ -24,6 +26,14 @@ class MessageContainer():
         return self.__alert
 
     @property
+    def debug(self):
+        return self.__debug
+
+    @property
+    def error(self):
+        return self.__error
+
+    @property
     def info(self):
         return self.__info
 
@@ -32,12 +42,9 @@ class MessageContainer():
         return self.__report
 
     @property
-    def error(self):
-        return self.__error
+    def verbose(self):
+        return self.__verbose
 
-    @property
-    def debug(self):
-        return self.__debug
 
 class InstantChannel():
     def __init__(self, plugin, channel):
@@ -61,11 +68,12 @@ class AggregatedMessage(MessageContainer):
     def __init__(self, plugin):
         self.__messages = defaultdict(list)
         super(AggregatedMessage, self).__init__(
-            AggregatedChannel(self.__messages, Interface.Channel.alert),
-            AggregatedChannel(self.__messages, Interface.Channel.info),
-            AggregatedChannel(self.__messages, Interface.Channel.report),
-            AggregatedChannel(self.__messages, Interface.Channel.error),
-            AggregatedChannel(self.__messages, Interface.Channel.debug)
+            alert=AggregatedChannel(self.__messages, Interface.Channel.alert),
+            debug=AggregatedChannel(self.__messages, Interface.Channel.debug),
+            error=AggregatedChannel(self.__messages, Interface.Channel.error),
+            info=AggregatedChannel(self.__messages, Interface.Channel.info),
+            report=AggregatedChannel(self.__messages, Interface.Channel.report),
+            verbose=AggregatedChannel(self.__messages, Interface.Channel.verbose)
         )
         self.__plugin = plugin
 
@@ -76,11 +84,12 @@ class AggregatedMessage(MessageContainer):
 class InstantMessage(MessageContainer):
     def __init__(self, plugin):
         super(InstantMessage, self).__init__(
-            InstantChannel(plugin, Interface.Channel.alert),
-            InstantChannel(plugin, Interface.Channel.info),
-            InstantChannel(plugin, Interface.Channel.report),
-            InstantChannel(plugin, Interface.Channel.error),
-            InstantChannel(plugin, Interface.Channel.debug)
+            alert=InstantChannel(plugin, Interface.Channel.alert),
+            debug=InstantChannel(plugin, Interface.Channel.debug),
+            error=InstantChannel(plugin, Interface.Channel.error),
+            info=InstantChannel(plugin, Interface.Channel.info),
+            report=InstantChannel(plugin, Interface.Channel.report),
+            verbose=InstantChannel(plugin, Interface.Channel.verbose)
         )
 
 class MessageAggregator:
