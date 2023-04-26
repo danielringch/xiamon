@@ -53,9 +53,9 @@ class Sysmonitor(Plugin):
         evaluator = self.__evaluators[key]
         value = getter()
         prefix = self.__prefixes[key]
-        evaluator.update(value)
+        avg = evaluator.update(value)
         if evaluator.treshold_exceeded:
-            self.alert(key, f'{prefix} is high: {value:.2f} avg.')
+            self.alert(key, f'{prefix} is high: {avg:.2f} avg.')
         else:
             self.reset_alert(key, f'{prefix} is under treshold again.')
         return value
