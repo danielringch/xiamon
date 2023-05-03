@@ -106,6 +106,6 @@ The [execution interval](../config_basics.md) is set by the key **check_interval
 
 ## **Reports**
 
-A summary is sent to the **report** channel with a table containing all drives and their monitored S.M.A.R.T. data.
+A summary is sent to the **verbose** channel with a table containing all drives and their monitored S.M.A.R.T. data.
 
 The [execution interval](../config_basics.md) is set by the key **report_interval**.

@@ -28,6 +28,7 @@ class Messagerelay(Plugin):
         __channels = {
             'alert': Plugin.Channel.alert,
             'info': Plugin.Channel.info,
+            'verbose': Plugin.Channel.verbose,
             'report': Plugin.Channel.report,
             'error': Plugin.Channel.error,
             'debug': Plugin.Channel.debug

@@ -27,12 +27,12 @@ class FlexpoolWorker:
         return self.__shares_valid
     
     @property
-    def shares_stale_shares(self):
-        return self.__shares_stale_shares
+    def shares_stale(self):
+        return self.__shares_stale
     
     @property
-    def shares_invalid_shares(self):
-        return self.__shares_invalid_shares
+    def shares_invalid(self):
+        return self.__shares_invalid
 
     def update(self, worker_status):
         self.__reset()
@@ -47,14 +47,14 @@ class FlexpoolWorker:
             self.__hashrate_reported = worker['reportedHashrate'] / 1000000000000.0
             self.__hashrate_average = worker['averageEffectiveHashrate'] / 1000000000000.0
             self.__shares_valid = worker['validShares']
-            self.__shares_stale_shares = worker['staleShares']
-            self.__shares_invalid_shares = worker['invalidShares']
+            self.__shares_stale = worker['staleShares']
+            self.__shares_invalid = worker['invalidShares']
 
     def __reset(self):
         self.__online = False
         self.__hashrate_reported = 0
         self.__hashrate_average = 0
         self.__shares_valid = 0
-        self.__shares_stale_shares = 0
-        self.__shares_invalid_shares = 0
+        self.__shares_stale = 0
+        self.__shares_invalid = 0
 

@@ -38,10 +38,10 @@ The [execution interval](../config_basics.md) is set by the key **check_interval
 
 ## **Summary**
 
-A summary is sent to the **info** channel and contains the following information:
+A summary is sent to the **info** and **verbose** channels and contains the following information:
 
 - Open balance
-- Worker overview
+- Total and per worker:
     - Reported/ average hashrate
     - Valid/ stale/ invalid partials
 - Payments since last summary

@@ -35,6 +35,7 @@ The **sender** will be shown as the sender of the message. It can be compared to
 The **channel** sets the target channel. Possible values are:
 - alert
 - info
+- verbose
 - report
 - error
 - debug

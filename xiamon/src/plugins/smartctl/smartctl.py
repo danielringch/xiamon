@@ -81,7 +81,7 @@ class Smartctl(Plugin):
                     cell = str(value)
                 table.data[str(attribute)].append(cell)
 
-        self.msg.report(table.render())
+        self.msg.verbose(table.render())
         
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)

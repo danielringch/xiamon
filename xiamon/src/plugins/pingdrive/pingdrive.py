@@ -54,8 +54,8 @@ class Pingdrive(Plugin):
                 else:
                     online += 1
             drive.reset_statistics()
+        self.msg.verbose(table.render())
         self.msg.info(f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
-        self.msg.report(table.render())
         self.__first_summary = False
 
     async def rescan(self):

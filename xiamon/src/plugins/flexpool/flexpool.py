@@ -35,12 +35,26 @@ class Flexpool(Plugin):
             self.__last_summary = now
         if open_xch is not None:
             self.msg.info(f'Open balance: {open_xch} XCH ({open_money:.2f} {self.__currency})')
+        total_hashrate_reported = 0
+        total_hashrate_average = 0
+        total_shares_valid = 0
+        total_shares_stale = 0
+        total_shares_invalid = 0
         for worker in self.__workers.values():
-            self.msg.info(
+            total_hashrate_reported += worker.hashrate_reported
+            total_hashrate_average += worker.hashrate_average
+            total_shares_valid += worker.shares_valid
+            total_shares_stale += worker.shares_stale
+            total_shares_invalid += worker.shares_invalid
+            self.msg.verbose(
                 f'Worker {worker.name} ({"online" if worker.online else "offline"}):',
                 f'Hashrate (reported | average): {worker.hashrate_reported:.2f} TB | {worker.hashrate_average:.2f} TB',
-                f'Shares (valid | stale | invalid): {worker.shares_valid} | {worker.shares_stale_shares} | {worker.shares_invalid_shares}'
+                f'Shares (valid | stale | invalid): {worker.shares_valid} | {worker.shares_stale} | {worker.shares_invalid}'
             )
+        self.msg.info(
+            f'Total hashrate (reported | average): {total_hashrate_reported:.2f} TB | {total_hashrate_average:.2f} TB',
+            f'Total shares (valid | stale | invalid): {total_shares_valid} | {total_shares_stale} | {total_shares_invalid}'
+        )
         if payments is not None:
             if len(payments) == 0:
                 self.msg.info('No new payments available')
