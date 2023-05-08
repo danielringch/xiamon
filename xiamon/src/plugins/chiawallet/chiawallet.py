@@ -51,7 +51,7 @@ class Chiawallet(Plugin):
                 f'new: {balance} XCH ({self.__coinprice.to_fiat_string(balance)})'
             )
             self.msg.info(message)
-            self.msg.report(message)
+            self.msg.accounting(message)
 
     async def summary(self):
         if not await self.__coinprice.update():
@@ -67,7 +67,7 @@ class Chiawallet(Plugin):
                 message = f'Balance: {balance:.12f} XCH ({self.__coinprice.to_fiat_string(balance)})\n{price_message}'
 
             self.msg.info(message)
-            self.msg.report(message)
+            self.msg.accounting(message)
 
     async def __get_balance(self, session):
         if not await self.__get_synced(session):

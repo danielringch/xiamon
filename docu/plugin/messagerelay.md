@@ -36,7 +36,7 @@ The **channel** sets the target channel. Possible values are:
 - alert
 - info
 - verbose
-- report
+- accounting
 - error
 - debug
 

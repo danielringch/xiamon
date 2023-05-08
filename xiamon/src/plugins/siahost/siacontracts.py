@@ -139,7 +139,7 @@ class Siacontracts:
 
         self.__add_summary(table, total_rewards)
 
-        self.__plugin.msg.report(table.render())
+        self.__plugin.msg.accounting(table.render())
 
     def __get_rewards(self, contracts):
         storage = sum(x.storage_revenue for x in contracts)

@@ -48,7 +48,7 @@ Xiamon communicates via outputs. Messages are routed through different message c
 
 - **Verbose**: Similar to the info channel, but more verbose. Works best with log files.
 
-- **Report**: Summaries and statistics worth to archive. Often used for financial reporting.
+- **Accounting**: Summaries and statistics related to financial reporting. It is usually worth to archive messages from this channel in log files.
 
 - **Error**: Something is wrong with the tool. Either your configuration file contains a mistake our you found a bug.
 

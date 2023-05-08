@@ -9,7 +9,7 @@ alert:  #optional
   color: "red"  #optional
 info:  #optional
 verbose:  #optional
-report:  #optional
+accounting:  #optional
   color: "yellow"  #optional
   whitelist:  #optional
     - "my_storagenode"

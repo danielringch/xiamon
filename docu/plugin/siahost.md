@@ -98,7 +98,7 @@ The [execution interval](../config_basics.md) is set by the key **summary_interv
 
 ## **List**
 
-A summary is sent to the **report** channel, containing the following information:
+A summary is sent to the **accounting** channel, containing the following information:
 - Coin price
 - Balance
   - Total balance
@@ -112,7 +112,7 @@ The [execution interval](../config_basics.md) is set by the key **list_interval*
 
 ## **Accounting**
 
-The accounting feature gives an overview over the daily income. When triggered, it writes a table to the **report** channel with a row for each day since the last accounting report, containing the following information:
+The accounting feature gives an overview over the daily income. When triggered, it writes a table to the **accounting** channel with a row for each day since the last accounting report, containing the following information:
 
 - First height of the day
 - Number of ended contracts

@@ -10,7 +10,7 @@ The basic configuration information can be found [here](../config_basics.md).
 name: "my_storagenode"  #unique name
 check_interval: "*/15 * * * *"  #cron schedule expression
 summary_interval: "0 0 * * *"  #cron schedule expression
-report_interval: "0 0 3 * *"  #cron schedule expression
+accounting_interval: "0 0 3 * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 host: "127.0.0.1:14002"
 database: "~/myDb.sqlite"
@@ -50,9 +50,9 @@ Traffic information is not available if the month changes between two summaries.
 
 The [execution interval](../config_basics.md) is set by the key **summary_interval**.
 
-## **Report**
+## **Accounting**
 
-A summary is sent to the **report** channel, containing the following information about the last month:
+A summary is sent to the **accounting** channel, containing the following information about the last month:
 
 - Storage utilization
 - Egress traffic
@@ -63,6 +63,6 @@ A summary is sent to the **report** channel, containing the following informatio
 
 If the key **csv_export** is set, the rewards are also added to a CSV export file.
 
-The necessary information may not be available from storj directly after the new month has started. Triggering the report on the third day of the next month or later has shown to work fine.
+The necessary information may not be available from storj directly after the new month has started. Triggering on the third day of the next month or later has shown to work fine.
 
-The [execution interval](../config_basics.md) is set by the key **report_interval**.
+The [execution interval](../config_basics.md) is set by the key **accounting_interval**.

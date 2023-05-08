@@ -2,19 +2,19 @@ from collections import defaultdict
 from .interface import Interface
 
 class MessageContainer():
-    def __init__(self, alert, debug, error, info, report, verbose):
+    def __init__(self, alert, debug, error, info, accounting, verbose):
         self.__alert = alert
         self.__debug = debug
         self.__error = error
         self.__info = info
-        self.__report = report
+        self.__accounting = accounting
         self.__verbose = verbose
         self.__channels = {
             Interface.Channel.alert: self.__alert,
             Interface.Channel.debug: self.__debug,
             Interface.Channel.error: self.__error,
             Interface.Channel.info: self.__info,
-            Interface.Channel.report: self.__report,
+            Interface.Channel.accounting: self.__accounting,
             Interface.Channel.verbose: self.__verbose
         }
 
@@ -38,8 +38,8 @@ class MessageContainer():
         return self.__info
 
     @property
-    def report(self):
-        return self.__report
+    def accounting(self):
+        return self.__accounting
 
     @property
     def verbose(self):
@@ -72,7 +72,7 @@ class AggregatedMessage(MessageContainer):
             debug=AggregatedChannel(self.__messages, Interface.Channel.debug),
             error=AggregatedChannel(self.__messages, Interface.Channel.error),
             info=AggregatedChannel(self.__messages, Interface.Channel.info),
-            report=AggregatedChannel(self.__messages, Interface.Channel.report),
+            accounting=AggregatedChannel(self.__messages, Interface.Channel.accounting),
             verbose=AggregatedChannel(self.__messages, Interface.Channel.verbose)
         )
         self.__plugin = plugin
@@ -88,7 +88,7 @@ class InstantMessage(MessageContainer):
             debug=InstantChannel(plugin, Interface.Channel.debug),
             error=InstantChannel(plugin, Interface.Channel.error),
             info=InstantChannel(plugin, Interface.Channel.info),
-            report=InstantChannel(plugin, Interface.Channel.report),
+            accounting=InstantChannel(plugin, Interface.Channel.accounting),
             verbose=InstantChannel(plugin, Interface.Channel.verbose)
         )
 

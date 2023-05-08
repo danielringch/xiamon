@@ -14,7 +14,7 @@ info:  #optional
   id: 234567890123456789
 verbose:
   id: 345678901234567890
-report:  #optional
+accounting:  #optional
   id: 456789012345678901
   whitelist:  #optional
     - "my_storagenode"

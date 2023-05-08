@@ -11,8 +11,8 @@ info:  #optional
   file: "~/logs/info.log"
 verbose:  #optional
   file: "~/logs/verbose.log"
-report:  #optional
-  file: "~/logs/report.log"
+accounting:  #optional
+  file: "~/logs/accounting.log"
   sort_by_plugin: true  #optional
   whitelist:  #optional
     - "my_storagenode"

@@ -29,7 +29,7 @@ class Messagerelay(Plugin):
             'alert': Plugin.Channel.alert,
             'info': Plugin.Channel.info,
             'verbose': Plugin.Channel.verbose,
-            'report': Plugin.Channel.report,
+            'accounting': Plugin.Channel.accounting,
             'error': Plugin.Channel.error,
             'debug': Plugin.Channel.debug
         }

@@ -18,7 +18,7 @@ class Storjnode(Plugin):
 
         scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
         scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
-        scheduler.add_job(f'{self.name}-report', self.report, self.config.get('0 0 2 0 0', 'report_interval'))
+        scheduler.add_job(f'{self.name}-accounting', self.accounting, self.config.get('0 0 2 0 0', 'accounting_interval'))
 
     async def check(self):
         try:
@@ -68,15 +68,15 @@ class Storjnode(Plugin):
         self.__storage.summary(node, payout)
         self.__earning.summary(payout)
 
-    async def report(self):
+    async def accounting(self):
         with self.message_aggregator():
             try:
                 payout = await self.__request('sno/estimated-payout', lambda x: Storjpayoutdata(x))
             except ApiRequestFailedException:
-                self.msg.info('No report created, node is not available.')
+                self.msg.info('No accounting report created, node is not available.')
                 return
 
-        self.__earning.report(payout)
+        self.__earning.accounting(payout)
 
     async def __request(self, cmd, generator):
         async with self.__api.create_session() as session:

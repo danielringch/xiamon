@@ -44,13 +44,13 @@ The plugin checks the wallet balance periodically.
 
 If the wallet is not synced, an alert is sent.
 
-If the wallet balance has changed, a message is sent to the channels **info** and **report**. If the key **csv_export** is set, the balance change is also added to a CSV export file.
+If the wallet balance has changed, a message is sent to the channels **info** and **accounting**. If the key **csv_export** is set, the balance change is also added to a CSV export file.
 
 The [execution interval](../config_basics.md) is set by the key **check_interval**.
 
 ## **Summary**
 
-A summary is sent to the **info** and **report** channels and contains the following information:
+A summary is sent to the **info** and **accounting** channels and contains the following information:
 
 - Wallet balance
 - Coin price
