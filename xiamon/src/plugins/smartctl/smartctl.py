@@ -42,6 +42,9 @@ class Smartctl(Plugin):
         drives = self.__get_drives()
         for device in drives:
             identifier = self.__get_identifier(device)
+            if identifier is None:
+                self.msg.debug(f'Drive {device} has no SMART support.')
+                continue
             if identifier in self.__blacklist:
                 self.msg.debug(f'Ignored blacklisted drive {identifier}.')
                 continue
@@ -107,7 +110,7 @@ class Smartctl(Plugin):
         result = []
         for device in self.__get_drives():
             identifier = self.__get_identifier(device)
-            if identifier in self.__blacklist:
+            if identifier is None or identifier in self.__blacklist:
                 continue
             snapshot = self.__get_smart_data(device, identifier)
             if not snapshot.success:
@@ -117,12 +120,18 @@ class Smartctl(Plugin):
         return result
 
     def __get_identifier(self, device):
-        output = subprocess.run(["lsblk", device,"-o", "MODEL,SERIAL"], text=True, stdout=subprocess.PIPE)
-        lines = output.stdout.splitlines()
-        if len(lines) < 2:
+        output = subprocess.run([self.__smartctl_call,"-i" , device], text=True, stdout=subprocess.PIPE)
+        model = None
+        serial = None
+        for line in output.stdout.splitlines():
+            if line.startswith('Device Model:     '):
+                model = line[18:]
+            elif line.startswith('Serial Number:    '):
+                serial = line[18:]
+                break
+        if model is None or serial is None:
             return None
-        return lines[1].replace(" ", "_")
-
+        return f'{model.replace(" ", "_")}_{serial.replace(" ", "_")}'
 
     def __get_smart_data(self, device, identifier):
         output = subprocess.run([self.__smartctl_call,"-A" , device], text=True, stdout=subprocess.PIPE)
