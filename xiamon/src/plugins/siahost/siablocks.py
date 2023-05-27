@@ -1,5 +1,5 @@
 from datetime import datetime, timedelta
-from ...core import Siablockdata, ApiRequestFailedException, Plugin
+from ...core import Siablockdata, ApiRequestFailedException
 
 class Siablocks:
 

@@ -1,5 +1,5 @@
 from datetime import datetime
-from ...core import Plugin, Conversions
+from ...core import Conversions
 
 class Siastorage:
     def __init__(self, plugin, scheduler, database):

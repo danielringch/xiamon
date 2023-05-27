@@ -1,0 +1,3 @@
+name: "my_messagerelay"  #unique name
+host: "localhost"  #ip
+port: "8080"  #port

@@ -33,7 +33,9 @@ The hardware related plugins will only work on linux. All other should run on an
   - [pingdrive](docu/plugin/pingdrive.md): Supervises disk activity and pings drives if too inactive. Prevents head parking and sends alerts in case of drives going offline.
   - [smartctl](docu/plugin/smartctl.md): Checks drive health using S.M.A.R.T. and provides some logging.
 - General
-  - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures
+  - [eccram](docu/plugin/eccram.md): Checks the error statistics of ECC RAM.
+  - [messagerelay](docu/plugin/messagerelay.md): Relays messages received via http post request to the interfaces.
+  - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures.
   - [serviceping](docu/plugin/serviceping.md): Pings chia, sia, storj and flexfarmer using their APIs. Usefull to check from another machine that your service is online.
 
 ## **Outputs**
@@ -42,9 +44,11 @@ Xiamon communicates via outputs. Messages are routed through different message c
 
 - **Alert**: Something unusal happened. It is a good idea to configure Xiamon to send messages from this channel to an output giving you instant messages.
 
-- **Info**: Some nice summaries and statistics. Nothing urgent.
+- **Info**: Some short summaries and statistics. Nothing urgent.
 
-- **Report**: Summaries and statistics worth to archive. Often used for financial reporting.
+- **Verbose**: Similar to the info channel, but more verbose. Works best with log files.
+
+- **Accounting**: Summaries and statistics related to financial reporting. It is usually worth to archive messages from this channel in log files.
 
 - **Error**: Something is wrong with the tool. Either your configuration file contains a mistake our you found a bug.
 

@@ -28,20 +28,20 @@ limits:  #optional
         evaluation: delta_max
         value: 0
 drives:  #optional
-    "ST14000NM001G-2K_ABCDEFGH":
+    "ST14000NM001G-2KJ103_ABCDEFGH":
         alias: my_drive_1  #optional
         limits:  #optional
             194:
               evaluation: max
               value: 40
-    "TOSHIBA_MG09ACA1_ABCDEFGH":
+    "TOSHIBA_MG08ACA14TE_ABCDEFGH":
         alias: my_drive_2  #optional
         limits:  #optional
             194:
               evaluation: max
               value: 45
-blacklist:
-    - "Generic_0123456789ABCDEF"
+blacklist:  #optional
+    - "WDC__WDS200T2B0B-00YS70_0123456789ABC"
 ```
 
 ## **Basic setup**
@@ -75,10 +75,7 @@ The following types of checks are implemented:
 
 ## **Drive identifiers**
 
-Custom checks per drive and the blacklist use drive identifiers. There are two ways to get the identifier of a drive:
-
-1. Run Xiamon with this plugin configured. All drives with their identifiers will be listed on the **debug** channel on startup.
-2. Run `lsblk -o MODEL,SERIAL` and connect both values with an underscore.
+Custom checks per drive and the blacklist use drive identifiers. To get the identifiers, run Xiamon with this plugin configured. All drives with their identifiers will be listed on the **debug** channel on startup.
 
 For better readability, an alias for each drive can be configured, see next section.
 
@@ -106,6 +103,6 @@ The [execution interval](../config_basics.md) is set by the key **check_interval
 
 ## **Reports**
 
-A summary is sent to the **report** channel with a table containing all drives and their monitored S.M.A.R.T. data.
+A summary is sent to the **verbose** channel with a table containing all drives and their monitored S.M.A.R.T. data.
 
 The [execution interval](../config_basics.md) is set by the key **report_interval**.

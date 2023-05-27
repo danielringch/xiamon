@@ -2,8 +2,10 @@ alert:  #optional
   file: "~/logs/alert.log"
 info:  #optional
   file: "~/logs/info.log"
-report:  #optional
-  file: "~/logs/report.log"
+verbose:  #optional
+  file: "~/logs/verbose.log"
+accounting:  #optional
+  file: "~/logs/accounting.log"
   sort_by_plugin: true  #optional
   whitelist:  #optional
     - "my_storagenode"

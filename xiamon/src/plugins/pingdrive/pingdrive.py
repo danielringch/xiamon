@@ -1,32 +1,26 @@
 import subprocess, re
 from collections import defaultdict
-from ...core import Plugin, Alert, Config, Tablerenderer
+from ...core import Plugin, Tablerenderer
 from .drive import Drive
 
 class Pingdrive(Plugin):
 
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('pingdrive', 'name')
-        super(Pingdrive, self).__init__(name, outputs)
-        self.print(f'Plugin pingdrive; name: {name}')
+        super(Pingdrive, self).__init__(config, outputs)
 
-        self.__alerts = {}
-        alert_mute_intervall = config_data.get(24, 'alert_mute_interval')
         self.__drive_configs = {}
         self.__drives = {}
 
-        for drive_block in config_data.data['drives']:
+        for drive_block in self.config.data['drives']:
             for alias, drive_config in drive_block.items():
-                self.__alerts[alias] = Alert(super(Pingdrive, self), alert_mute_intervall)
                 drive_config['alias'] = alias
                 self.__drive_configs[drive_config['mount_point']] = drive_config
   
         self.__first_summary = True
 
-        scheduler.add_job(f'{name}-check', self.check, '* * * * *')
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
-        scheduler.add_startup_job(f'{name}-startup', self.rescan)
+        scheduler.add_job(f'{self.name}-check', self.check, '* * * * *')
+        scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_startup_job(f'{self.name}-startup', self.rescan)
 
     async def check(self):
         for drive in self.__drives.values():
@@ -34,9 +28,9 @@ class Pingdrive(Plugin):
             if message is not None:
                 self.msg.debug(message)
             if drive.online:
-                self.__alerts[drive.alias].reset(f'{drive.alias} is online again')
+                self.reset_alert(drive.alias, f'{drive.alias} is online again')
             else:
-                self.__alerts[drive.alias].send(f'{drive.alias} is offline')
+                self.alert(drive.alias, f'{drive.alias} is offline')
 
     async def summary(self):
         online = 0
@@ -60,8 +54,8 @@ class Pingdrive(Plugin):
                 else:
                     online += 1
             drive.reset_statistics()
+        self.msg.verbose(table.render())
         self.msg.info(f'Drives (online, inactive, offline):\n{online} | {inactive} | {offline}')
-        self.msg.report(table.render())
         self.__first_summary = False
 
     async def rescan(self):

@@ -60,6 +60,6 @@ A summary is sent to the **info** channel with the following information:
   - inactive (ping is successful, but number of expected active minutes was not reached)
   - offline (ping failed)
 
-A table with detailed information for every drive is sent to the **report** channel.
+A table with detailed information for every drive is sent to the **verbose** channel.
 
 The [execution interval](../config_basics.md) is set by the key **summary_interval**.

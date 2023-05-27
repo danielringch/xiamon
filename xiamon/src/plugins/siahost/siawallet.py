@@ -1,4 +1,3 @@
-from ...core import Plugin
 
 class Siawallet:
     def __init__(self, plugin, database, csv, coinprice):
@@ -38,7 +37,7 @@ class Siawallet:
             f'Balance ({self.__coinprice.currency})': self.__coinprice.to_fiat(balance),
             f'Coinprice ({self.__coinprice.currency}/SC)': self.__coinprice.price
         })
-        self.__plugin.msg.report(
+        self.__plugin.msg.accounting(
             f'Coin price: {self.__coinprice.price} {self.__coinprice.currency}/SC',
             f'Balance: {balance} SC ({self.__coinprice.to_fiat_string(balance)})',
             f'Free balance: {free} SC ({(free / balance * 100):.0f} %)',

@@ -1,16 +1,10 @@
-from ...core import Plugin, Alert, Conversions
+from ...core import Conversions
 
 class Siahealth:
     def __init__(self, plugin, config):
 
         self.__plugin = plugin
-        mute_interval = config.get(24, 'alert_mute_interval')
         self.__minimum_available_balance = config.get(10, 'minimum_available_balance')
-
-        self.__unsync_alert = Alert(plugin, mute_interval)
-        self.__wallet_locked_alert = Alert(plugin, mute_interval)
-        self.__low_unlocked_balance_alert = Alert(plugin, mute_interval)
-        self.__status_alert = Alert(plugin, mute_interval)
 
         self.__proof_deadlines = []
 
@@ -19,24 +13,24 @@ class Siahealth:
 
     def check(self, consensus, host, wallet):
         if not consensus.synced:
-            self.__unsync_alert.send(f'Sia node is not synced, height {consensus.height}')
+            self.__plugin.alert('unsync', f'Sia node is not synced, height {consensus.height}')
         else:
-            self.__unsync_alert.reset('Sia node is synced again.')
+            self.__plugin.reset_alert('unsync', 'Sia node is synced again.')
 
         if wallet.unlocked:
-            self.__wallet_locked_alert.reset('Wallet is unlocked again.')
+            self.__plugin.reset_alert('locked', 'Wallet is unlocked again.')
         else:
-            self.__wallet_locked_alert.send('Wallet is locked.')
+            self.__plugin.alert('locked', 'Wallet is locked.')
 
         if wallet.balance < self.__minimum_available_balance:
-            self.__low_unlocked_balance_alert.send(f'Available balance is low: {wallet.balance:.0f} SC')
+            self.__plugin.alert('balance', f'Available balance is low: {wallet.balance:.0f} SC')
         else:
-            self.__low_unlocked_balance_alert.reset('Available balance is above treshold again.')
+            self.__plugin.reset_alert('balance', 'Available balance is above treshold again.')
 
         if not host.statusok:
-            self.__status_alert.send('Host seems to have connection issues.')
+            self.__plugin.alert('connection', 'Host seems to have connection issues.')
         else:
-            self.__status_alert.reset('Host connection issues resolved.')
+            self.__plugin.reset_alert('connection', 'Host connection issues resolved.')
 
         block_diff = None
         for deadline in self.__proof_deadlines:

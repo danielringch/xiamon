@@ -1,50 +1,50 @@
 from datetime import datetime, timedelta
 import os, subprocess, re
-from ...core import Plugin, Config, Tablerenderer
+from ...core import Plugin, Tablerenderer
 from .smartctldb import Smartctldb
 from .smartsnapshot import SmartSnapshot
 from .attributeevaluator import AttributeEvaluator
 
 class Smartctl(Plugin):
     def __init__(self, config, scheduler, outputs):
-        self.__config = Config(config)
-        name = self.__config.get('smartctl', 'name')
-        super(Smartctl, self).__init__(name, outputs)
-        self.print(f'Plugin smartctl; name: {name}')
+        super(Smartctl, self).__init__(config, outputs)
         
         self.__scheduler = scheduler
-        self.__startup_job = f'{name}-startup'
-        self.__cleanup_job = f'{name}-cleanup'
-        self.__check_job = f'{name}-check'
-        self.__report_job = f'{name}-report'
+        self.__startup_job = f'{self.name}-startup'
+        self.__cleanup_job = f'{self.name}-cleanup'
+        self.__check_job = f'{self.name}-check'
+        self.__report_job = f'{self.name}-report'
 
         self.__smartctl_call = os.path.join(
-            os.path.dirname(self.__config.data["binary"]),
-            f'./{os.path.basename(self.__config.data["binary"])}')
+            os.path.dirname(self.config.data["binary"]),
+            f'./{os.path.basename(self.config.data["binary"])}')
 
-        self.__db = Smartctldb(super(Smartctl, self), self.__config.data['database'])
-        self.__aggregation = timedelta(hours=self.__config.get(24, 'aggregation'))
-        self.__expiration = timedelta(days=self.__config.get(180, 'expiration'))
+        self.__db = Smartctldb(super(Smartctl, self), self.config.data['database'])
+        self.__aggregation = timedelta(hours=self.config.get(24, 'aggregation'))
+        self.__expiration = timedelta(days=self.config.get(180, 'expiration'))
 
         self.__attributes_of_interest = set()
-        self.__attributes_of_interest.update(int(x) for x in self.__config.get({}, 'limits').keys())
-        for drive in self.__config.get({}, 'drives').values():
+        self.__attributes_of_interest.update(int(x) for x in self.config.get({}, 'limits').keys())
+        for drive in self.config.get({}, 'drives').values():
             self.__attributes_of_interest.update(drive.get('limits', {}).keys())
 
         self.__drives = {}
 
-        self.__blacklist = set(self.__config.get([], 'blacklist'))
+        self.__blacklist = set(self.config.get([], 'blacklist'))
 
         self.__scheduler.add_startup_job(self.__startup_job, self.startup)
         self.__scheduler.add_job(self.__cleanup_job, self.cleanup, '0 0 * * *')
-        self.__scheduler.add_job(self.__check_job, self.run, self.__config.get('0 * * * *', 'check_interval'))
-        self.__scheduler.add_job(self.__report_job, self.report, self.__config.get(None, 'report_interval'))
+        self.__scheduler.add_job(self.__check_job, self.run, self.config.get('0 * * * *', 'check_interval'))
+        self.__scheduler.add_job(self.__report_job, self.report, self.config.get(None, 'report_interval'))
 
     async def startup(self):
         self.msg.debug(f'Monitored attributes: {", ".join(str(x) for x in self.__attributes_of_interest)}')
         drives = self.__get_drives()
         for device in drives:
             identifier = self.__get_identifier(device)
+            if identifier is None:
+                self.msg.debug(f'Drive {device} has no SMART support.')
+                continue
             if identifier in self.__blacklist:
                 self.msg.debug(f'Ignored blacklisted drive {identifier}.')
                 continue
@@ -84,7 +84,7 @@ class Smartctl(Plugin):
                     cell = str(value)
                 table.data[str(attribute)].append(cell)
 
-        self.msg.report(table.render())
+        self.msg.verbose(table.render())
         
     def __get_drives(self):
         lsblk_output = subprocess.run(["lsblk","-o" , "KNAME"], text=True, stdout=subprocess.PIPE)
@@ -101,7 +101,7 @@ class Smartctl(Plugin):
     def __add_drive(self, identifier, device):
         evaluator = self.__drives.get(identifier, None)
         if evaluator is None:
-            evaluator = AttributeEvaluator(super(Smartctl, self), self.__aggregation, self.__config, identifier)
+            evaluator = AttributeEvaluator(super(Smartctl, self), self.__aggregation, self.config, identifier)
             self.__drives[identifier] = evaluator
             self.msg.debug(f'Found drive {evaluator.name} at {device} with {evaluator.config_type} limits.')
         return evaluator
@@ -110,7 +110,7 @@ class Smartctl(Plugin):
         result = []
         for device in self.__get_drives():
             identifier = self.__get_identifier(device)
-            if identifier in self.__blacklist:
+            if identifier is None or identifier in self.__blacklist:
                 continue
             snapshot = self.__get_smart_data(device, identifier)
             if not snapshot.success:
@@ -120,12 +120,18 @@ class Smartctl(Plugin):
         return result
 
     def __get_identifier(self, device):
-        output = subprocess.run(["lsblk", device,"-o", "MODEL,SERIAL"], text=True, stdout=subprocess.PIPE)
-        lines = output.stdout.splitlines()
-        if len(lines) < 2:
+        output = subprocess.run([self.__smartctl_call,"-i" , device], text=True, stdout=subprocess.PIPE)
+        model = None
+        serial = None
+        for line in output.stdout.splitlines():
+            if line.startswith('Device Model:     '):
+                model = line[18:]
+            elif line.startswith('Serial Number:    '):
+                serial = line[18:]
+                break
+        if model is None or serial is None:
             return None
-        return lines[1].replace(" ", "_")
-
+        return f'{model.replace(" ", "_")}_{serial.replace(" ", "_")}'
 
     def __get_smart_data(self, device, identifier):
         output = subprocess.run([self.__smartctl_call,"-A" , device], text=True, stdout=subprocess.PIPE)

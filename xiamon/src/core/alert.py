@@ -1,4 +1,3 @@
-from .plugin import Plugin
 import datetime
 
 class Alert:

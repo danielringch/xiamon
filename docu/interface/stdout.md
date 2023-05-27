@@ -8,7 +8,8 @@ This interface writes messages to std output.
 alert:  #optional
   color: "red"  #optional
 info:  #optional
-report:  #optional
+verbose:  #optional
+accounting:  #optional
   color: "yellow"  #optional
   whitelist:  #optional
     - "my_storagenode"

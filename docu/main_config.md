@@ -18,8 +18,11 @@ plugins:
     - "plugin/chiaharvester_2.yaml"
   chianode: "plugin/chianode.yaml"  #optional
   chiawallet: "plugin/chiawallet.yaml"  #optional
+  diskfree: "plugin/diskfree.yaml"  #optional
+  eccram: "plugin/eccram.yaml"  #optional
   flexfarmer: "plugin/flexfarmer.yaml"  #optional
   flexpool: "plugin/flexpool.yaml"  #optional
+  messagerelay: "plugin/messagerelay.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
@@ -44,8 +47,11 @@ The following plugins are available:
 - chiaharvester
 - chianode
 - chiawallet
+- diskfree
+- eccram
 - flexfarmer
 - flexpool
+- messagerelay
 - pingdrive
 - serviceping
 - siahost

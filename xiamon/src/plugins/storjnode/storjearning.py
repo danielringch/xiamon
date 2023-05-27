@@ -29,7 +29,7 @@ class Storjearning:
 
         self.__plugin.msg.info(f'Current month earnings: {earning:.2f} USD (+ {delta_earning:.2f} USD)')
             
-    def report(self, payout):
+    def accounting(self, payout):
         storage_reward = payout.last_month.storage_reward
         egress_reward = payout.last_month.egress_reward
         repair_reward = payout.last_month.repair_audit_reward
@@ -75,4 +75,4 @@ class Storjearning:
         table.data['Percent'].append(f'{egress_percent:.0f} %')
         table.data['Percent'].append(f'{repair_percent:.0f} %')
 
-        self.__plugin.msg.report(table.render())
+        self.__plugin.msg.accounting(table.render())

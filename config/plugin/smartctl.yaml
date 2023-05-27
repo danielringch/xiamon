@@ -19,17 +19,17 @@ limits:  #optional
         evaluation: delta_max
         value: 0
 drives:  #optional
-    "ST14000NM001G-2K_ABCDEFGH":
+    "ST14000NM001G-2KJ103_ABCDEFGH":
         alias: my_drive_1  #optional
         limits:  #optional
             194:
               evaluation: max
               value: 40
-    "TOSHIBA_MG09ACA1_ABCDEFGH":
+    "TOSHIBA_MG08ACA14TE_ABCDEFGH":
         alias: my_drive_2  #optional
         limits:  #optional
             194:
               evaluation: max
               value: 45
-blacklist:
-    - "Generic_0123456789ABCDEF"
+blacklist:  #optional
+    - "WDC__WDS200T2B0B-00YS70_0123456789ABC"

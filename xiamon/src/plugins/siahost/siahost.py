@@ -1,4 +1,4 @@
-from ...core import Plugin, Siaapi, Config, CsvExporter, Coinprice, ApiRequestFailedException
+from ...core import Plugin, Siaapi, CsvExporter, Coinprice, ApiRequestFailedException
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
 from .siablocks import Siablocks
@@ -10,42 +10,39 @@ from .siawallet import Siawallet
 
 class Siahost(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('siahost', 'name')
-        super(Siahost, self).__init__(name, outputs)
-        self.print(f'Plugin siahost; name: {name}')
+        super(Siahost, self).__init__(config, outputs)
 
         self.__scheduler = scheduler
-        self.__check_job = f'{name}-check'
-        self.__summary_job = f'{name}-summary'
-        self.__list_job = f'{name}-list'
-        self.__accounting_job = f'{name}-accounting'
-        self.__autoprice_job = f'{name}-autoprice'
-        self.__daychange_job = f'{name}-daychange'
-        self.__startup_job = f'{name}-startup'
+        self.__check_job = f'{self.name}-check'
+        self.__summary_job = f'{self.name}-summary'
+        self.__list_job = f'{self.name}-list'
+        self.__accounting_job = f'{self.name}-accounting'
+        self.__autoprice_job = f'{self.name}-autoprice'
+        self.__daychange_job = f'{self.name}-daychange'
+        self.__startup_job = f'{self.name}-startup'
 
-        host = config_data.get('127.0.0.1:9980','host')
-        password = config_data.data['password']
+        host = self.config.get('127.0.0.1:9980','host')
+        password = self.config.data['password']
         self.__api = Siaapi(host, password, super(Siahost, self))
 
-        self.__db = Siadb(config_data.data['database'])
-        self.__csv = CsvExporter(config_data.get(None, 'csv_export'))
+        self.__db = Siadb(self.config.data['database'])
+        self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
         self.__blocks = Siablocks(super(Siahost, self), self.__api, self.__db)
-        self.__coinprice = Coinprice('siacoin', config_data.data['currency'])
+        self.__coinprice = Coinprice('siacoin', self.config.data['currency'])
 
-        self.__health = Siahealth(self, config_data)
+        self.__health = Siahealth(self, self.config)
         self.__storage = Siastorage(self, self.__scheduler, self.__db)
         self.__wallet = Siawallet(self, self.__db, self.__csv, self.__coinprice)
         self.__autoprice = None
         self.__reports = Siacontracts(self, self.__coinprice, self.__scheduler, self.__db, self.__blocks)
-        if 'autoprice' in  config_data.data:
-            self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, config_data)
-            self.__scheduler.add_job(self.__autoprice_job ,self.price, config_data.get('0 0 * * *', 'price_interval'))
+        if 'autoprice' in  self.config.data:
+            self.__autoprice = Siaautoprice(self, self.__api, self.__coinprice, self.config)
+            self.__scheduler.add_job(self.__autoprice_job ,self.price, self.config.get('0 0 * * *', 'price_interval'))
 
-        self.__scheduler.add_job(self.__check_job ,self.check, config_data.get('0 * * * *', 'check_interval'))
-        self.__scheduler.add_job(self.__summary_job, self.summary, config_data.get('0 0 * * *', 'summary_interval'))
-        self.__scheduler.add_job(self.__list_job, self.list, config_data.get('59 23 * * *', 'list_interval'))
-        self.__scheduler.add_job(self.__accounting_job, self.accounting, config_data.get('0 0 * * MON', 'accounting_interval'))
+        self.__scheduler.add_job(self.__check_job ,self.check, self.config.get('0 * * * *', 'check_interval'))
+        self.__scheduler.add_job(self.__summary_job, self.summary, self.config.get('0 0 * * *', 'summary_interval'))
+        self.__scheduler.add_job(self.__list_job, self.list, self.config.get('59 23 * * *', 'list_interval'))
+        self.__scheduler.add_job(self.__accounting_job, self.accounting, self.config.get('0 0 * * MON', 'accounting_interval'))
         self.__scheduler.add_job(self.__daychange_job, self.daychange, '59 23 * * *')
         self.__scheduler.add_startup_job(self.__startup_job, self.startup)
 

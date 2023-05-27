@@ -1,34 +1,27 @@
 import aiohttp
-from ...core import Plugin, Alert, Chiarpc, Config
+from ...core import Plugin, Chiarpc
 from .nodeconnections import Nodeconnections
 from .nodesyncstate import NodeSyncState
 
 class Chianode(Plugin):
     def __init__(self, config, scheduler, outputs):
-        config_data = Config(config)
-        name = config_data.get('chianode', 'name')
-        super(Chianode, self).__init__(name, outputs)
-        self.print(f'Plugin chianode; name: {name}')
+        super(Chianode, self).__init__(config, outputs)
+        
+        host = self.config.get('127.0.0.1:8555', 'host')
+        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chianode, self))
 
-        mute_interval = config_data.get(24, 'alert_mute_interval')
-
-        host = config_data.get('127.0.0.1:8555', 'host')
-        self.__rpc = Chiarpc(host, config_data.data['cert'], config_data.data['key'], super(Chianode, self))
-
-        self.__node_unsynced_alert = Alert(super(Chianode, self), mute_interval)
-
-        scheduler.add_job(f'{name}-check' ,self.check, config_data.get('0 * * * *', 'check_interval'))
-        scheduler.add_job(f'{name}-summary', self.summary, config_data.get('0 0 * * *', 'summary_interval'))
+        scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
+        scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
 
     async def check(self):
         async with aiohttp.ClientSession() as session:
             state = await NodeSyncState.create(self.__rpc, session)
             if not state.available or (not state.synced and state.height is None):
-                self.__node_unsynced_alert.send('Full node stalled.', 'stalled')
+                self.alert('unsynced', 'Full node stalled.', 'stalled')
             elif state.synced:
-                self.__node_unsynced_alert.reset('Full node synced again.')
+                self.reset_alert('unsynced', 'Full node synced again.')
             else:
-                self.__node_unsynced_alert.send(f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
+                self.send('unsynced', f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
 
     async def summary(self):
         async with aiohttp.ClientSession() as session:

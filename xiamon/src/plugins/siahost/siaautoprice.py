@@ -1,7 +1,6 @@
-from collections import namedtuple, defaultdict
+from collections import namedtuple
 from enum import Enum
-from unicodedata import category
-from ...core import Plugin, Conversions, ApiRequestFailedException
+from ...core import Conversions, ApiRequestFailedException
 
 class Siaautoprice:
 
@@ -119,10 +118,10 @@ class Siaautoprice:
 
             if current_price != new_price:
                 message = f'new {self.__config.name} price: {current_price} -> {new_price} {self.__config.unit}'
-                messages.report(message)
+                messages.accounting(message)
                 messages.info(message)
                 return (self.__config.parameter, self.__config.apiconverter(new_price))
             else:
-                messages.report(f'{self.__config.name} price: {current_price} {self.__config.unit}')
+                messages.accounting(f'{self.__config.name} price: {current_price} {self.__config.unit}')
                 return None
 

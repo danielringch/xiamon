@@ -1,0 +1,2 @@
+name: "my_eccram"  #unique name
+interval: "0 0 * * *"  #cron schedule expression
