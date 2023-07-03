@@ -130,3 +130,18 @@ class Conversions:
                 if result < 1000:
                     return result, prefix
             raise OverflowError()
+        
+    @staticmethod
+    def reverse_autorange(value, unit, base_unit, base=1000):
+        prefix = unit[0:-(len(base_unit))]
+        if len(prefix) == 0:
+            return value
+        if prefix in prefixes_upwards:
+            exp = prefixes_upwards[prefix]
+        elif prefix in prefixes_downwards:
+            exp = prefixes_downwards[prefixes_downwards]
+        else:
+            raise ValueError()
+
+        return value * (base ** exp)
+        
