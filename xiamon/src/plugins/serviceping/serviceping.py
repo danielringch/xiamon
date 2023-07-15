@@ -9,16 +9,15 @@ class Serviceping(Plugin):
 
         self.__checkers = {}
 
-        if 'chia' in self.config.data:
-            self.__checkers['chia'] = Serviceping.Chia(self.config, super(Serviceping, self))
-        if 'flexfarmer' in self.config.data:
-            self.__checkers['flexfarmer'] = Serviceping.Flexfarmer(self.config)
-        if 'sia' in self.config.data:
-            sia_checker = Serviceping.Sia(self.config, super(Serviceping, self))
-            self.__checkers['sia'] = sia_checker
-        if 'storj' in self.config.data:
-            storj_checker = Serviceping.Storj(self.config)
-            self.__checkers['storj'] = storj_checker
+        ctors = {
+            "chia": Serviceping.Chia,
+            "flexfarmer": Serviceping.Flexfarmer,
+            "sia": Serviceping.Sia,
+            "storj": Serviceping.Storj
+        }
+
+        for host, config in self.config.data['hosts'].items():
+            self.__checkers[host] = ctors[config['type']](config, super(Serviceping, self))
 
         self.__successful_pings = defaultdict(lambda: 0)
         self.__failed_pings = defaultdict(lambda: 0)
@@ -45,8 +44,7 @@ class Serviceping(Plugin):
         
     class Chia:
         def __init__(self, config, plugin):
-            host = config.get('127.0.0.1:8555','chia','host')
-            self.__rpc = Chiarpc(host, config.data['chia']['cert'], config.data['chia']['key'], plugin)
+            self.__rpc = Chiarpc(config['host'], config['cert'], config['key'], plugin)
 
         async def check(self):
             async with aiohttp.ClientSession() as session:
@@ -57,8 +55,8 @@ class Serviceping(Plugin):
                     return False
 
     class Flexfarmer:
-        def __init__(self, config):
-            self.__host = config.get('127.0.0.1:29549','flexfarmer','host')
+        def __init__(self, config, _):
+            self.__host = config['host']
 
         async def check(self):
             async with aiohttp.ClientSession() as session:
@@ -71,8 +69,7 @@ class Serviceping(Plugin):
 
     class Sia:
         def __init__(self, config, plugin):
-            host = config.get('127.0.0.1:9980', 'sia', 'host')
-            self.__api = Siaapi(host, None, plugin)
+            self.__api = Siaapi(config['host'], None, plugin)
 
         async def check(self):
             async with self.__api.create_session() as session:
@@ -83,8 +80,8 @@ class Serviceping(Plugin):
                     return False
 
     class Storj:
-        def __init__(self, config):
-            self.__host = config.get('127.0.0.1:14002', 'storj', 'host')
+        def __init__(self, config, _):
+            self.__host = config['host']
 
         async def check(self):
             async with aiohttp.ClientSession() as session:

@@ -15,27 +15,36 @@ name: "my_serviceping"  #unique name
 summary_interval: "0 0 * * *"  #cron schedule expression
 check_interval: "0 * * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
-chia:  #optional
-    cert: "~/.chia/mainnet/config/ssl/full_node/private_full_node.crt"
-    key: "~/.chia/mainnet/config/ssl/full_node/private_full_node.key"
-    host: "127.0.0.1:8555"
-flexfarmer: #optional
-    host: "127.0.0.1:8080"
-sia: #optional
-    host: "127.0.0.1:9980"
-storj: #optional
-    host: "127.0.0.1:14002"
+hosts:
+    my_host_1:  # optional
+        type: chia
+        cert: "~/.chia/mainnet/config/ssl/full_node/private_full_node.crt"
+        key: "~/.chia/mainnet/config/ssl/full_node/private_full_node.key"
+        host: "127.0.0.1:8555"
+    my_host_2:  # optional
+        type: flexfarmer
+        host: "127.0.0.1:8080"
+    my_host_3:  # optional
+        type: sia
+        host: "127.0.0.1:9980"
+    my_host_4:  # optional
+        type: storj
+        host: "127.0.0.1:14002"
 ```
 
 ## **Basic setup**
 
+The services to monitor are listed under the key **hosts**. For each service, the displayed name is set as a key.
+
+The key **type** sets the type of service, supported values are `chia`, `flexfarmer`, `sia` and `storj`.
+
 ### ***Chia***
 
-The configuration for chia is set by the key **chia**. The configuration is the same as for the chia full node plugin and can be found [here](chianode.md).
+The configuration is the same as for the chia full node plugin and can be found [here](chianode.md).
 
 ### ***Flexfarmer***
 
-The configuration for flexfarmer is set by the key **flexfarmer** and has the **host** as value.
+The key **host** specifies the ip and port of the flexfarmer instance.
 
 The key **api_server_listen** in flexfarmers configuration file needs to be set to `localhost:8080` (access of same machine) or `0.0.0.0:8080` (access in local network) to enable flexfarmers API server.
 
@@ -43,11 +52,12 @@ The port of the api server in the flexfarmer configuration template is set to 80
 
 ### ***Sia***
 
-The configuration for sia is set by the key **sia**. The configuration is the same as for the siahost plugin and can be found [here](siahost.md). Since this plugin only does readonly calls, no api password is required.
+The key **host** specifies the ip and port of the siad instance. For more information, see the documentation of the [siahost plugin](siahost.md). No api password is required for this plugin.
 
 ### ***Storj***
 
-The configuration for storj is set by the key **storj**. The configuration is the same as for the storj plugin and can be found [here](storjnode.md).
+The key **host** specifies the ip and port of the storj instance. For more information, see the documentation of the [storj plugin](storjnode.md).
+
 
 ## **Check**
 
