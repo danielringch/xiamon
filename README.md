@@ -32,6 +32,8 @@ The hardware related plugins will only work on linux. All other should run on an
   - [diskfree](docu/plugin/diskfree.md): Disk free space monitoring.
   - [pingdrive](docu/plugin/pingdrive.md): Supervises disk activity and pings drives if too inactive. Prevents head parking and sends alerts in case of drives going offline.
   - [smartctl](docu/plugin/smartctl.md): Checks drive health using S.M.A.R.T. and provides some logging.
+- Energy management
+  - [opendtu](docu/plugin/opendtu.md): Solar farm monitoring for Hoymiles inverters and openDTU.
 - General
   - [eccram](docu/plugin/eccram.md): Checks the error statistics of ECC RAM.
   - [messagerelay](docu/plugin/messagerelay.md): Relays messages received via http post request to the interfaces.

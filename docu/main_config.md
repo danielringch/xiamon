@@ -23,6 +23,7 @@ plugins:
   flexfarmer: "plugin/flexfarmer.yaml"  #optional
   flexpool: "plugin/flexpool.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
+  opendtu: "plugin/opendtu.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
@@ -52,6 +53,7 @@ The following plugins are available:
 - flexfarmer
 - flexpool
 - messagerelay
+- opendtu
 - pingdrive
 - serviceping
 - siahost

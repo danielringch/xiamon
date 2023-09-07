@@ -7,6 +7,7 @@ from .eccram import *
 from .flexfarmer import *
 from .flexpool import *
 from .messagerelay import *
+from .opendtu import *
 from .pingdrive import *
 from .serviceping import *
 from .siahost import *

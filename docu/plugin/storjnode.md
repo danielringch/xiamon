@@ -1,6 +1,6 @@
 # The Xiamon storjnode plugin
 
-This plugin monitors a storj SNO instance.
+This plugin monitors one or multiple storj SNO instances.
 
 ## **Configuration template**
 
@@ -12,26 +12,29 @@ check_interval: "*/15 * * * *"  #cron schedule expression
 summary_interval: "0 0 * * *"  #cron schedule expression
 accounting_interval: "0 0 3 * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
-host: "127.0.0.1:14002"
+hosts:
+    my_storj_host: "127.0.0.1:14002"  #optional
+    my_other_storj_host: "192.168.0.1:14003"  #optional
 database: "~/myDb.sqlite"
 csv_export: "~/myCsv.csv"  #optional
 ```
 
 ## **Basic setup**
 
-The storjhost is usually `127.0.0.1:14002` and is configured by the key **host**.
+A storj SNO instance usually uses port `14002`. All monitored instances and their aliases are configured as list below the key **hosts**. 
 
 The plugin uses an internal database, its path is configured by the key **database**.
 
 ## **Checks**
 
-The plugin checks the health of the storj instance and sends an alert if one of the following conditions is true:
+The plugin checks the health of all storj SNO instances and sends an alert if:
 
-- Software version is outdated
+- the instance is offline
+- the software version is outdated
 - QUIC is not enabled
-- No satellite is connected
-- Node is suspended or disqualified by a satellite
-- Storage space is overused
+- no satellite is connected
+- the node is suspended or disqualified by a satellite
+- storage space is overused
 
 The [execution interval](../config_basics.md) is set by the key **check_interval**.
 
@@ -45,6 +48,8 @@ A summary is sent to the **info** channel, containing the following information:
 - Repair/ audit traffic since last summary
 - Earnings since last summary (exlcuding held earnings)
 - Total earnings of the month (exlcuding held earnings)
+
+The same information broken down by storj SNO instance is written to the **verbose** channel.
 
 Traffic information is not available if the month changes between two summaries.
 

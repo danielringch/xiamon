@@ -6,7 +6,7 @@ from src.core import Scheduler
 from src.interfaces import *
 from src.plugins import *
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 warnings.filterwarnings(
     "ignore",
@@ -27,6 +27,7 @@ available_plugins = {'chiaharvester': Chiaharvester,
                      'flexfarmer': Flexfarmer,
                      'flexpool': Flexpool,
                      'messagerelay': Messagerelay,
+                     'opendtu': Opendtu,
                      'pingdrive': Pingdrive,
                      'serviceping': Serviceping,
                      'siahost' : Siahost,

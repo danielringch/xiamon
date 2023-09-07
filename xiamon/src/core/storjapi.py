@@ -7,7 +7,8 @@ class Storjapi:
         self.__host = host
         self.__plugin = plugin
 
-    def create_session(self):
+    @staticmethod
+    def create_session():
         session = aiohttp.ClientSession()
         return session
 

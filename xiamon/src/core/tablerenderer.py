@@ -4,6 +4,12 @@ class Tablerenderer:
     def __init__(self, header = []):
         self.data = defaultdict(list, { x:[] for x in header })
 
+    def add_row(self, data):
+        i = 0
+        for col in self.data.values():
+            col.append(data[i] if len(data) > i else '')
+            i += 1
+
     def reverse(self):
         rows = max(len(x) for x in self.data.values())
         for column in self.data.values():
