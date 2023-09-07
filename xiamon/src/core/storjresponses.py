@@ -2,6 +2,7 @@ from .conversions import Conversions
 
 class Storjnodedata:
     def __init__(self, json):
+        self.__id = json['nodeID']
         self.__quic = (json['quicStatus'] == "OK")
         self.__uptodate = json['upToDate']
         self.__traffic = int(json['bandwidth']['used'])
@@ -17,6 +18,10 @@ class Storjnodedata:
                 self.__disqualified += 1
             if satellite['suspended'] is not None:
                 self.__suspended += 1
+
+    @property
+    def id(self):
+        return self.__id
 
     @property
     def quic(self):

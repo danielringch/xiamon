@@ -1,5 +1,6 @@
-from ...core import Plugin, Alert, Storjapi, Storjnodedata, Storjpayoutdata, Config, ApiRequestFailedException, CsvExporter
+from ...core import Plugin, Storjapi, ApiRequestFailedException, CsvExporter
 from .storjdb import Storjdb
+from .storjhost import Storjhost
 from .storjstorage import Storjstorage
 from .storjearning import Storjearning
 
@@ -7,8 +8,7 @@ class Storjnode(Plugin):
     def __init__(self, config, scheduler, outputs):
         super(Storjnode, self).__init__(config, outputs)
 
-        host = self.config.get('127.0.0.1:14002','host')
-        self.__api = Storjapi(host, super(Storjnode, self))
+        self.__hosts = [Storjhost(super(Storjnode, self), name, host) for name, host in self.config.data['hosts'].items()]
 
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
         self.__db = Storjdb(self.config.data['database'])
@@ -21,68 +21,43 @@ class Storjnode(Plugin):
         scheduler.add_job(f'{self.name}-accounting', self.accounting, self.config.get('0 0 2 0 0', 'accounting_interval'))
 
     async def check(self):
-        try:
-            data = await self.__request('sno/', lambda x: Storjnodedata(x))
-        except ApiRequestFailedException:
-            return
-        
-        if not data.uptodate:
-            self.alert('version', 'Node version is outdated.')
-        else:
-            self.reset_alert('version', 'Node version is up to date.')
-
-        if not data.quic:
-            self.alert('quic', 'QUIC is disabled.')
-        else:
-            self.reset_alert('quic', 'QUIC is enabled again.')
-
-        if data.satellites == 0:
-            self.alert('sat', 'Node is offline.')
-        else:
-            self.reset_alert('sat', f'Node is online again, {data.satellites} satellites.')
-
-        if data.disqualified > 0:
-            self.alert('disq', f'Node is disqualified for {data.disqualified} satellites.')
-        else:
-            self.reset_alert('disq', 'Node is no longer disqualified for any satellite.')
-
-        if data.suspended > 0:
-            self.alert('susp', f'Node is suspended for {data.disqualified} satellites.')
-        else:
-            self.reset_alert('susp', 'Node is no longer suspended for any satellite.')
-
-        if data.overused_space > 0:
-            self.alert('overu', f'Node overuses {data.overused_space} bytes storage.')
-        else:
-            self.reset_alert('overu', 'Node does no longer overuse storage.')
+        async with Storjapi.create_session() as session:
+            for host in self.__hosts:
+                await host.check(session)
 
     async def summary(self):
         with self.message_aggregator():
-            try:
-                node = await self.__request('sno/', lambda x: Storjnodedata(x))
-                payout = await self.__request('sno/estimated-payout', lambda x: Storjpayoutdata(x))
-            except ApiRequestFailedException:
-                self.msg.info('No summary created, node is not available.')
+            node_infos = {}
+            payout_infos = {}
+            async with Storjapi.create_session() as session:
+                for host in self.__hosts:
+                    try:
+                        node_infos[host] = await host.get_node_info(session)
+                        payout_infos[host] = await host.get_payout_info(session)
+                    except ApiRequestFailedException:
+                        self.msg.info('Summary is incomplete, data from {host.name} is missing.')
+                        continue
+
+            if len(node_infos) == 0 or len(payout_infos) == 0:
+                self.msg.info('No summary created, no nodes are available.')
                 return
 
-        self.__storage.summary(node, payout)
-        self.__earning.summary(payout)
+            self.__storage.summary(node_infos, payout_infos)
+            self.__earning.summary(payout_infos)
 
     async def accounting(self):
         with self.message_aggregator():
-            try:
-                payout = await self.__request('sno/estimated-payout', lambda x: Storjpayoutdata(x))
-            except ApiRequestFailedException:
-                self.msg.info('No accounting report created, node is not available.')
+            payout_infos = {}
+            async with Storjapi.create_session() as session:
+                for host in self.__hosts:
+                    try:
+                        payout_infos[host] = await host.get_payout_info(session)
+                    except ApiRequestFailedException:
+                        self.msg.accounting('Accounting report is incomplete, data from {host.name} is missing.')
+                        continue
+
+            if len(payout_infos) == 0:
+                self.msg.accounting('No accounting report created, no nodes are available.')
                 return
 
-        self.__earning.accounting(payout)
-
-    async def __request(self, cmd, generator):
-        async with self.__api.create_session() as session:
-            try:
-                json = await self.__api.get(session, cmd)
-                result = generator(json)
-                return result
-            except ApiRequestFailedException:
-                raise
+            self.__earning.accounting(payout_infos)
