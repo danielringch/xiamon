@@ -10,8 +10,7 @@ The whole software is configured as a combination of plugins and outputs, provid
 
 ## **Prerequisites**
 
-- Python version 3.8 or newer
-- pip
+- Python version 3.8 or newer with pip + venv
 
 The hardware related plugins will only work on linux. All other should run on any OS, but I have no capacity to test this, so feedback is appreciated. My test machines run Ubuntu and Raspbian.
 
@@ -66,6 +65,11 @@ More outputs can be added easily in the future.
 
 ## **Usage**
 
+1. Activate virtual environment:
+```
+source <path to virtual environment>/bin/activate
+```
+2. Run Xiamon:
 ```
 python3 xiamon/xiamon.py --config <path to main config file> 
 ```
@@ -78,11 +82,13 @@ git clone https://github.com/danielringch/xiamon.git
 ```
 2. Copy the `config` directory to a place of your choice.
 3. Adapt the copied config files.
-4. Install dependencies:
+4. Create a python venv and install dependencies:
 ```
+python3 -m venv <path to virtual environment>
+source <path to virtual environment>/bin/activate
 python3 -m pip install -r requirements.txt
 ```
-5. Run Xiamon.
+
 
 ### **Using Docker**
 
