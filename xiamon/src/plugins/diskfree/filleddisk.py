@@ -31,7 +31,7 @@ class FilledDisk:
         missing_space = self.__min_space - free_space
 
         normalized_free_space = Conversions.byte_to_auto(free_space)
-        normalized_min_space = Conversions.bit_to_auto(self.__min_space)
+        normalized_min_space = Conversions.byte_to_auto(self.__min_space)
         normalized_missing_space = Conversions.byte_to_auto(missing_space)
         low_space_message = 'Low free space at {0}: {1[0]:.2f} {1[1]} required, {2[0]:.2f} {2[1]} available, {3[0]:.2f} {3[1]} missing.'.format(
             self.__path,

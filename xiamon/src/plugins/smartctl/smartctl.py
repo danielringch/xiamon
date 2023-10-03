@@ -15,9 +15,9 @@ class Smartctl(Plugin):
         self.__check_job = f'{self.name}-check'
         self.__report_job = f'{self.name}-report'
 
-        self.__smartctl_call = os.path.join(
-            os.path.dirname(self.config.data["binary"]),
-            f'./{os.path.basename(self.config.data["binary"])}')
+        binary_path = self.config.get('/usr/sbin/smartctl', 'binary')
+        self.__smartctl_call = os.path.join(os.path.dirname(binary_path),f'./{os.path.basename(binary_path)}')
+        self.__use_sudo = binary_path.startswith('/usr/sbin')
 
         self.__db = Smartctldb(super(Smartctl, self), self.config.data['database'])
         self.__aggregation = timedelta(hours=self.config.get(24, 'aggregation'))
@@ -120,7 +120,7 @@ class Smartctl(Plugin):
         return result
 
     def __get_identifier(self, device):
-        output = subprocess.run([self.__smartctl_call,"-i" , device], text=True, stdout=subprocess.PIPE)
+        output = self.__call_smartctl("-i", device)
         model = None
         serial = None
         for line in output.stdout.splitlines():
@@ -134,8 +134,16 @@ class Smartctl(Plugin):
         return f'{model.replace(" ", "_")}_{serial.replace(" ", "_")}'
 
     def __get_smart_data(self, device, identifier):
-        output = subprocess.run([self.__smartctl_call,"-A" , device], text=True, stdout=subprocess.PIPE)
+        output = self.__call_smartctl("-A", device)
         return SmartSnapshot.from_smartctl(
             identifier, 
             output.stdout, 
             self.__attributes_of_interest)
+    
+    def __call_smartctl(self, flag, device):
+        if self.__use_sudo:
+            call = ['sudo', self.__smartctl_call, flag, device]
+        else:
+            call = [self.__smartctl_call, flag, device]
+
+        return subprocess.run(call, text=True, stdout=subprocess.PIPE)

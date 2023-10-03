@@ -1,10 +1,10 @@
 name: "my_smartctldrive"  #unique name
 check_interval: "0 * * * *"  #cron schedule expression
 report_interval: "0 0 * * MON"  #cron schedule expression
-binary: "~/smartctl"
 database: database: "~/myDb.sqlite"
 aggregation: 24  #hours
 expiration: 31  #days
+binary: "~/smartctl"  #optional
 limits:  #optional
     4:
         evaluation: delta_max
