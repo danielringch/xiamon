@@ -10,10 +10,10 @@ The basic configuration information can be found [here](../config_basics.md).
 name: "my_smartctldrive"  #unique name
 check_interval: "0 * * * *"  #cron schedule expression
 report_interval: "0 0 * * MON"  #cron schedule expression
-binary: "~/smartctl"
 database: database: "~/myDb.sqlite"
 aggregation: 24  #hours
 expiration: 31  #days
+binary: "~/smartctl"  #optional
 limits:  #optional
     4:
         evaluation: delta_max
@@ -46,17 +46,29 @@ blacklist:  #optional
 
 ## **Basic setup**
 
-This plugin calls the program `smartctl` from smartmontools, which requires root rights. Since it is not useful to run Xiamon as root, it is necessary to make `smartctl` usable with the user running Xiamon:
-
-- as root, copy the smartctl binary (usually in /usr/sbin) to a place accessible by the user running Xiamon
-- as root, make the copy of `smartctl` executable for the user running Xiamon by running the command `chmod u+s smartctl`
-- Set the value of the key **binary** in the configuration to the path of the copy of `smartctl`
-
 The plugin stores the S.M.A.R.T. data from the drives in its own database. The path of the file is set by the key **database**.
 
 The plugin is capable of checking the delta of S.M.A.R.T. data. The reference time is configured by the key **aggregation**. E.g. a value of 24 means that the delta check compares S.M.A.R.T. data with the data from 24 hours ago.
 
 To prevent the database from getting too big, old data is removed automatically. The time how long data remains in the database is configured by the key **expiration**.
+
+This plugin calls the program `smartctl` from smartmontools, which requires root rights. Since it is not useful to run Xiamon as root, some extra steps are necessary to to make `smartctl` usable with the user running Xiamon. There are two options:
+
+#### Modified sudoers file
+
+- add the following line to `/etc/sudoers` using editor `visudo`:
+```
+<user running Xiamon> ALL=(ALL) NOPASSWD: /usr/sbin/smartctl
+```
+- replace the user placeholder by the actual user
+
+#### Copy of smartctl binary with custom rights
+
+- as root, copy the smartctl binary (usually in /usr/sbin) to a place accessible by the user running Xiamon
+- as root, make the copy of `smartctl` executable for the user running Xiamon by running the command `chmod u+s smartctl`
+- Set the value of the key **binary** in the configuration to the path of the copy of `smartctl`
+
+
 
 ## **Global checks**
 
