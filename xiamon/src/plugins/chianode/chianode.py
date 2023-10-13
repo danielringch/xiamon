@@ -21,7 +21,7 @@ class Chianode(Plugin):
             elif state.synced:
                 self.reset_alert('unsynced', 'Full node synced again.')
             else:
-                self.send('unsynced', f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
+                self.alert('unsynced', f'Full node NOT synced; {state.height}/{state.peak}.', 'syncing')
 
     async def summary(self):
         async with aiohttp.ClientSession() as session:
