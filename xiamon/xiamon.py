@@ -32,6 +32,7 @@ available_plugins = {'chiaharvester': Chiaharvester,
                      'serviceping': Serviceping,
                      'siahost' : Siahost,
                      'smartctl': Smartctl,
+                     'spacefarmers': Spacefarmers,
                      'storjnode': Storjnode,
                      'sysmonitor': Sysmonitor}
 

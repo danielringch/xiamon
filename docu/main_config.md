@@ -28,6 +28,7 @@ plugins:
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
   smartctl: "plugin/smartctl.yaml"  #optional
+  spacefarmers: "plugin/spacefarmers.yaml"  #optional
   storjnode: "plugin/storjnode.yaml"  #optional
   sysmonitor: "plugin/sysmonitor.yaml"  #optional
 ```

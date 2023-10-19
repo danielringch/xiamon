@@ -23,6 +23,7 @@ The hardware related plugins will only work on linux. All other should run on an
   - [chiawallet](docu/plugin/chiawallet.md): Chia (lite) wallet monitoring using the chia API. Tracks the wallet balance and balance changes.
   - [flexfarmer](docu/plugin/flexfarmer.md): Flexfarmer instance monitoring using flexfarmer log files. Gives statistics about partials, space and lookup times.
   - [flexpool](docu/plugin/flexpool.md): Flexpool account monitoring using flexpool API. Tracks the open balance and worker status.
+  - [spacefarmers](docu/plugin/spacefarmers.md): pool monitoring for spacefarmers.io. Tracks the open balance, partials and worker status.
 - Sia
   - [siahost](docu/plugin/siahost.md): Sia host monitoring using the sia API. Includes wallet tracking, storage and traffic statistics, automatic price updates and financial reporting.
 - Storj

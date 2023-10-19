@@ -12,5 +12,6 @@ from .pingdrive import *
 from .serviceping import *
 from .siahost import *
 from .smartctl import *
+from .spacefarmers import *
 from .storjnode import *
 from .sysmonitor import *
