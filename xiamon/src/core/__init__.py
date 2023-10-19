@@ -5,6 +5,8 @@ from .config import Config
 from .conversions import Conversions, Byteunit
 from .csvexporter import CsvExporter
 from .exceptions import *
+from .hostdapi import Hostdapi
+from .hostdresponses import *
 from .interface import Interface
 from .messagecontainer import MessageContainer
 from .otherdefaultdict import otherdefaultdict

@@ -6,6 +6,7 @@ from .diskfree import *
 from .eccram import *
 from .flexfarmer import *
 from .flexpool import *
+from .hostd import *
 from .messagerelay import *
 from .opendtu import *
 from .pingdrive import *

@@ -22,6 +22,7 @@ plugins:
   eccram: "plugin/eccram.yaml"  #optional
   flexfarmer: "plugin/flexfarmer.yaml"  #optional
   flexpool: "plugin/flexpool.yaml"  #optional
+  hostd: "plugin/hostd.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
   opendtu: "plugin/opendtu.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
@@ -53,6 +54,7 @@ The following plugins are available:
 - eccram
 - flexfarmer
 - flexpool
+- hostd
 - messagerelay
 - opendtu
 - pingdrive

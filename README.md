@@ -25,6 +25,7 @@ The hardware related plugins will only work on linux. All other should run on an
   - [flexpool](docu/plugin/flexpool.md): Flexpool account monitoring using flexpool API. Tracks the open balance and worker status.
   - [spacefarmers](docu/plugin/spacefarmers.md): pool monitoring for spacefarmers.io. Tracks the open balance, partials and worker status.
 - Sia
+  - [hostd](docu/plugin/hostd.md): Sia host monitoring using the hostd API. Includes wallet tracking, storage and traffic statistics, automatic price updates and financial reporting.
   - [siahost](docu/plugin/siahost.md): Sia host monitoring using the sia API. Includes wallet tracking, storage and traffic statistics, automatic price updates and financial reporting.
 - Storj
   - [storjnode](docu/plugin/storjnode.md): Storj node monitoring using the storj API. Includes storage and traffic statistics and financial reporting.
