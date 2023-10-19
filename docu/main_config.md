@@ -20,8 +20,6 @@ plugins:
   chiawallet: "plugin/chiawallet.yaml"  #optional
   diskfree: "plugin/diskfree.yaml"  #optional
   eccram: "plugin/eccram.yaml"  #optional
-  flexfarmer: "plugin/flexfarmer.yaml"  #optional
-  flexpool: "plugin/flexpool.yaml"  #optional
   hostd: "plugin/hostd.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
   opendtu: "plugin/opendtu.yaml"  #optional

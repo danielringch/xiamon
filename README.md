@@ -21,8 +21,6 @@ The hardware related plugins will only work on linux. All other should run on an
   - [chiafarmer](docu/plugin/chiafarmer.md): Chia farmer monitoring using the chia API. Checks for missed signage points.
   - [chianode](docu/plugin/chianode.md): Chia full node monitoring using the chia API. Checks that the node stays synced and gives information about connected peers.
   - [chiawallet](docu/plugin/chiawallet.md): Chia (lite) wallet monitoring using the chia API. Tracks the wallet balance and balance changes.
-  - [flexfarmer](docu/plugin/flexfarmer.md): Flexfarmer instance monitoring using flexfarmer log files. Gives statistics about partials, space and lookup times.
-  - [flexpool](docu/plugin/flexpool.md): Flexpool account monitoring using flexpool API. Tracks the open balance and worker status.
   - [spacefarmers](docu/plugin/spacefarmers.md): pool monitoring for spacefarmers.io. Tracks the open balance, partials and worker status.
 - Sia
   - [hostd](docu/plugin/hostd.md): Sia host monitoring using the hostd API. Includes wallet tracking, storage and traffic statistics, automatic price updates and financial reporting.
@@ -39,7 +37,7 @@ The hardware related plugins will only work on linux. All other should run on an
   - [eccram](docu/plugin/eccram.md): Checks the error statistics of ECC RAM.
   - [messagerelay](docu/plugin/messagerelay.md): Relays messages received via http post request to the interfaces.
   - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures.
-  - [serviceping](docu/plugin/serviceping.md): Pings chia, sia, storj and flexfarmer using their APIs. Usefull to check from another machine that your service is online.
+  - [serviceping](docu/plugin/serviceping.md): Pings chia, sia and storj using their APIs. Usefull to check from another machine that your service is online.
 
 ## **Outputs**
 
