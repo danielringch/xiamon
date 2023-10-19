@@ -44,22 +44,4 @@ The following interfaces are available:
 
 The key **plugins** starts the section defining the plugins. The subsequent key defines the plugin, for each given configuration file, an own instance of the plugin is created.
 
-The following plugins are available:
-
-- chiafarmer
-- chiaharvester
-- chianode
-- chiawallet
-- diskfree
-- eccram
-- flexfarmer
-- flexpool
-- hostd
-- messagerelay
-- opendtu
-- pingdrive
-- serviceping
-- siahost
-- smartctl
-- storjnode
-- sysmonitor
+The available plugins can be taken from the configuration template above.
