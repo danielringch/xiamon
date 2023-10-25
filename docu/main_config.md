@@ -20,14 +20,14 @@ plugins:
   chiawallet: "plugin/chiawallet.yaml"  #optional
   diskfree: "plugin/diskfree.yaml"  #optional
   eccram: "plugin/eccram.yaml"  #optional
-  flexfarmer: "plugin/flexfarmer.yaml"  #optional
-  flexpool: "plugin/flexpool.yaml"  #optional
+  hostd: "plugin/hostd.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
   opendtu: "plugin/opendtu.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
   smartctl: "plugin/smartctl.yaml"  #optional
+  spacefarmers: "plugin/spacefarmers.yaml"  #optional
   storjnode: "plugin/storjnode.yaml"  #optional
   sysmonitor: "plugin/sysmonitor.yaml"  #optional
 ```
@@ -42,21 +42,4 @@ The following interfaces are available:
 
 The key **plugins** starts the section defining the plugins. The subsequent key defines the plugin, for each given configuration file, an own instance of the plugin is created.
 
-The following plugins are available:
-
-- chiafarmer
-- chiaharvester
-- chianode
-- chiawallet
-- diskfree
-- eccram
-- flexfarmer
-- flexpool
-- messagerelay
-- opendtu
-- pingdrive
-- serviceping
-- siahost
-- smartctl
-- storjnode
-- sysmonitor
+The available plugins can be taken from the configuration template above.

@@ -11,13 +11,13 @@ plugins:
   chiawallet: "plugin/chiawallet.yaml"  #optional
   diskfree: "plugin/diskfree.yaml"  #optional
   eccram: "plugin/eccram.yaml"  #optional
-  flexfarmer: "plugin/flexfarmer.yaml"  #optional
-  flexpool: "plugin/flexpool.yaml"  #optional
+  hostd: "plugin/hostd.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
   opendtu: "plugin/opendtu.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
   smartctl: "plugin/smartctl.yaml"  #optional
+  spacefarmers: "plugin/spacefarmers.yaml"  #optional
   storjnode: "plugin/storjnode.yaml"  #optional
   sysmonitor: "plugin/sysmonitor.yaml"  #optional

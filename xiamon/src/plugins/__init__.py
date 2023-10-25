@@ -4,13 +4,13 @@ from .chianode import *
 from .chiawallet import *
 from .diskfree import *
 from .eccram import *
-from .flexfarmer import *
-from .flexpool import *
+from .hostd import *
 from .messagerelay import *
 from .opendtu import *
 from .pingdrive import *
 from .serviceping import *
 from .siahost import *
 from .smartctl import *
+from .spacefarmers import *
 from .storjnode import *
 from .sysmonitor import *

@@ -1,11 +1,10 @@
-name: "my_flexpool"  #unique name
+name: "my_spacefarmers"  #unique name
 summary_interval: "0 0 * * *"  #cron schedule expression
 check_interval: "0 * * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
-address: "xch1fh6f088cxcvqscy4xtxfq7762vhsh9mjcql6m3svfhmlxsc3jd4sd37xdl"
-currency: "USD"
-workers:
-  my_worker_1:
+launcher_id: "1cd80c9d73b433a3ac080e50542ffc18bc68dd5b686fbc91866ae90ab2d76f70"
+harvesters:
+  c0e81b8f13:  #optional
     maximum_offline_time: 0.5 #hours
-  my_worker_2:
+  97e4fd0301:  #optional
     maximum_offline_time: 1.0 #hours

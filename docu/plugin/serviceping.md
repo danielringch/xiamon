@@ -4,7 +4,6 @@ This plugin pings some services to check whether they are online. This plugin us
 - chia (full node)
 - sia (siad)
 - storj
-- flexfarmer
 
 ## **Configuration template**
 
@@ -22,12 +21,9 @@ hosts:
         key: "~/.chia/mainnet/config/ssl/full_node/private_full_node.key"
         host: "127.0.0.1:8555"
     my_host_2:  # optional
-        type: flexfarmer
-        host: "127.0.0.1:8080"
-    my_host_3:  # optional
         type: sia
         host: "127.0.0.1:9980"
-    my_host_4:  # optional
+    my_host_3:  # optional
         type: storj
         host: "127.0.0.1:14002"
 ```
@@ -36,19 +32,11 @@ hosts:
 
 The services to monitor are listed under the key **hosts**. For each service, the displayed name is set as a key.
 
-The key **type** sets the type of service, supported values are `chia`, `flexfarmer`, `sia` and `storj`.
+The key **type** sets the type of service, supported values are `chia`, `sia` and `storj`.
 
 ### ***Chia***
 
 The configuration is the same as for the chia full node plugin and can be found [here](chianode.md).
-
-### ***Flexfarmer***
-
-The key **host** specifies the ip and port of the flexfarmer instance.
-
-The key **api_server_listen** in flexfarmers configuration file needs to be set to `localhost:8080` (access of same machine) or `0.0.0.0:8080` (access in local network) to enable flexfarmers API server.
-
-The port of the api server in the flexfarmer configuration template is set to 8080. In practice, this port is often already in use by other http servers on the machine, feel free to choose a different port.
 
 ### ***Sia***
 

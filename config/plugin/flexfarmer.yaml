@@ -1,4 +1,0 @@
-name: "my_flexfarmer"  #unique name
-interval: "0 0 * * *"  #cron schedule expression
-log_file: "~/flexfarmer.log"
-output_path: "~/myArchive"

@@ -11,7 +11,6 @@ class Serviceping(Plugin):
 
         ctors = {
             "chia": Serviceping.Chia,
-            "flexfarmer": Serviceping.Flexfarmer,
             "sia": Serviceping.Sia,
             "storj": Serviceping.Storj
         }
@@ -52,19 +51,6 @@ class Serviceping(Plugin):
                     await self.__rpc.post(session, 'healthz')
                     return True
                 except ApiRequestFailedException:
-                    return False
-
-    class Flexfarmer:
-        def __init__(self, config, _):
-            self.__host = config['host']
-
-        async def check(self):
-            async with aiohttp.ClientSession() as session:
-                try:
-                    async with session.get(f'http://{self.__host}/stats') as response:
-                        status = response.status
-                        return status >= 200 and status <= 299
-                except Exception:
                     return False
 
     class Sia:

@@ -68,21 +68,27 @@ class Smartctl(Plugin):
 
     async def report(self):
         last_execution = self.__scheduler.get_last_execution(self.__report_job)
-        table = Tablerenderer(['Device', 'Alias'] + [str(x) for x in sorted(self.__attributes_of_interest)])
+        attribute_columns = sorted(self.__attributes_of_interest)
+        table = Tablerenderer(['Device', 'Alias'] + [str(x) for x in attribute_columns] )
 
         for snapshot, evaluator in sorted(self.__get_snapshots(), key=lambda y: y[1].name):
             old_snapshot = self.__db.get(snapshot.identifier, last_execution)
 
-            table.data['Device'].append(snapshot.identifier)
-            table.data['Alias'].append(evaluator.name if evaluator.name != snapshot.identifier else '')
+            row = []
+            row.append(snapshot.identifier)
+            row.append(evaluator.name if evaluator.name != snapshot.identifier else '')
 
-            for attribute, value in snapshot.attributes.items():
-                try:
-                    delta = value - old_snapshot.attributes[attribute]
-                    cell = f'({delta:+}) {value}'
-                except:
-                    cell = str(value)
-                table.data[str(attribute)].append(cell)
+            for attribute in attribute_columns:
+                if attribute in snapshot.attributes:
+                    value = snapshot.attributes[attribute]
+                    try:
+                        delta = value - old_snapshot.attributes[attribute]
+                        row.append(f'({delta:+}) {value}')
+                    except:
+                        row.append(str(value))
+                else:
+                    row.append('')
+            table.add_row(row)
 
         self.msg.verbose(table.render())
         
