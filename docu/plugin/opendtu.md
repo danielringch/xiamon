@@ -12,6 +12,7 @@ check_interval: "0 * * * *"  #cron schedule expression
 summary_interval: "0 0 * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 host: "192.168.4.1:80"
+serial: "123456789012"  #optional
 database: "~/myDb.sqlite"
 verbose_csv_export: "~/myVerboseCsv.csv"  #optional
 summary_csv_export: "~/mySummaryCsv.csv"  #optional
@@ -20,6 +21,8 @@ summary_csv_export: "~/mySummaryCsv.csv"  #optional
 ## **Basic setup**
 
 For the key **host**, you need ip address and port of your openDTU. The ip address depends on your network setup, while the port is usually `80`.
+
+If you want to monitor only a specific inverter, you can specify its serial number with the key **serial**.
 
 The plugin uses an internal database, its path is configured by the key **database**.
 
