@@ -1,4 +1,4 @@
-import subprocess, re
+import subprocess, re, json
 from collections import defaultdict
 from ...core import Plugin, Tablerenderer
 from .drive import Drive
@@ -70,17 +70,22 @@ class Pingdrive(Plugin):
                 self.msg.debug(f'Added drive {device} ({self.__drives[device].alias}).')
 
     def __get_drives(self):
-        lsblk_output = subprocess.run(["lsblk","-o" , "KNAME,MOUNTPOINT"], text=True, stdout=subprocess.PIPE)
-        drive_pattern = re.compile("sd\\D+")
         drives = defaultdict(set)
-        for line in lsblk_output.stdout.splitlines():
-            parts = re.split("[ \\t]+", line)
-            if (len(parts) != 2) or len(parts[1]) == 0:
-                continue
-            device_match = drive_pattern.search(parts[0])
-            if not device_match:
-                continue
-            device = device_match.group(0)
-            mountpoint = parts[1]
-            drives[device].add(mountpoint)
+        try:
+            output = subprocess.check_output(["findmnt", "--real", "--raw", "--output=source,target", "--noheadings"]).decode("utf-8")
+        except subprocess.CalledProcessError as e:
+            self.msg.error(f'Can not read drive list: {e}')
+            return drives
+        
+        block_device_pattern = re.compile(r"\/dev\/([a-zA-z0-9]+)")
+        drives = defaultdict(set)
+        for line in output.splitlines():
+            parts = line.split(' ')
+            if len(parts) == 2:
+                device, mount = parts
+                block_device_match = block_device_pattern.search(device)
+                if not block_device_match:
+                    continue
+                block_device = re.sub(r'p?[0-9]+$', '', block_device_match.group(1))
+                drives[block_device].add(mount)
         return drives
