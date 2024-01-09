@@ -11,6 +11,7 @@ class Opendtu(Plugin):
         self.__summary_job = f'{self.name}-summary'
 
         self.__host = self.config.get('192.168.4.1:80', 'host')
+        self.__serial = self.config.get(None, 'serial')
 
         self.__db = Opendtudb(self.config.data['database'])
         self.__check_csv = CsvExporter(self.config.get(None, 'verbose_csv_export'))
@@ -32,14 +33,7 @@ class Opendtu(Plugin):
                         json = await response.json()
                         status = response.status
                     if (status >= 200 and status <= 299):
-                        total_energy = round(Conversions.reverse_autorange( \
-                            json["total"]["YieldTotal"]["v"],
-                            json["total"]["YieldTotal"]["u"],
-                            "Wh"))
-                        day_energy = round(Conversions.reverse_autorange( \
-                            json["total"]["YieldDay"]["v"],
-                            json["total"]["YieldDay"]["u"],
-                            "Wh"))
+                        total_energy, day_energy = self.__get_energy(json)
                         break
                     else:
                         self.msg.debug(f'Command api/livedata/status failed with code {status}, {retries} retries left')
@@ -96,4 +90,32 @@ class Opendtu(Plugin):
             last_total = total
         self.msg.verbose(table.render())
 
-        
+    def __get_energy(self, json):
+        if self.__serial is None:
+            total_energy = round(Conversions.reverse_autorange( \
+                json["total"]["YieldTotal"]["v"],
+                json["total"]["YieldTotal"]["u"],
+                "Wh"))
+            day_energy = round(Conversions.reverse_autorange( \
+                json["total"]["YieldDay"]["v"],
+                json["total"]["YieldDay"]["u"],
+                "Wh"))
+        else:
+            total_energy = 0
+            day_energy = 0
+            for inverter in json["inverters"]:
+                if inverter["serial"] != self.__serial:
+                    continue
+                for phase in inverter["AC"].values():
+                    total_energy += round(Conversions.reverse_autorange( \
+                        phase["YieldTotal"]["v"],
+                        phase["YieldTotal"]["u"],
+                        "Wh"))
+                    day_energy += round(Conversions.reverse_autorange( \
+                        phase["YieldDay"]["v"],
+                        phase["YieldDay"]["u"],
+                        "Wh"))
+        return total_energy, day_energy
+
+
+            

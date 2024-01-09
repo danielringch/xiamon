@@ -36,6 +36,7 @@ The hardware related plugins will only work on linux. All other should run on an
 - General
   - [eccram](docu/plugin/eccram.md): Checks the error statistics of ECC RAM.
   - [messagerelay](docu/plugin/messagerelay.md): Relays messages received via http post request to the interfaces.
+  - [mqttlogger](docu/plugin/mqttlogger.md): Logs data from MQTT topics.
   - [sysmonitor](docu/plugin/sysmonitor.md): Checks basic system health, such as load, RAM, swap and temperatures.
   - [serviceping](docu/plugin/serviceping.md): Pings chia, sia and storj using their APIs. Usefull to check from another machine that your service is online.
 

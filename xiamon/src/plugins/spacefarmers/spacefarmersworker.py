@@ -25,7 +25,7 @@ class SpacefarmersWorker:
 
     @property
     def average_time(self):
-        return self.__total_time / self.__valid_partials
+        return self.__total_time / self.__valid_partials if self.__valid_partials > 0 else 0
     
     @property
     def partials_valid(self):

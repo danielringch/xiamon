@@ -61,6 +61,8 @@ class Discordbot(Interface):
                     print(f'[discordbot] Failed sending a message: send queue overflow.')
 
         async def flush(self):
+            if self.__channel is None:
+                return
             while not self.__buffer.empty():
                 try:
                     await self.__channel.send(self.__buffer.get(block=False))

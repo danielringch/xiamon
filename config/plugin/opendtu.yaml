@@ -3,6 +3,7 @@ check_interval: "0 * * * *"  #cron schedule expression
 summary_interval: "0 0 * * *"  #cron schedule expression
 alert_mute_interval: 24  #hours
 host: "192.168.4.1:80"
+serial: "123456789012"  #optional
 database: "~/myDb.sqlite"
 verbose_csv_export: "~/myVerboseCsv.csv"  #optional
 summary_csv_export: "~/mySummaryCsv.csv"  #optional

@@ -6,6 +6,7 @@ from .diskfree import *
 from .eccram import *
 from .hostd import *
 from .messagerelay import *
+from .mqttlogger import *
 from .opendtu import *
 from .pingdrive import *
 from .serviceping import *

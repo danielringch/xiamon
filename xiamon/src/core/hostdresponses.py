@@ -35,8 +35,8 @@ class Hostdmetricsdata:
         self.__risked_collateral = Conversions.hasting_to_siacoin(int(json['contracts']['riskedCollateral']))
         self.__total_storage = int(json['storage']['totalSectors']) * 4194304
         self.__used_storage = int(json['storage']['physicalSectors']) * 4194304
-        self.__ingress = int(json['data']['rhp2']['ingress']) + int(json['data']['rhp3']['ingress'])
-        self.__egress = int(json['data']['rhp2']['egress']) + int(json['data']['rhp3']['egress'])
+        self.__ingress = int(json['data']['rhp']['ingress'])
+        self.__egress = int(json['data']['rhp']['egress'])
         self.__timestamp = ciso8601.parse_datetime(json['timestamp'])
 
     @property
