@@ -1,0 +1,13 @@
+name: "my_mqtt_logger"  #unique name
+host: "localhost:1883"  #ip, port
+ca: "foo.crt"  #optional, path to CA certificate
+tls_insecure: false  #optional, may be necessary to allow self signed certificates
+user: "foo"  #optional, MQTT broker user
+password: "bar"  #optional, MQTT broker user
+topics:
+    foo/bar: #optional, MQTT topic
+        channel: info  #xiamon message channel
+        type: uint8  #type hint
+    test/123: #optional, MQTT topic
+        channel: alert  #xiamon message channel
+        type: utf-8  #type hint
