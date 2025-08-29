@@ -4,8 +4,8 @@ from ...core import Plugin, Chiarpc, ApiRequestFailedException
 from .challengecache import ChallengeCache
 
 class Chiafarmer(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Chiafarmer, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Chiafarmer, self).__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'

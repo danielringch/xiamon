@@ -6,8 +6,8 @@ from .hostdstorage import Hostdstorage
 from .hostdwallet import Hostdwallet
 
 class Hostd(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Hostd, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Hostd, self).__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'

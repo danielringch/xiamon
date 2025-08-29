@@ -2,11 +2,12 @@ import json
 import http.server
 import threading
 from ...core import Plugin
+from ...core.interface import send_message
 
 
 class Messagerelay(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Messagerelay, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Messagerelay, self).__init__(config)
 
         self.__host = self.config.get('localhost', 'host')
         self.__port = int(self.config.get('8080', 'port'))
@@ -48,7 +49,7 @@ class Messagerelay(Plugin):
                 channel = self.__channels[data['channel']]
                 message = data['message']
 
-                self.__plugin.send(channel, message, sender)
+                send_message(channel, message, sender)
             except:
                 self.__plugin.msg.error(f'Invalid incoming message: {payload}')
 

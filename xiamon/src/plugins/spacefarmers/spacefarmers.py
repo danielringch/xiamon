@@ -3,8 +3,8 @@ from ...core import Plugin, Conversions
 from .spacefarmersworker import SpacefarmersWorker
 
 class Spacefarmers(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Spacefarmers, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Spacefarmers, self).__init__(config)
 
         self.__scheduler = scheduler
         self.__startup_job = f'{self.name}-startup'

@@ -1,6 +1,6 @@
 import croniter, datetime, traceback
 from collections import namedtuple
-from .interface import Interface
+from .interface import Interface, send_message
 
 Startupjob = namedtuple("Startupjob", "name func")
 
@@ -16,10 +16,8 @@ class Scheduler:
     def __init__(self):
         self.__jobs = {}
         self.__startup_jobs = []
-        self.__interfaces = []
 
-    async def start(self, interfaces):
-        self.__interfaces.extend(interfaces)
+    async def start(self):
         for job in self.__jobs.values():
             self.__print(Interface.Channel.debug, f'Job {job.name}; next execution: {job.next}')
         for startup_job in self.__startup_jobs:
@@ -75,5 +73,4 @@ class Scheduler:
             self.__print(Interface.Channel.error, message)
 
     def __print(self, channel, message):
-        for interface in self.__interfaces:
-            interface.send_message(channel, 'scheduler', message)
+        send_message(channel, message, 'scheduler')

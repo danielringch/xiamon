@@ -4,8 +4,8 @@ from .nodeconnections import Nodeconnections
 from .nodesyncstate import NodeSyncState
 
 class Chianode(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Chianode, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Chianode, self).__init__(config)
         
         host = self.config.get('127.0.0.1:8555', 'host')
         self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chianode, self))

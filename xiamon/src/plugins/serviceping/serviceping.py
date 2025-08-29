@@ -4,8 +4,8 @@ from ...core import Plugin
 from ...core import Chiarpc, Siaapi, ApiRequestFailedException
 
 class Serviceping(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Serviceping, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Serviceping, self).__init__(config)
 
         self.__checkers = {}
 

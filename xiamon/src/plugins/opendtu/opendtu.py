@@ -3,8 +3,8 @@ from ...core import Plugin, Conversions, CsvExporter, Tablerenderer
 from .opendtudb import Opendtudb
 
 class Opendtu(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Opendtu, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Opendtu, self).__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'

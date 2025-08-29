@@ -4,8 +4,8 @@ from ...core import Plugin
 class Eccram(Plugin):
     CONTROLLER_PATH = '/sys/devices/system/edac/mc'
 
-    def __init__(self, config, scheduler, outputs):
-        super(Eccram, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Eccram, self).__init__(config)
 
         self.__mc_regex = re.compile(r'^mc\d+$')
         self.__ce = 0

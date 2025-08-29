@@ -5,8 +5,8 @@ from .storjstorage import Storjstorage
 from .storjearning import Storjearning
 
 class Storjnode(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Storjnode, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Storjnode, self).__init__(config)
 
         self.__hosts = [Storjhost(super(Storjnode, self), name, host) for name, host in self.config.data['hosts'].items()]
 

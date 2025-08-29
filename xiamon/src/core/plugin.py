@@ -1,21 +1,19 @@
 from abc import ABC
 from collections import defaultdict
 from .interface import Interface
-from .messagecontainer import AggregatedMessage, InstantMessage, MessageAggregator
+from .messagecontainer import MessageContainer
 from .config import Config
 from .alert import Alert
 
 class Plugin(ABC):
     Channel = Interface.Channel
 
-    def __init__(self, config_file, outputs):
+    def __init__(self, config_file):
         self.config = Config(config_file)
 
         self.name = self.config.data['name']
 
-        self.__outputs = outputs
-        self.__message_container = None
-        self.__instant_message = InstantMessage(self)
+        self.__message_container = MessageContainer(self.name)
 
         self.__alert_mute_interval = self.config.get(24, 'alert_mute_interval')
         self.__alerts = defaultdict(lambda: Alert(self, self.__alert_mute_interval))
@@ -31,10 +29,6 @@ class Plugin(ABC):
         for line in message.splitlines():
             print(f'    {line}')
 
-    def send(self, channel, message, sender=None):
-        for output in self.__outputs:
-            output.send_message(channel, self.name if sender is None else sender, message)
-
     def alert(self, key, message, sub_key=None):
         self.__alerts[key].send(message, sub_key)
 
@@ -43,19 +37,7 @@ class Plugin(ABC):
 
     @property
     def msg(self):
-        if self.__message_container is None:
-            return self.__instant_message
-        else:
-            return self.__message_container
-
-    @property
-    def instant(self):
-        return self.__instant_message
-
-    def __flush_message_container(self):
-        self.__message_container.flush()
-        self.__message_container = None
+        return self.__message_container
 
     def message_aggregator(self):
-        self.__message_container = AggregatedMessage(self)
-        return MessageAggregator(self.__flush_message_container)
+        return self.__message_container.create_aggregator()

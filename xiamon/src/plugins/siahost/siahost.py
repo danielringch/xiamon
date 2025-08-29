@@ -9,8 +9,8 @@ from .siastorage import Siastorage
 from .siawallet import Siawallet
 
 class Siahost(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Siahost, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Siahost, self).__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'

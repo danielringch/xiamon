@@ -3,6 +3,7 @@ import warnings
 from pytz_deprecation_shim import PytzUsageWarning
 
 from src.core import Scheduler
+from src.core.interface import add_interface
 from src.interfaces import *
 from src.plugins import *
 
@@ -50,7 +51,6 @@ async def main():
     with open(config_file, "r") as stream:
         config = yaml.safe_load(stream)
     
-    interfaces = []
     plugins = {}
 
     scheduler = Scheduler()
@@ -64,16 +64,16 @@ async def main():
             check_item(key, available_interfaces)
             interface = available_interfaces[key](get_config_path(path, args.config), scheduler)
             await interface.start()
-            interfaces.append(interface)
+            add_interface(interface)
 
     for key, value in config['plugins'].items():
         paths = [value] if isinstance(value, str) else value
         for path in paths:
             check_item(key, available_plugins)
-            plugin = available_plugins[key](get_config_path(path, args.config), scheduler, interfaces)
+            plugin = available_plugins[key](get_config_path(path, args.config), scheduler)
             plugins[plugin.name] = plugin
 
-    await scheduler.start(interfaces)
+    await scheduler.start()
 
     if args.manual:
         for manual_job in args.manual:

@@ -6,8 +6,8 @@ from ...core import Plugin
 
 
 class Mqttlogger(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Mqttlogger, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Mqttlogger, self).__init__(config)
 
         ip, port = self.config.get('localhost:1883', 'host').split(':')
         ca = self.config.get(None, 'ca')
@@ -78,7 +78,7 @@ class Mqttlogger(Plugin):
                     data = message.decode('utf-8')
                 else:
                     data = struct.unpack(type, message)[0]
-            self.send(channel, f'MQTT message on {topic}: {data}')
+            self.msg[channel](f'MQTT message on {topic}: {data}')
         except Exception as e:
             self.msg.error(f'Unable to parse MQTT message on topic {topic}: {e}')
 

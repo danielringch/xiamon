@@ -3,8 +3,8 @@ from .filleddisk import FilledDisk
 
 class Diskfree(Plugin):
 
-    def __init__(self, config, scheduler, outputs):
-        super(Diskfree, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Diskfree, self).__init__(config)
 
         self.__drives = {}
 

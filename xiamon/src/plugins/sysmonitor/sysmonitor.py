@@ -3,8 +3,8 @@ from .resourceevaluator import Resourceevaluator
 from ...core import Plugin, Alert, Config
 
 class Sysmonitor(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Sysmonitor, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Sysmonitor, self).__init__(config)
 
         self.__evaluators = {}
         self.__prefixes = {'load' : 'Load', 'ram' : 'RAM usage', 'swap' : 'Swap usage', 'temperature' : 'Temperature'}

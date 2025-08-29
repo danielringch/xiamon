@@ -2,8 +2,8 @@ import aiohttp
 from ...core import Plugin, Chiarpc, ApiRequestFailedException
 
 class Chiaharvester(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Chiaharvester, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Chiaharvester, self).__init__(config)
 
         self.__check_job = f'{self.name}-check'
 

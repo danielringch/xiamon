@@ -3,8 +3,8 @@ from ...core import Plugin, Chiarpc, Coinprice, Coin, Currency, ApiRequestFailed
 from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Chiawallet, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Chiawallet, self).__init__(config)
 
         host = self.config.get('127.0.0.1:9256', 'host')
         self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chiawallet, self))

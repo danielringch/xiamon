@@ -6,8 +6,8 @@ from .smartsnapshot import SmartSnapshot
 from .attributeevaluator import AttributeEvaluator
 
 class Smartctl(Plugin):
-    def __init__(self, config, scheduler, outputs):
-        super(Smartctl, self).__init__(config, outputs)
+    def __init__(self, config, scheduler):
+        super(Smartctl, self).__init__(config)
         
         self.__scheduler = scheduler
         self.__startup_job = f'{self.name}-startup'
