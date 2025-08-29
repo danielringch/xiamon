@@ -50,7 +50,7 @@ class Messagerelay(Plugin):
 
                 self.__plugin.send(channel, message, sender)
             except:
-                self.__plugin.msg.error(f'Invalid incoming message: {data}')
+                self.__plugin.msg.error(f'Invalid incoming message: {payload}')
 
                 self.send_response(400)
                 self.send_header('Content-type', 'text/plain')

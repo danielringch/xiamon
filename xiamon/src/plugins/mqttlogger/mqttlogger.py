@@ -57,10 +57,11 @@ class Mqttlogger(Plugin):
                 self.msg.error(f'Invalid type for topic {topic}.')
                 continue
             self.__topics[topic] = partial(self.__process_message, parsed_channel, decoder)
-            self.__mqtt.subscribe(topic, qos=1)
 
     def __on_connect(self, client, userdata, flags, rc):
         self.msg.debug(f'MQTT connected with code {rc}.')
+        for topic in self.__topics.keys():
+            self.__mqtt.subscribe(topic, qos=1)
          
     def __on_message(self, client, userdata, msg):
         callback = self.__topics.get(msg.topic, None)
