@@ -1,4 +1,4 @@
-from ...core import Plugin, Hostdapi, CsvExporter, Coinprice, ApiRequestFailedException
+from ...core import Plugin, Hostdapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException
 from ...core import Hostdconsensusdata, Hostdwalletdata, Hostdmetricsdata
 from .hostddb import Hostddb
 from .hostdhealth import Hostdhealth
@@ -24,7 +24,7 @@ class Hostd(Plugin):
 
         self.__db = Hostddb(self.config.data['database'])
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
-        self.__coinprice = Coinprice('siacoin', self.config.data['currency'])
+        self.__coinprice = Coinprice(Coin.SIACOIN, Currency(self.config.data['currency']))
 
         self.__health = Hostdhealth(self, self.config)
         self.__storage = Hostdstorage(self)

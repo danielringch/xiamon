@@ -1,4 +1,4 @@
-from ...core import Plugin, Siaapi, CsvExporter, Coinprice, ApiRequestFailedException
+from ...core import Plugin, Siaapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
 from .siablocks import Siablocks
@@ -28,7 +28,7 @@ class Siahost(Plugin):
         self.__db = Siadb(self.config.data['database'])
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
         self.__blocks = Siablocks(super(Siahost, self), self.__api, self.__db)
-        self.__coinprice = Coinprice('siacoin', self.config.data['currency'])
+        self.__coinprice = Coinprice(Coin.SIACOIN, Currency(self.config.data['currency']))
 
         self.__health = Siahealth(self, self.config)
         self.__storage = Siastorage(self, self.__scheduler, self.__db)

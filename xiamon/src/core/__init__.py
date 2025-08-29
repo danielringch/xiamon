@@ -1,6 +1,6 @@
 from .alert import Alert
 from .chiarpc import Chiarpc
-from .coinprice import Coinprice
+from .coinprice import Coinprice, Coin, Currency
 from .config import Config
 from .conversions import Conversions, Byteunit
 from .csvexporter import CsvExporter

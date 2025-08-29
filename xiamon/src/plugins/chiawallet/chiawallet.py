@@ -1,5 +1,5 @@
 import aiohttp
-from ...core import Plugin, Chiarpc, Coinprice, ApiRequestFailedException, Conversions, CsvExporter
+from ...core import Plugin, Chiarpc, Coinprice, Coin, Currency, ApiRequestFailedException, Conversions, CsvExporter
 from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
@@ -12,7 +12,7 @@ class Chiawallet(Plugin):
 
         self.__db = Chiawalletdb(self.config.data['database'])
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
-        self.__coinprice = Coinprice('chia', self.config.get('usd', 'currency'))
+        self.__coinprice = Coinprice(Coin.CHIA, Currency(self.config.get('usd', 'currency')))
 
         scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
         scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))
