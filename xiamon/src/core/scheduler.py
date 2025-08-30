@@ -1,6 +1,6 @@
 import croniter, datetime, traceback
 from collections import namedtuple
-from .interface import Interface, send_message
+from .interface import Channel, send_message
 
 Startupjob = namedtuple("Startupjob", "name func")
 
@@ -19,9 +19,9 @@ class Scheduler:
 
     async def start(self):
         for job in self.__jobs.values():
-            self.__print(Interface.Channel.debug, f'Job {job.name}; next execution: {job.next}')
+            self.__print(Channel.DEBUG, f'Job {job.name}; next execution: {job.next}')
         for startup_job in self.__startup_jobs:
-            self.__print(Interface.Channel.debug, f'Running startup job {startup_job.name}.')
+            self.__print(Channel.DEBUG, f'Running startup job {startup_job.name}.')
             await self.__try_run(startup_job)
             
     def add_job(self, name, func, interval):
@@ -35,7 +35,7 @@ class Scheduler:
         if job in self.__jobs:
             await self.__try_run(self.__jobs[job])
         else:
-            self.__print(Interface.Channel.error, f'Job {job} not found.')
+            self.__print(Channel.ERROR, f'Job {job} not found.')
 
     def get_last_execution(self, job):
         bundle = self.__jobs[job]
@@ -70,7 +70,7 @@ class Scheduler:
         except Exception as e:
             trace = traceback.format_exc()
             message = f'Job {job.name} failed:\n{repr(e)}\n{trace}'
-            self.__print(Interface.Channel.error, message)
+            self.__print(Channel.ERROR, message)
 
     def __print(self, channel, message):
         send_message(channel, message, 'scheduler')

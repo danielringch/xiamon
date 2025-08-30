@@ -2,7 +2,7 @@ import struct
 import paho.mqtt.client as mqtt
 from ssl import CERT_NONE
 from functools import partial
-from ...core import Plugin
+from ...core import Plugin, Channel
 
 
 class Mqttlogger(Plugin):
@@ -47,7 +47,7 @@ class Mqttlogger(Plugin):
 
         for topic, metadata in self.config.data['topics'].items():
             try:
-                parsed_channel = Plugin.Channel[metadata['channel']]
+                parsed_channel = Channel(metadata['channel'])
             except:
                 self.msg.error(f'Invalid channel for topic {topic}.')
                 continue

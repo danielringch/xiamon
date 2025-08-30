@@ -1,13 +1,10 @@
 from abc import ABC
 from collections import defaultdict
-from .interface import Interface
 from .messagecontainer import MessageContainer
 from .config import Config
 from .alert import Alert
 
 class Plugin(ABC):
-    Channel = Interface.Channel
-
     def __init__(self, config_file):
         self.config = Config(config_file)
 

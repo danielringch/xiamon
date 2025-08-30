@@ -1,8 +1,8 @@
 from typing import List
-from .interface import Interface, send_message
+from .interface import Channel, send_message
 
 class InstantChannel():
-    def __init__(self, sender, channel: Interface.Channel):
+    def __init__(self, sender, channel: Channel):
         self.__sender = sender
         self.__channel = channel
 
@@ -10,7 +10,7 @@ class InstantChannel():
         send_message(self.__channel, '\n'.join(x for x in lines if x), self.__sender)
 
 class AggregatedChannel():
-    def __init__(self, channel: Interface.Channel):
+    def __init__(self, channel: Channel):
         self.__buffer: List[str] = []
         self.__channel = channel
 
@@ -25,12 +25,12 @@ class MessageContainer():
         self.__sender = sender
         self.__to_instant_mode()
         self._channels = {
-            Interface.Channel.alert: self._alert,
-            Interface.Channel.debug: self._debug,
-            Interface.Channel.error: self._error,
-            Interface.Channel.info: self._info,
-            Interface.Channel.accounting: self._accounting,
-            Interface.Channel.verbose: self._verbose
+            Channel.ALERT: self._alert,
+            Channel.DEBUG: self._debug,
+            Channel.ERROR: self._error,
+            Channel.INFO: self._info,
+            Channel.ACCOUNTING: self._accounting,
+            Channel.VERBOSE: self._verbose
         }
 
     def __getitem__(self, channel):
@@ -64,20 +64,20 @@ class MessageContainer():
         return self.Aggregator(self)
     
     def __to_instant_mode(self):
-        self._alert = InstantChannel(self.__sender, Interface.Channel.alert)
-        self._debug = InstantChannel(self.__sender, Interface.Channel.debug)
-        self._error = InstantChannel(self.__sender, Interface.Channel.error)
-        self._info = InstantChannel(self.__sender, Interface.Channel.info)
-        self._accounting = InstantChannel(self.__sender, Interface.Channel.accounting)
-        self._verbose = InstantChannel(self.__sender, Interface.Channel.verbose)
+        self._alert = InstantChannel(self.__sender, Channel.ALERT)
+        self._debug = InstantChannel(self.__sender, Channel.DEBUG)
+        self._error = InstantChannel(self.__sender, Channel.ERROR)
+        self._info = InstantChannel(self.__sender, Channel.INFO)
+        self._accounting = InstantChannel(self.__sender, Channel.ACCOUNTING)
+        self._verbose = InstantChannel(self.__sender, Channel.VERBOSE)
 
     def __to_aggregated_mode(self):
-        self._alert = AggregatedChannel(Interface.Channel.alert)
-        self._debug = AggregatedChannel(Interface.Channel.debug)
-        self._error = AggregatedChannel(Interface.Channel.error)
-        self._info = AggregatedChannel(Interface.Channel.info)
-        self._accounting = AggregatedChannel(Interface.Channel.accounting)
-        self._verbose = AggregatedChannel(Interface.Channel.verbose)
+        self._alert = AggregatedChannel(Channel.ALERT)
+        self._debug = AggregatedChannel(Channel.DEBUG)
+        self._error = AggregatedChannel(Channel.ERROR)
+        self._info = AggregatedChannel(Channel.INFO)
+        self._accounting = AggregatedChannel(Channel.ACCOUNTING)
+        self._verbose = AggregatedChannel(Channel.VERBOSE)
     
     def __flush(self):
         for channel in self._channels.values():

@@ -1,7 +1,7 @@
 import datetime
+from typing import Dict
 from ...core import otherdefaultdict
-from ...core.interface import Interface
-from ...core import Config
+from ...core import Config, Interface, Channel
 from .datesorter import Datesorter
 from .pluginsorter import Pluginsorter
 
@@ -21,25 +21,25 @@ class Logfile(Interface):
 
         self.__date_sorters = otherdefaultdict(lambda x: Datesorter(x))
         self.__plugin_sorters = otherdefaultdict(lambda x: Pluginsorter(x))
-        self.__channels = {}
+        self.__channels: Dict[Channel, Logfile.Channel] = {}
 
-        for channel, name in self.channel_names.items():
-            if name in config_data.data:
-                file = config_data.get(None, name, 'file')
+        for channel in Channel:
+            if channel.value in config_data.data:
+                file = config_data.get(None, channel.value, 'file')
                 if file is None:
                     continue
-                sorter = self.__plugin_sorters[file] if config_data.get(False, name, 'sort_by_plugin') else self.__date_sorters[file]
+                sorter = self.__plugin_sorters[file] if config_data.get(False, channel.value, 'sort_by_plugin') else self.__date_sorters[file]
                 self.__channels[channel] = Logfile.Channel(
-                    name,
+                    channel.value,
                     sorter,
-                    config_data.get(None, name, 'whitelist'),
-                    config_data.get(None, name, 'blacklist'))
+                    config_data.get(None, channel.value, 'whitelist'),
+                    config_data.get(None, channel.value, 'blacklist'))
 
         scheduler.add_job(flush_job, self.__flush, "* * * * *")
         scheduler.add_job(daychange_job ,self.__handle_day_change, '0 0 * * *')
 
     async def start(self):
-        channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
+        channels = ','.join(x.value for x in self.__channels.keys())
         print(f'[logfile] Logfile ready, available channels: {channels}')
 
     def send_message(self, channel, sender, message):

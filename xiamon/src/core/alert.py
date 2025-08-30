@@ -1,5 +1,5 @@
 import datetime
-from .interface import Interface, send_message
+from .interface import Channel, send_message
 
 class Alert:
     def __init__(self, plugin, mute_interval, tolerance=0):
@@ -23,7 +23,7 @@ class Alert:
             self.__plugin.msg.debug(f'Alert tolerated, {self.__tolerance_remaining} time(s) remaining:\n{message}')
             return
         self.mute(key)
-        send_message(Interface.Channel.alert, message, self.__plugin.name)
+        send_message(Channel.ALERT, message, self.__plugin.name)
 
     def reset(self, message=None):
         if self.__tolerance_remaining < self.__tolerance:
@@ -33,7 +33,7 @@ class Alert:
             return;
         self.__current_mute = None
         if message is not None:
-            send_message(Interface.Channel.alert, message, self.__plugin.name)
+            send_message(Channel.ALERT, message, self.__plugin.name)
         else:
             self.__plugin.msg.debug(f'Alert reset without message')
 

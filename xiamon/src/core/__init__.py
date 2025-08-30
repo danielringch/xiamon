@@ -7,7 +7,7 @@ from .csvexporter import CsvExporter
 from .exceptions import *
 from .hostdapi import Hostdapi
 from .hostdresponses import *
-from .interface import Interface
+from .interface import Interface, Channel
 from .messagecontainer import MessageContainer
 from .otherdefaultdict import otherdefaultdict
 from .plugin import Plugin

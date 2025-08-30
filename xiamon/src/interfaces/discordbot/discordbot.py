@@ -3,8 +3,8 @@ from discord.ext import tasks
 from queue import Queue
 from time import sleep
 from threading import Thread
-from ...core.interface import Interface
-from ...core import Config
+from typing import Dict
+from ...core import Config, Interface, Channel
 
 class Discordbot(Interface):
     def __init__(self, config, _):
@@ -16,7 +16,7 @@ class Discordbot(Interface):
         with open(os.path.join(os.path.dirname(config), config_data.data['token']), "r") as stream:
             token = stream.readline()
         
-        self.__worker = Discordbot.DiscordWorker(token, self.channel_names, config_data)
+        self.__worker = Discordbot.DiscordWorker(token, config_data)
         self.__worker.daemon = True
         
 
@@ -25,7 +25,7 @@ class Discordbot(Interface):
         while not self.__worker.bot.ready:
             sleep(1)
         
-        channels = ','.join(self.channel_names[x] for x in self.__worker.bot.channels)
+        channels = ','.join(x.value for x in self.__worker.bot.channels)
         print(f'[discordbot] Discord bot {self.__worker.bot.user} ready, available channels: {channels}')
 
     def send_message(self, channel, sender, message):
@@ -70,22 +70,22 @@ class Discordbot(Interface):
                     print(f'[discordbot] Failed sending a message: {e}.')
 
     class Bot(discord.Client):
-        def __init__(self, channels, config):
+        def __init__(self, config):
             intents = discord.Intents.default()
             intents.messages = True
             intents.message_content = True
 
             super().__init__(intents=intents)
 
-            self.__channels = {}
-            for channel, name in channels.items():
-                if name in config.data:
-                    id = config.data[name]['id']
+            self.__channels: Dict[Channel, Discordbot.Channel] = {}
+            for channel in Channel:
+                if channel.value in config.data:
+                    id = config.data[channel.value]['id']
                     self.__channels[channel] = Discordbot.Channel(
                         self,
                         id,
-                        config.get(None, name, 'whitelist'),
-                        config.get(None, name, 'blacklist'))
+                        config.get(None, channel.value, 'whitelist'),
+                        config.get(None, channel.value, 'blacklist'))
 
             self.__ready = False
 
@@ -124,10 +124,10 @@ class Discordbot(Interface):
             return self.__channels.keys()
 
     class DiscordWorker(Thread):
-        def __init__(self, token, channels, config):
+        def __init__(self, token, config):
             Thread.__init__(self)
             self.__token = token
-            self.__bot = Discordbot.Bot(channels, config)
+            self.__bot = Discordbot.Bot(config)
 
         async def main(self):
             async with self.__bot:

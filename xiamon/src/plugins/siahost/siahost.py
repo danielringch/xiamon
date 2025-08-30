@@ -1,4 +1,4 @@
-from ...core import Plugin, Siaapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException
+from ...core import Plugin, Siaapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException, Channel
 from ...core import Siacontractsdata, Siaconsensusdata, Siahostdata, Siawalletdata, Siastoragedata, Siatrafficdata
 from .siaautoprice import Siaautoprice
 from .siablocks import Siablocks
@@ -81,7 +81,7 @@ class Siahost(Plugin):
                 self.msg.info('No summary created, host is not available.')
                 return
 
-            await self.__update_coinprice(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
+            await self.__update_coinprice(Channel.INFO, 'Summary is incomplete: coin price not available.')
 
             locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
 
@@ -102,7 +102,7 @@ class Siahost(Plugin):
                 self.msg.error('Report failed: some host queries failed.')
                 return
 
-            await self.__update_coinprice(Plugin.Channel.error, 'Report incomplete: coin price not available.')
+            await self.__update_coinprice(Channel.ERROR, 'Report incomplete: coin price not available.')
 
             locked_collateral, risked_collateral = self.__get_collaterals(consensus, contracts)
             await self.__wallet.dump(wallet, locked_collateral, risked_collateral)
@@ -116,7 +116,7 @@ class Siahost(Plugin):
                 self.msg.error('Accounting failed: some host queries failed.')
                 return
 
-            await self.__update_coinprice(Plugin.Channel.error, 'Autoprice incomplete: coin price not available.')
+            await self.__update_coinprice(Channel.ERROR, 'Autoprice incomplete: coin price not available.')
             await self.__blocks.update(consensus)
             await self.__reports.accounting(consensus, contracts)
 
@@ -130,13 +130,13 @@ class Siahost(Plugin):
                 self.msg.error('Autoprice failed: some host queries failed.')
                 return
 
-            if not await self.__update_coinprice(Plugin.Channel.error, 'Autoprice failed: coin price not available.'):
+            if not await self.__update_coinprice(Channel.ERROR, 'Autoprice failed: coin price not available.'):
                 return
 
             await self.__autoprice.update(host)
 
     async def daychange(self):
-        await self.__update_coinprice(Plugin.Channel.error, 'Coin price update failed: coin price not available.')
+        await self.__update_coinprice(Channel.ERROR, 'Coin price update failed: coin price not available.')
         try:
             contracts = await self.__request('host/contracts', lambda x: Siacontractsdata(x))
         except ApiRequestFailedException:

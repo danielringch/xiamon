@@ -1,7 +1,7 @@
 import json
 import http.server
 import threading
-from ...core import Plugin
+from ...core import Plugin, Channel
 from ...core.interface import send_message
 
 
@@ -25,16 +25,7 @@ class Messagerelay(Plugin):
         self.print(f'Listening to {self.__host}:{self.__port}...')
         httpd.serve_forever()            
 
-    class MessagerelayHandler(http.server.BaseHTTPRequestHandler):
-        __channels = {
-            'alert': Plugin.Channel.alert,
-            'info': Plugin.Channel.info,
-            'verbose': Plugin.Channel.verbose,
-            'accounting': Plugin.Channel.accounting,
-            'error': Plugin.Channel.error,
-            'debug': Plugin.Channel.debug
-        }
-
+    class MessagerelayHandler(http.server.BaseHTTPRequestHandler):å
         def __init__(self, plugin, *args):
             self.__plugin = plugin
             super().__init__(*args)
@@ -46,7 +37,7 @@ class Messagerelay(Plugin):
                 data = json.loads(payload)
 
                 sender = data['sender']
-                channel = self.__channels[data['channel']]
+                channel = Channel(data['channel'])
                 message = data['message']
 
                 send_message(channel, message, sender)

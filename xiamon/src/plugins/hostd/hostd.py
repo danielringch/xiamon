@@ -1,4 +1,4 @@
-from ...core import Plugin, Hostdapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException
+from ...core import Plugin, Hostdapi, CsvExporter, Coinprice, Coin, Currency, ApiRequestFailedException, Channel
 from ...core import Hostdconsensusdata, Hostdwalletdata, Hostdmetricsdata
 from .hostddb import Hostddb
 from .hostdhealth import Hostdhealth
@@ -63,7 +63,7 @@ class Hostd(Plugin):
                 self.msg.info('No summary created, host is not available.')
                 return
 
-            await self.__update_coinprice(Plugin.Channel.info, 'Summary is incomplete: coin price not available.')
+            await self.__update_coinprice(Channel.INFO, 'Summary is incomplete: coin price not available.')
 
             self.__health.summary(consensus)
             await self.__wallet.summary(wallet, metrics)
@@ -78,7 +78,7 @@ class Hostd(Plugin):
                 self.msg.error('Report failed: some host queries failed.')
                 return
 
-            await self.__update_coinprice(Plugin.Channel.error, 'Report incomplete: coin price not available.')
+            await self.__update_coinprice(Channel.ERROR, 'Report incomplete: coin price not available.')
 
             await self.__wallet.dump(wallet, metrics)
 

@@ -1,6 +1,6 @@
 import datetime, colorama
-from ...core.interface import Interface
-from ...core import Config
+from typing import Dict
+from ...core import Config, Interface, Channel
 
 class Stdout(Interface):
     def __init__(self, config, _):
@@ -10,19 +10,19 @@ class Stdout(Interface):
 
         colorama.init()
 
-        self.__channels = {}
+        self.__channels: Dict[Channel, Stdout.Channel] = {}
 
-        for channel, name in self.channel_names.items():
-            if name in config_data.data:
+        for channel in Channel:
+            if channel.value in config_data.data:
                 self.__channels[channel] = Stdout.Channel(
-                    name,
-                    config_data.get('reset', name, 'color'),
-                    config_data.get(None, name, 'whitelist'),
-                    config_data.get(None, name, 'blacklist'))
+                    channel.value,
+                    config_data.get('reset', channel.value, 'color'),
+                    config_data.get(None, channel.value, 'whitelist'),
+                    config_data.get(None, channel.value, 'blacklist'))
 
 
     async def start(self):
-        channels = ','.join(self.channel_names[x] for x in self.__channels.keys())
+        channels = ','.join(x.value for x in self.__channels.keys())
         print(f'[stdout] Stdout ready, available channels: {channels}')
 
     def send_message(self, channel, sender, message):
