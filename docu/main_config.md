@@ -22,7 +22,6 @@ plugins:
   eccram: "plugin/eccram.yaml"  #optional
   hostd: "plugin/hostd.yaml"  #optional
   messagerelay: "plugin/messagerelay.yaml"  #optional
-  opendtu: "plugin/opendtu.yaml"  #optional
   pingdrive: "plugin/pingdrive.yaml"  #optional
   serviceping: "plugin/serviceping.yaml"  #optional
   siahost: "plugin/siahost.yaml"  #optional
