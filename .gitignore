@@ -2,6 +2,9 @@
 *.token
 ._.DS_Store
 .DS_Store
+.devcontainer
+*.code-workspace
+local
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
