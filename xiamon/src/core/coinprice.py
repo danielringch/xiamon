@@ -29,7 +29,7 @@ class Coinprice:
                 async with session.get(f'https://api.coingecko.com/api/v3/simple/price?ids={self.__coin.value}&vs_currencies={self.__currency.value}') as response:
                     json = await response.json()
                     status = response.status
-                    self.__price = json[self.__id][self.__currency] if ((status >= 200) and (status <= 299)) else None
+                    self.__price = json[self.__coin.value][self.__currency.value] if ((status >= 200) and (status <= 299)) else None
 
         except:
             self.__price = None
