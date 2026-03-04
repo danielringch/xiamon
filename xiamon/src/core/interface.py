@@ -16,7 +16,7 @@ class Interface(ABC):
         pass
 
     @abstractmethod
-    def send_message(self, channel, prefix, message):
+    def send_message(self, channel, sender, message):
         pass
 
 __interfaces: List[Interface] = []
