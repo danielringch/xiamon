@@ -10,7 +10,7 @@ from .siawallet import Siawallet
 
 class Siahost(Plugin):
     def __init__(self, config, scheduler):
-        super(Siahost, self).__init__(config)
+        super().__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'
@@ -23,11 +23,11 @@ class Siahost(Plugin):
 
         host = self.config.get('127.0.0.1:9980','host')
         password = self.config.data['password']
-        self.__api = Siaapi(host, password, super(Siahost, self))
+        self.__api = Siaapi(host, password, self)
 
         self.__db = Siadb(self.config.data['database'])
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
-        self.__blocks = Siablocks(super(Siahost, self), self.__api, self.__db)
+        self.__blocks = Siablocks(self, self.__api, self.__db)
         self.__coinprice = Coinprice(Coin.SIACOIN, Currency(self.config.data['currency']))
 
         self.__health = Siahealth(self, self.config)

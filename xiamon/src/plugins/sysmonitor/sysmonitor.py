@@ -4,7 +4,7 @@ from ...core import Plugin, Alert, Config
 
 class Sysmonitor(Plugin):
     def __init__(self, config, scheduler):
-        super(Sysmonitor, self).__init__(config)
+        super().__init__(config)
 
         self.__evaluators = {}
         self.__prefixes = {'load' : 'Load', 'ram' : 'RAM usage', 'swap' : 'Swap usage', 'temperature' : 'Temperature'}

@@ -6,7 +6,7 @@ from .drive import Drive
 class Pingdrive(Plugin):
 
     def __init__(self, config, scheduler):
-        super(Pingdrive, self).__init__(config)
+        super().__init__(config)
 
         self.__drive_configs = {}
         self.__drives = {}

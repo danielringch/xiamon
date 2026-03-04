@@ -5,10 +5,10 @@ from .nodesyncstate import NodeSyncState
 
 class Chianode(Plugin):
     def __init__(self, config, scheduler):
-        super(Chianode, self).__init__(config)
+        super().__init__(config)
         
         host = self.config.get('127.0.0.1:8555', 'host')
-        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chianode, self))
+        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], self)
 
         scheduler.add_job(f'{self.name}-check' ,self.check, self.config.get('0 * * * *', 'check_interval'))
         scheduler.add_job(f'{self.name}-summary', self.summary, self.config.get('0 0 * * *', 'summary_interval'))

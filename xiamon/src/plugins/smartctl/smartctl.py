@@ -7,7 +7,7 @@ from .attributeevaluator import AttributeEvaluator
 
 class Smartctl(Plugin):
     def __init__(self, config, scheduler):
-        super(Smartctl, self).__init__(config)
+        super().__init__(config)
         
         self.__scheduler = scheduler
         self.__startup_job = f'{self.name}-startup'
@@ -19,7 +19,7 @@ class Smartctl(Plugin):
         self.__smartctl_call = os.path.join(os.path.dirname(binary_path),f'./{os.path.basename(binary_path)}')
         self.__use_sudo = binary_path.startswith('/usr/sbin')
 
-        self.__db = Smartctldb(super(Smartctl, self), self.config.data['database'])
+        self.__db = Smartctldb(self, self.config.data['database'])
         self.__aggregation = timedelta(hours=self.config.get(24, 'aggregation'))
         self.__expiration = timedelta(days=self.config.get(180, 'expiration'))
 
@@ -107,7 +107,7 @@ class Smartctl(Plugin):
     def __add_drive(self, identifier, device):
         evaluator = self.__drives.get(identifier, None)
         if evaluator is None:
-            evaluator = AttributeEvaluator(super(Smartctl, self), self.__aggregation, self.config, identifier)
+            evaluator = AttributeEvaluator(self, self.__aggregation, self.config, identifier)
             self.__drives[identifier] = evaluator
             self.msg.debug(f'Found drive {evaluator.name} at {device} with {evaluator.config_type} limits.')
         return evaluator

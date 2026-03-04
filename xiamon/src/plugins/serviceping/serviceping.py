@@ -5,7 +5,7 @@ from ...core import Chiarpc, Siaapi, ApiRequestFailedException
 
 class Serviceping(Plugin):
     def __init__(self, config, scheduler):
-        super(Serviceping, self).__init__(config)
+        super().__init__(config)
 
         self.__checkers = {}
 
@@ -16,7 +16,7 @@ class Serviceping(Plugin):
         }
 
         for host, config in self.config.data['hosts'].items():
-            self.__checkers[host] = ctors[config['type']](config, super(Serviceping, self))
+            self.__checkers[host] = ctors[config['type']](config, self)
 
         self.__successful_pings = defaultdict(lambda: 0)
         self.__failed_pings = defaultdict(lambda: 0)

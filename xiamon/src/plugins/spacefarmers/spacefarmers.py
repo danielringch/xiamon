@@ -4,7 +4,7 @@ from .spacefarmersworker import SpacefarmersWorker
 
 class Spacefarmers(Plugin):
     def __init__(self, config, scheduler):
-        super(Spacefarmers, self).__init__(config)
+        super().__init__(config)
 
         self.__scheduler = scheduler
         self.__startup_job = f'{self.name}-startup'

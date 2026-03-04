@@ -7,7 +7,7 @@ from ...core.interface import send_message
 
 class Messagerelay(Plugin):
     def __init__(self, config, scheduler):
-        super(Messagerelay, self).__init__(config)
+        super().__init__(config)
 
         self.__host = self.config.get('localhost', 'host')
         self.__port = int(self.config.get('8080', 'port'))
@@ -25,7 +25,7 @@ class Messagerelay(Plugin):
         self.print(f'Listening to {self.__host}:{self.__port}...')
         httpd.serve_forever()            
 
-    class MessagerelayHandler(http.server.BaseHTTPRequestHandler):å
+    class MessagerelayHandler(http.server.BaseHTTPRequestHandler):
         def __init__(self, plugin, *args):
             self.__plugin = plugin
             super().__init__(*args)

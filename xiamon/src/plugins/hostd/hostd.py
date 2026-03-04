@@ -7,7 +7,7 @@ from .hostdwallet import Hostdwallet
 
 class Hostd(Plugin):
     def __init__(self, config, scheduler):
-        super(Hostd, self).__init__(config)
+        super().__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'

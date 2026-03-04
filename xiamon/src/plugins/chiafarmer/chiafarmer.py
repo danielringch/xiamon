@@ -5,7 +5,7 @@ from .challengecache import ChallengeCache
 
 class Chiafarmer(Plugin):
     def __init__(self, config, scheduler):
-        super(Chiafarmer, self).__init__(config)
+        super().__init__(config)
 
         self.__scheduler = scheduler
         self.__check_job = f'{self.name}-check'
@@ -16,12 +16,12 @@ class Chiafarmer(Plugin):
             self.config.get('127.0.0.1:8559','host'),
             self.config.data['cert'],
             self.config.data['key'],
-            super(Chiafarmer, self))
+            self)
 
         self.__threshold_short = float(self.config.get(0.95, 'underharvested_threshold_short'))
         self.__threshold_long = float(self.config.get(0.99, 'underharvested_threshold_long'))
 
-        self.__history = ChallengeCache(super(Chiafarmer, self))
+        self.__history = ChallengeCache(self)
 
         self.__scheduler.add_job(self.__check_job ,self.check, "*/5 * * * *")
         self.__scheduler.add_job(self.__evaluate_job, self.evaluate, "0 * * * *")

@@ -4,10 +4,10 @@ from .chiawalletdb import Chiawalletdb
 
 class Chiawallet(Plugin):
     def __init__(self, config, scheduler):
-        super(Chiawallet, self).__init__(config)
+        super().__init__(config)
 
         host = self.config.get('127.0.0.1:9256', 'host')
-        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], super(Chiawallet, self))
+        self.__rpc = Chiarpc(host, self.config.data['cert'], self.config.data['key'], self)
         self.__wallet_id = self.config.get(1, 'wallet_id')
 
         self.__db = Chiawalletdb(self.config.data['database'])

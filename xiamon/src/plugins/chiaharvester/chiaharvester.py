@@ -3,7 +3,7 @@ from ...core import Plugin, Chiarpc, ApiRequestFailedException
 
 class Chiaharvester(Plugin):
     def __init__(self, config, scheduler):
-        super(Chiaharvester, self).__init__(config)
+        super().__init__(config)
 
         self.__check_job = f'{self.name}-check'
 
@@ -11,7 +11,7 @@ class Chiaharvester(Plugin):
             self.config.get('127.0.0.1:8560', 'host'),
             self.config.data['cert'],
             self.config.data['key'],
-            super(Chiaharvester, self))
+            self)
 
         self.__failed_plots = set()
         self.__not_found_plots = set()

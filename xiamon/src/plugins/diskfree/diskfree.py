@@ -4,7 +4,7 @@ from .filleddisk import FilledDisk
 class Diskfree(Plugin):
 
     def __init__(self, config, scheduler):
-        super(Diskfree, self).__init__(config)
+        super().__init__(config)
 
         self.__drives = {}
 

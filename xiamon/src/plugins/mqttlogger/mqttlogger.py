@@ -7,7 +7,7 @@ from ...core import Plugin, Channel
 
 class Mqttlogger(Plugin):
     def __init__(self, config, scheduler):
-        super(Mqttlogger, self).__init__(config)
+        super().__init__(config)
 
         ip, port = self.config.get('localhost:1883', 'host').split(':')
         ca = self.config.get(None, 'ca')

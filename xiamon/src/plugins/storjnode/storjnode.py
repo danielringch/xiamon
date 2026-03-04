@@ -6,9 +6,9 @@ from .storjearning import Storjearning
 
 class Storjnode(Plugin):
     def __init__(self, config, scheduler):
-        super(Storjnode, self).__init__(config)
+        super().__init__(config)
 
-        self.__hosts = [Storjhost(super(Storjnode, self), name, host) for name, host in self.config.data['hosts'].items()]
+        self.__hosts = [Storjhost(self, name, host) for name, host in self.config.data['hosts'].items()]
 
         self.__csv = CsvExporter(self.config.get(None, 'csv_export'))
         self.__db = Storjdb(self.config.data['database'])
