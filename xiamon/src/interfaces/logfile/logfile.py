@@ -9,7 +9,7 @@ LOGFILE_INSTANCE_COUNT = 0
 
 class Logfile(Interface):
     def __init__(self, config, scheduler):
-        super(Logfile, self).__init__()
+        super().__init__()
         config_data = Config(config)
         print('[logfile] Logfile loading')
 
@@ -68,6 +68,8 @@ class Logfile(Interface):
             self.__separator = '|'
 
         def send(self, sender, raw_message):
+            if not raw_message:
+                return
             if self.__whitelist is not None and sender not in self.__whitelist:
                 return
             if self.__blacklist is not None and sender in self.__blacklist:

@@ -8,7 +8,7 @@ from ...core import Config, Interface, Channel
 
 class Discordbot(Interface):
     def __init__(self, config, _):
-        super(Discordbot, self).__init__()
+        super().__init__()
         print('[discordbot] Discord bot loading')
 
         config_data = Config(config)
@@ -45,6 +45,8 @@ class Discordbot(Interface):
             self.__channel = self.__client.get_channel(self.__id)
 
         def send(self, sender, message):
+            if not message:
+                return
             if self.__whitelist is not None and sender not in self.__whitelist:
                 return
             if self.__blacklist is not None and sender in self.__blacklist:

@@ -4,7 +4,7 @@ from ...core import Config, Interface, Channel
 
 class Stdout(Interface):
     def __init__(self, config, _):
-        super(Stdout, self).__init__()
+        super().__init__()
         config_data = Config(config)
         print(f'[stdout] Stdout loading')
 
@@ -54,6 +54,8 @@ class Stdout(Interface):
             return datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
 
         def send(self, sender, message):
+            if not message:
+                return
             if self.__whitelist is not None and sender not in self.__whitelist:
                 return
             if self.__blacklist is not None and sender in self.__blacklist:
